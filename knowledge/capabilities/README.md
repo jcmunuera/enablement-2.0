@@ -37,6 +37,7 @@ Capabilities are high-level technical objectives that can be enabled when genera
 | [api_architecture](./api_architecture.md) | API layers and service architecture | ✅ Active | ADR-001, ADR-009 |
 | [resilience](./resilience.md) | Fault tolerance patterns | ✅ Active | ADR-004 |
 | [persistence](./persistence.md) | Data access patterns (JPA, System API) | ✅ Active | ADR-011 |
+| [integration](./integration.md) | API integration (REST, gRPC, Async) | ✅ Active | ADR-012 |
 | observability | Logging, metrics, tracing | 🔜 Planned | ADR-005 (future) |
 | error_handling | Error response standards | 🔜 Planned | ADR-006 (future) |
 | security | Authentication, authorization | 🔜 Planned | ADR-007 (future) |

@@ -1,19 +1,18 @@
 ---
 id: mod-017-persistence-systemapi
 title: "MOD-017: System API Persistence"
-version: 1.1
+version: 1.2
 date: 2025-12-01
 status: Active
 derived_from: eri-code-012-persistence-patterns-java-spring
+depends_on:
+  - mod-018-api-integration-rest-java-spring
 domain: code
 tags:
   - java
   - spring-boot
   - system-api
   - persistence
-  - feign
-  - resttemplate
-  - restclient
   - resilience
 used_by:
   - skill-code-020-generate-microservice-java-spring
@@ -27,9 +26,9 @@ Reusable templates for implementing persistence via System API delegation. The D
 
 **Source ERI:** [ERI-CODE-012](../../../ERIs/eri-code-012-persistence-patterns-java-spring/ERI.md)
 
-**Use when:** Service delegates persistence to mainframe via System APIs
+**Depends on:** [mod-018-api-integration-rest-java-spring](../mod-018-api-integration-rest-java-spring/MODULE.md) for REST client
 
-**Client variants:** Feign (recommended), RestTemplate, RestClient
+**Use when:** Service delegates persistence to mainframe via System APIs
 
 ---
 
@@ -44,14 +43,9 @@ mod-017-persistence-systemapi/
 │   ├── mapper/
 │   │   └── SystemApiMapper.java.tpl
 │   ├── adapter/
-│   │   └── SystemApiAdapter.java.tpl
-│   ├── client/                          # Variants in same directory
-│   │   ├── feign.java.tpl
-│   │   ├── resttemplate.java.tpl
-│   │   └── restclient.java.tpl
+│   │   └── SystemApiAdapter.java.tpl     # Uses client from mod-018
 │   ├── config/
-│   │   ├── application-systemapi.yml.tpl
-│   │   └── feign-config.java.tpl        # Only for Feign variant
+│   │   └── application-systemapi.yml.tpl
 │   ├── exception/
 │   │   └── SystemApiUnavailableException.java.tpl
 │   └── test/
@@ -60,6 +54,10 @@ mod-017-persistence-systemapi/
     ├── README.md
     └── systemapi-check.sh
 ```
+
+> **Note:** REST client templates (feign, restclient, resttemplate) have been moved to 
+> [mod-018-api-integration-rest-java-spring](../mod-018-api-integration-rest-java-spring/MODULE.md).
+> This module focuses on the persistence adapter that wraps the client with resilience patterns.
 
 ---
 
