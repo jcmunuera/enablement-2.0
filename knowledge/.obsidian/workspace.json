@@ -11,10 +11,14 @@
             "id": "addf29cccf98c882",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "capabilities/persistence.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "persistence"
             }
           }
         ]
@@ -178,6 +182,10 @@
   },
   "active": "addf29cccf98c882",
   "lastOpenFiles": [
+    "skills/modules/mod-015-hexagonal-base-java-spring/templates/domain/Enum.java.tpl",
+    "CHANGELOG-v7.1.md",
+    "skills/skill-code-020-generate-microservice-java-spring/SKILL.md",
+    "capabilities/persistence.md",
     "skills/modules/mod-015-hexagonal-base-java-spring/templates/Application.java.tpl",
     "skills/modules/mod-015-hexagonal-base-java-spring/templates/infrastructure/CorrelationIdFilter.java.tpl",
     "skills/modules/mod-015-hexagonal-base-java-spring/templates/infrastructure/GlobalExceptionHandler.java.tpl",

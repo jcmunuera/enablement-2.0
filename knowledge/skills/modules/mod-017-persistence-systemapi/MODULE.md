@@ -281,6 +281,171 @@ public class {Entity}SystemApiMapper {
 
 ---
 
+## Field Transformations (mapping.json)
+
+System APIs often use different data formats than domain models. The `mapping.json` file defines field transformations between domain and System API representations.
+
+### Transformation Types
+
+| Type | Domain Format | System API Format | Example |
+|------|---------------|-------------------|---------|
+| `uuid_format` | UUID with hyphens | 36 chars uppercase no hyphens | `550e8400-e29b-41d4-a716-446655440000` ↔ `550E8400E29B41D4A716446655440000` |
+| `case_conversion` | Mixed case | UPPERCASE | `John` ↔ `JOHN` |
+| `enum_to_code` | Enum value | Single char code | `ACTIVE` ↔ `A` |
+| `date_format` | LocalDate | ISO string | `2024-01-15` ↔ `"2024-01-15"` |
+| `timestamp_format` | Instant | DB2 timestamp | `2024-01-15T10:30:00Z` ↔ `2024-01-15-10.30.00.000000` |
+| `direct` | Any | Same | No transformation |
+
+### mapping.json Structure
+
+```json
+{
+  "entity": "Customer",
+  "systemApi": "parties-system-api",
+  "fields": [
+    {
+      "domain": "id",
+      "domainType": "CustomerId",
+      "systemApi": "CUST_ID",
+      "systemApiType": "String",
+      "transformation": "uuid_format"
+    },
+    {
+      "domain": "firstName",
+      "domainType": "String",
+      "systemApi": "CUST_FNAME",
+      "systemApiType": "String",
+      "transformation": "case_conversion",
+      "toDomainRule": "capitalize",
+      "toSystemApiRule": "uppercase"
+    },
+    {
+      "domain": "status",
+      "domainType": "CustomerStatus",
+      "systemApi": "CUST_STAT_CD",
+      "systemApiType": "String",
+      "transformation": "enum_to_code",
+      "mappings": {
+        "ACTIVE": "A",
+        "INACTIVE": "I",
+        "BLOCKED": "B",
+        "PENDING_VERIFICATION": "P"
+      }
+    },
+    {
+      "domain": "updatedAt",
+      "domainType": "Instant",
+      "systemApi": "LST_UPDT_TS",
+      "systemApiType": "String",
+      "transformation": "timestamp_format",
+      "systemApiPattern": "yyyy-MM-dd-HH.mm.ss.SSSSSS"
+    }
+  ]
+}
+```
+
+### Generated Mapper with Transformations
+
+When `mapping.json` is provided, the generator produces a mapper with transformation methods:
+
+```java
+@Component
+public class CustomerSystemApiMapper {
+    
+    // UUID transformation
+    public CustomerId toCustomerId(String systemApiId) {
+        if (systemApiId == null) return null;
+        // 550E8400E29B41D4A716446655440000 → 550e8400-e29b-41d4-a716-446655440000
+        String formatted = systemApiId.substring(0, 8) + "-" +
+                          systemApiId.substring(8, 12) + "-" +
+                          systemApiId.substring(12, 16) + "-" +
+                          systemApiId.substring(16, 20) + "-" +
+                          systemApiId.substring(20);
+        return CustomerId.of(UUID.fromString(formatted.toLowerCase()));
+    }
+    
+    public String toSystemApiId(CustomerId id) {
+        if (id == null) return null;
+        return id.value().toString().replace("-", "").toUpperCase();
+    }
+    
+    // Case conversion
+    public String toDomainName(String systemApiName) {
+        if (systemApiName == null) return null;
+        // JOHN → John
+        return systemApiName.substring(0, 1).toUpperCase() + 
+               systemApiName.substring(1).toLowerCase();
+    }
+    
+    public String toSystemApiName(String domainName) {
+        if (domainName == null) return null;
+        return domainName.toUpperCase();
+    }
+    
+    // Enum mapping
+    public CustomerStatus toDomainStatus(String code) {
+        return switch (code) {
+            case "A" -> CustomerStatus.ACTIVE;
+            case "I" -> CustomerStatus.INACTIVE;
+            case "B" -> CustomerStatus.BLOCKED;
+            case "P" -> CustomerStatus.PENDING_VERIFICATION;
+            default -> throw new IllegalArgumentException("Unknown status: " + code);
+        };
+    }
+    
+    public String toSystemApiStatus(CustomerStatus status) {
+        return switch (status) {
+            case ACTIVE -> "A";
+            case INACTIVE -> "I";
+            case BLOCKED -> "B";
+            case PENDING_VERIFICATION -> "P";
+        };
+    }
+    
+    // Timestamp transformation
+    private static final DateTimeFormatter DB2_FORMAT = 
+        DateTimeFormatter.ofPattern("yyyy-MM-dd-HH.mm.ss.SSSSSS");
+    
+    public Instant toDomainTimestamp(String db2Timestamp) {
+        if (db2Timestamp == null) return null;
+        return LocalDateTime.parse(db2Timestamp, DB2_FORMAT)
+            .atZone(ZoneId.of("UTC"))
+            .toInstant();
+    }
+    
+    public String toSystemApiTimestamp(Instant instant) {
+        if (instant == null) return null;
+        return DB2_FORMAT.format(instant.atZone(ZoneId.of("UTC")));
+    }
+}
+```
+
+### Providing mapping.json
+
+The `mapping.json` file can be:
+1. **Manually created** by the developer based on System API contract
+2. **Generated as draft** by a future skill (skill-021-generate-mapping) analyzing OpenAPI specs
+3. **Reviewed and validated** by the developer before code generation
+
+**Input location:** `./inputs/mapping.json` (referenced in generation-request.json)
+
+```json
+{
+  "features": {
+    "integration": {
+      "apis": [
+        {
+          "name": "parties-system-api",
+          "mapping": "./inputs/mapping.json"
+        }
+      ]
+    }
+  }
+}
+```
+
+---
+
 ## Template: Adapter (with Resilience)
 
 ```java

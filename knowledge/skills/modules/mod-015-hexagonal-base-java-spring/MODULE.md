@@ -22,6 +22,7 @@ templates/
 ├── domain/
 │   ├── Entity.java.tpl               # Domain entity (pure POJO)
 │   ├── EntityId.java.tpl             # Value object for ID
+│   ├── Enum.java.tpl                 # Domain enum (pure Java enum)
 │   ├── Repository.java.tpl           # Port interface
 │   ├── DomainService.java.tpl        # Domain service (pure POJO)
 │   └── NotFoundException.java.tpl    # Domain exception

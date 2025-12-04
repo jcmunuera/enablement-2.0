@@ -816,6 +816,7 @@ When generating, Claude MUST use these templates - not improvise.
 |-------------|----------|-------|
 | `domain/model/{{Entity}}.java` | `templates/domain/Entity.java.tpl` | Pure POJO |
 | `domain/model/{{Entity}}Id.java` | `templates/domain/EntityId.java.tpl` | Value object |
+| `domain/model/{{EnumName}}.java` | `templates/domain/Enum.java.tpl` | Domain enum |
 | `domain/repository/{{Entity}}Repository.java` | `templates/domain/Repository.java.tpl` | Port interface |
 | `domain/service/{{Entity}}DomainService.java` | `templates/domain/DomainService.java.tpl` | POJO service |
 | `domain/exception/{{Entity}}NotFoundException.java` | `templates/domain/NotFoundException.java.tpl` | Domain exception |
@@ -851,6 +852,7 @@ When generating, Claude MUST use these templates - not improvise.
 | `adapter/systemapi/dto/{{Api}}Dto.java` | `templates/dto/Dto.java.tpl` | mod-017 | persistence.type = "system_api" |
 | `adapter/systemapi/mapper/{{Entity}}Mapper.java` | `templates/mapper/SystemApiMapper.java.tpl` | mod-017 | persistence.type = "system_api" |
 | `adapter/systemapi/{{Entity}}SystemApiAdapter.java` | `templates/adapter/SystemApiAdapter.java.tpl` | mod-017 | persistence.type = "system_api" |
+| `adapter/systemapi/SystemApiUnavailableException.java` | `templates/exception/SystemApiUnavailableException.java.tpl` | mod-017 | persistence.type = "system_api" |
 | `adapter/systemapi/client/{{Api}}Client.java` | `templates/client/restclient.java.tpl` | mod-018 | system_api.client = "restclient" |
 | `adapter/systemapi/client/{{Api}}Client.java` | `templates/client/feign.java.tpl` | mod-018 | system_api.client = "feign" |
 | `adapter/systemapi/client/{{Api}}Client.java` | `templates/client/resttemplate.java.tpl` | mod-018 | system_api.client = "resttemplate" |

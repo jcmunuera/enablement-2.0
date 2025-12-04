@@ -89,14 +89,37 @@ Limits execution time to prevent hanging operations.
     "resilience": {
       "timeout": {
         "enabled": true,
-        "duration": "5s"
+        "strategy": "client_level",
+        "duration": "10s",
+        "connectTimeout": "5s"
       }
     }
   }
 }
 ```
 
-**Module:** mod-003-timeout-java-resilience4j
+**Strategy Options:**
+
+| Strategy | Description | Module | Use When |
+|----------|-------------|--------|----------|
+| `client_level` | HTTP client timeouts (RestClient/RestTemplate/WebClient) | mod-018-api-integration-rest-java-spring | **Default for new projects.** Simpler, synchronous code |
+| `timelimiter` | Resilience4j @TimeLimiter annotation | mod-003-timeout-java-resilience4j | Need per-method control, fallback methods, or async patterns |
+
+**Configuration Parameters:**
+
+| Parameter | Applies To | Description | Default |
+|-----------|-----------|-------------|---------|
+| `duration` | Both | Read/operation timeout | `10s` |
+| `connectTimeout` | client_level | Connection establishment timeout | `5s` |
+| `cancelRunningFuture` | timelimiter | Cancel future on timeout | `true` |
+
+**Default Strategy:** `client_level` (simpler for synchronous System API calls)
+
+**Important:** `timelimiter` strategy requires methods to return `CompletableFuture<T>`, which adds complexity. Use only when async patterns are already in place or per-method timeout control is required.
+
+**Modules:** 
+- mod-003-timeout-java-resilience4j (timelimiter strategy)
+- mod-018-api-integration-rest-java-spring (client_level strategy)
 
 ---
 
@@ -188,7 +211,12 @@ Limits the rate of calls to protect resources.
 {
   "resilience": {
     "circuit_breaker": { "enabled": true, "pattern": "basic_fallback" },
-    "timeout": { "enabled": true, "duration": "5s" }
+    "timeout": { 
+      "enabled": true, 
+      "strategy": "client_level",
+      "duration": "10s",
+      "connectTimeout": "5s"
+    }
   }
 }
 ```

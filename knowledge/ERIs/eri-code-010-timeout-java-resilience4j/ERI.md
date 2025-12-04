@@ -705,6 +705,120 @@ eri_constraints:
 
 ---
 
+## Alternative Strategy: Client-Level Timeout
+
+While `@TimeLimiter` provides powerful annotation-based timeout control, it requires methods to return `CompletableFuture<T>`, which adds complexity in synchronous codebases. For simpler cases, **client-level timeouts** offer an alternative.
+
+### When to Use Client-Level Timeout
+
+| Criteria | @TimeLimiter (Resilience4j) | Client-Level Timeout |
+|----------|----------------------------|---------------------|
+| **Code style** | Async (CompletableFuture) | Synchronous |
+| **Granularity** | Per-method | Per-client |
+| **Configuration** | YAML + annotations | YAML only |
+| **Fallback support** | Built-in | Manual (try-catch) |
+| **Metrics** | Automatic via Actuator | Manual or none |
+| **Complexity** | Higher (async wrapper) | Lower |
+
+### Default Recommendation
+
+For **new Domain API projects** consuming System APIs:
+- **Default:** Client-level timeout (simpler, synchronous)
+- **Use @TimeLimiter when:** Need per-method control, fallback methods, or existing async patterns
+
+### Client-Level Implementation (RestClient)
+
+```java
+// RestClientConfig.java
+@Configuration
+public class RestClientConfig {
+    
+    @Value("${integration.system-api.connect-timeout:5s}")
+    private Duration connectTimeout;
+    
+    @Value("${integration.system-api.read-timeout:10s}")
+    private Duration readTimeout;
+    
+    @Bean
+    public RestClient.Builder restClientBuilder() {
+        return RestClient.builder()
+            .requestFactory(clientHttpRequestFactory());
+    }
+    
+    @Bean
+    public ClientHttpRequestFactory clientHttpRequestFactory() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(connectTimeout);
+        factory.setReadTimeout(readTimeout);
+        return factory;
+    }
+}
+```
+
+```yaml
+# application.yml
+integration:
+  system-api:
+    connect-timeout: 5s
+    read-timeout: 10s
+```
+
+### Client-Level Implementation (RestTemplate)
+
+```java
+@Bean
+public RestTemplate restTemplate(RestTemplateBuilder builder) {
+    return builder
+        .setConnectTimeout(Duration.ofSeconds(5))
+        .setReadTimeout(Duration.ofSeconds(10))
+        .build();
+}
+```
+
+### Client-Level Implementation (WebClient)
+
+```java
+@Bean
+public WebClient webClient() {
+    HttpClient httpClient = HttpClient.create()
+        .responseTimeout(Duration.ofSeconds(10))
+        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000);
+    
+    return WebClient.builder()
+        .clientConnector(new ReactorClientHttpConnector(httpClient))
+        .build();
+}
+```
+
+### Strategy Selection in generation-request.json
+
+```json
+{
+  "features": {
+    "resilience": {
+      "timeout": {
+        "enabled": true,
+        "strategy": "client_level",  // or "timelimiter"
+        "duration": "10s",
+        "connectTimeout": "5s"
+      }
+    }
+  }
+}
+```
+
+| Strategy Value | Module | Template |
+|----------------|--------|----------|
+| `timelimiter` | mod-003-timeout-java-resilience4j | @TimeLimiter annotation |
+| `client_level` | mod-018-api-integration-rest-java-spring | RestClient/RestTemplate config |
+
+### Module Reference
+
+- **@TimeLimiter strategy:** [mod-003-timeout-java-resilience4j](../../skills/modules/mod-003-timeout-java-resilience4j/)
+- **Client-level strategy:** [mod-018-api-integration-rest-java-spring](../../skills/modules/mod-018-api-integration-rest-java-spring/)
+
+---
+
 **Status:** ✅ Production-Ready  
 **Framework:** Java/Spring Boot  
 **Library:** Resilience4j 2.1.0
