@@ -1,0 +1,329 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "execution-audit-schema-v1.0",
+  "title": "Execution Audit Schema",
+  "description": "Schema for recording complete execution traces of skill executions",
+  "type": "object",
+  "required": ["executionId", "timestamp", "skill", "input", "decisions", "outputs", "validation"],
+  "properties": {
+    "executionId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this execution"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 timestamp of execution start"
+    },
+    "skill": {
+      "type": "object",
+      "required": ["id", "version", "type"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Skill identifier",
+          "example": "skill-code-020-generate-microservice-java-spring"
+        },
+        "version": {
+          "type": "string",
+          "description": "Skill version used"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["GENERATE", "ADD", "REMOVE", "REFACTOR", "ANALYZE", "VALIDATE", "DOCUMENT"],
+          "description": "Type of skill"
+        }
+      }
+    },
+    "discovery": {
+      "type": "object",
+      "description": "How the skill was selected (if via discovery)",
+      "properties": {
+        "userPrompt": {
+          "type": "string",
+          "description": "Original user prompt in natural language"
+        },
+        "capabilitiesIdentified": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Capabilities detected from prompt",
+          "example": ["api_architecture.domain_api", "persistence.system_api", "resilience.circuit_breaker"]
+        },
+        "skillSelectionReason": {
+          "type": "string",
+          "description": "Why this skill was selected"
+        }
+      }
+    },
+    "input": {
+      "type": "object",
+      "required": ["requestFile"],
+      "properties": {
+        "requestFile": {
+          "type": "string",
+          "description": "Name of the input request file",
+          "example": "generation-request.json"
+        },
+        "requestContent": {
+          "type": "object",
+          "description": "Full content of the request"
+        },
+        "requestHash": {
+          "type": "string",
+          "description": "SHA-256 hash of the request for integrity"
+        },
+        "additionalInputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "file": { "type": "string" },
+              "purpose": { "type": "string" },
+              "hash": { "type": "string" }
+            }
+          },
+          "description": "Additional input files (OpenAPI specs, mappings, etc.)"
+        }
+      }
+    },
+    "decisions": {
+      "type": "object",
+      "required": ["modulesResolved"],
+      "properties": {
+        "modulesResolved": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["module", "reason"],
+            "properties": {
+              "module": {
+                "type": "string",
+                "description": "Module identifier",
+                "example": "mod-015-hexagonal-base-java-spring"
+              },
+              "version": {
+                "type": "string",
+                "description": "Module version"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why this module was included",
+                "example": "always required (base hexagonal)"
+              },
+              "condition": {
+                "type": "string",
+                "description": "The condition that triggered inclusion",
+                "example": "persistence.type = system_api"
+              }
+            }
+          }
+        },
+        "templatesProcessed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["template", "module", "outputPath", "status"],
+            "properties": {
+              "template": {
+                "type": "string",
+                "description": "Template file name",
+                "example": "domain/Entity.java.tpl"
+              },
+              "module": {
+                "type": "string",
+                "description": "Module containing the template"
+              },
+              "outputPath": {
+                "type": "string",
+                "description": "Generated file path"
+              },
+              "status": {
+                "type": "string",
+                "enum": ["SUCCESS", "FAILED", "SKIPPED"],
+                "description": "Processing result"
+              },
+              "variablesUsed": {
+                "type": "object",
+                "description": "Variables substituted in this template"
+              },
+              "checksum": {
+                "type": "string",
+                "description": "SHA-256 of generated file"
+              }
+            }
+          }
+        },
+        "templatesSkipped": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "template": { "type": "string" },
+              "module": { "type": "string" },
+              "reason": { "type": "string" }
+            }
+          },
+          "description": "Templates that were not processed (condition not met)"
+        },
+        "configurationsMerged": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "targetFile": { 
+                "type": "string",
+                "example": "application.yml"
+              },
+              "sourceTemplates": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "mergeOrder": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "improvisations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["description", "file", "reason"],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "What was improvised"
+          },
+          "file": {
+            "type": "string",
+            "description": "File affected by improvisation"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why improvisation was needed"
+          },
+          "gap": {
+            "type": "string",
+            "description": "GAP identifier for tracking",
+            "example": "GAP-001: Need template for custom enum"
+          },
+          "recommendation": {
+            "type": "string",
+            "description": "Suggested fix to avoid future improvisation"
+          }
+        }
+      },
+      "description": "Any code/content generated outside of templates"
+    },
+    "outputs": {
+      "type": "object",
+      "required": ["projectPath", "filesGenerated"],
+      "properties": {
+        "projectPath": {
+          "type": "string",
+          "description": "Root path of generated/modified project"
+        },
+        "filesGenerated": {
+          "type": "integer",
+          "description": "Total number of files created/modified"
+        },
+        "filesCreated": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of newly created files"
+        },
+        "filesModified": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of modified existing files (for ADD/REMOVE skills)"
+        },
+        "manifestPath": {
+          "type": "string",
+          "description": "Path to manifest.json"
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "required": ["overall"],
+      "properties": {
+        "overall": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "WARN"],
+          "description": "Overall validation result"
+        },
+        "tier1": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string", "enum": ["PASS", "FAIL", "SKIP"] },
+            "checks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "status": { "type": "string" },
+                  "message": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "tier2": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string", "enum": ["PASS", "FAIL", "SKIP"] },
+            "checks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "status": { "type": "string" },
+                  "message": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "tier3": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "status": { "type": "string", "enum": ["PASS", "FAIL", "SKIP"] },
+              "script": { "type": "string" },
+              "output": { "type": "string" }
+            }
+          },
+          "description": "Per-module Tier-3 validation results"
+        }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "properties": {
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "durationMs": { "type": "integer" },
+        "phases": {
+          "type": "object",
+          "additionalProperties": { "type": "integer" },
+          "description": "Duration of each phase in ms"
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "knowledgeBaseVersion": { "type": "string" },
+        "executorVersion": { "type": "string" },
+        "environment": { "type": "string" }
+      }
+    }
+  }
+}
