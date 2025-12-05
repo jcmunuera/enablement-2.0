@@ -131,9 +131,20 @@ See `validation/` directory.
 
 - **ADR-004:** Resilience Patterns
 - **ERI-008:** circuit-breaker-java-resilience4j
-- **Module:** mod-001-circuit-breaker-java-resilience4j
-- **Model:** See `model/ENABLEMENT-MODEL-v1.2.md` for complete model
 
 ---
 
-**Last Updated:** 2025-11-26
+## Modules Used
+
+| Module | Purpose |
+|--------|---------|
+| `mod-001-circuit-breaker-java-resilience4j` | Templates and validation for circuit breaker pattern |
+
+See module's **Template Catalog** for available templates:
+- `annotation/basic-circuitbreaker.java.tpl` - Basic @CircuitBreaker
+- `annotation/circuitbreaker-with-fallback.java.tpl` - With fallback method
+- `config/application-circuitbreaker.yml.tpl` - YAML configuration
+
+---
+
+**Last Updated:** 2025-12-05

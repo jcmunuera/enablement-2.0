@@ -28,6 +28,49 @@ Reusable templates for implementing JPA persistence following Hexagonal Architec
 
 ---
 
+## Template Catalog
+
+This catalog defines the templates provided by this module and their output paths.
+
+### Entity Templates
+
+| Template | Output Path | Description |
+|----------|-------------|-------------|
+| `entity/JpaEntity.java.tpl` | `src/main/java/{{basePackagePath}}/adapter/persistence/entity/{{Entity}}JpaEntity.java` | JPA entity (adapter layer) |
+
+### Repository Templates
+
+| Template | Output Path | Description |
+|----------|-------------|-------------|
+| `repository/JpaRepository.java.tpl` | `src/main/java/{{basePackagePath}}/adapter/persistence/repository/{{Entity}}JpaRepository.java` | Spring Data JPA repository |
+
+### Adapter Templates
+
+| Template | Output Path | Description |
+|----------|-------------|-------------|
+| `adapter/PersistenceAdapter.java.tpl` | `src/main/java/{{basePackagePath}}/adapter/persistence/{{Entity}}PersistenceAdapter.java` | Repository port implementation |
+
+### Mapper Templates
+
+| Template | Output Path | Description |
+|----------|-------------|-------------|
+| `mapper/PersistenceMapper.java.tpl` | `src/main/java/{{basePackagePath}}/adapter/persistence/mapper/{{Entity}}PersistenceMapper.java` | Domain ↔ JPA entity mapper |
+
+### Configuration Templates
+
+| Template | Output Path | Description |
+|----------|-------------|-------------|
+| `config/application-jpa.yml.tpl` | Merge into `src/main/resources/application.yml` | JPA/Datasource configuration |
+| `config/pom-jpa.xml.tpl` | Merge into `pom.xml` | Maven dependencies |
+
+### Test Templates
+
+| Template | Output Path | Description |
+|----------|-------------|-------------|
+| `test/PersistenceAdapterTest.java.tpl` | `src/test/java/{{basePackagePath}}/adapter/persistence/{{Entity}}PersistenceAdapterTest.java` | Integration tests |
+
+---
+
 ## Template: JPA Entity
 
 ```java

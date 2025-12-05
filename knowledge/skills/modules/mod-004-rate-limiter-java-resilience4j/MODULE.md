@@ -27,6 +27,33 @@ Reusable template for implementing the Rate Limiter pattern using Resilience4j i
 
 ---
 
+## Template Catalog
+
+This catalog defines the templates provided by this module and their output paths.
+
+### Annotation Templates
+
+| Template | Output Path | Description |
+|----------|-------------|-------------|
+| `annotation/basic-ratelimiter.java.tpl` | Applied to existing service class | Basic @RateLimiter annotation |
+| `annotation/ratelimiter-with-fallback.java.tpl` | Applied to existing service class | @RateLimiter with fallback method |
+| `annotation/full-resilience-stack.java.tpl` | Applied to existing service class | Combined with Circuit Breaker, Retry, Timeout |
+
+### Configuration Templates
+
+| Template | Output Path | Description |
+|----------|-------------|-------------|
+| `config/application-ratelimiter.yml.tpl` | Merge into `src/main/resources/application.yml` | Rate limiter configuration |
+| `config/pom-ratelimiter.xml.tpl` | Merge into `pom.xml` | Maven dependencies |
+
+### Test Templates
+
+| Template | Output Path | Description |
+|----------|-------------|-------------|
+| `test/RateLimiterTest.java.tpl` | `src/test/java/{{basePackagePath}}/resilience/RateLimiterTest.java` | Integration tests |
+
+---
+
 ## Template: Application Service with Rate Limiter
 
 ### Basic Rate Limiter

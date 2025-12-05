@@ -371,11 +371,13 @@ Quick reference for Skills to understand the module.
 | `{{serviceName}}` | string | ✅ | Service/class name (PascalCase) |
 | `{{packageName}}` | string | ✅ | Base package (dot notation) |
 
-## Templates
+## Template Catalog
 
-| Template | Output | Description |
-|----------|--------|-------------|
-| `Config.java.hbs` | `{packageName}/config/{serviceName}Config.java` | Configuration class |
+This catalog defines the **output path** for each template. Skills use this to determine where each generated file should be placed.
+
+| Template | Output Path | Description |
+|----------|-------------|-------------|
+| `Config.java.tpl` | `src/main/java/{packagePath}/config/{serviceName}Config.java` | Configuration class |
 
 ## Validation
 
@@ -534,17 +536,16 @@ exit $ERRORS
 
 ---
 
-## Templates
+## Template Catalog
 
-### {template-name}.hbs
+This catalog defines the **output path** for each template provided by this module.
 
-**Output:** `{output-path}`
+| Template | Output Path | Description |
+|----------|-------------|-------------|
+| `{concern}/{Name}.java.tpl` | `src/main/java/{{basePackagePath}}/{layer}/{Name}.java` | {description} |
 
-**Purpose:** {what this template generates}
-
-```handlebars
-{template content}
-```
+> **Note:** Templates are stored in `templates/` directory. The actual template content
+> is in the .tpl files, not inline in this document.
 
 ---
 
