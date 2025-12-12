@@ -1,7 +1,7 @@
 # Enablement 2.0: Technical Architecture Guide
 
-**Version:** 1.1  
-**Date:** 2025-11-28  
+**Version:** 1.2  
+**Date:** 2025-12-12  
 **Audience:** Software Architects, Tech Leads, Senior Engineers  
 **Classification:** Internal Technical
 
@@ -161,7 +161,7 @@ The software development lifecycle (SDLC) faces several critical challenges:
 knowledge/
 │
 ├── model/                              # META-LEVEL (Specifications)
-│   ├── ENABLEMENT-MODEL-v1.2.md       # Master document
+│   ├── ENABLEMENT-MODEL-v1.3.md       # Master document
 │   └── standards/
 │       ├── ASSET-STANDARDS-v1.3.md    # Asset structure
 │       ├── authoring/                  # Creation guides
@@ -610,6 +610,12 @@ User                       Platform                      Knowledge Base
    │                           │                              │
 ```
 
+> **Implementation Details:** The orchestration layer is formally specified in:
+> - `knowledge/orchestration/discovery-rules.md` - How prompts map to skills
+> - `knowledge/orchestration/execution-framework.md` - Generic execution flow
+> - `knowledge/orchestration/prompt-template.md` - Standard input format
+> - Each Skill's `EXECUTION-FLOW.md` - Skill-specific deterministic steps
+
 ### 7.3 MCP Integration (Model Context Protocol)
 
 For integration with Claude and other LLMs:
@@ -851,7 +857,7 @@ TOTAL: 11/11 checks passed
 
 | Document | Purpose | Location |
 |----------|---------|----------|
-| ENABLEMENT-MODEL-v1.2.md | Master model | `model/` |
+| ENABLEMENT-MODEL-v1.3.md | Master model | `model/` |
 | ASSET-STANDARDS-v1.3.md | Asset structure | `model/standards/` |
 | authoring/SKILL.md | How to create skills | `model/standards/authoring/` |
 | validators/README.md | Validation system | `knowledge/validators/` |

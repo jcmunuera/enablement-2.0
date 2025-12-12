@@ -180,8 +180,9 @@
       "bases:Create new base": false
     }
   },
-  "active": "addf29cccf98c882",
+  "active": "2a148c5fbd3cbabc",
   "lastOpenFiles": [
+    "model/ENABLEMENT-MODEL-v1.3.md",
     "ADRs/adr-012-api-integration-patterns/ADR.md",
     "skills/skill-code-020-generate-microservice-java-spring/EXECUTION-FLOW.md",
     "orchestration/execution-framework.md",

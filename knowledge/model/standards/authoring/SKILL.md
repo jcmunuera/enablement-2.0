@@ -1,7 +1,7 @@
 # Authoring Guide: SKILL
 
-**Version:** 2.0  
-**Last Updated:** 2025-11-28  
+**Version:** 2.1  
+**Last Updated:** 2025-12-12  
 **Asset Type:** Skill  
 **Priority:** CRITICAL
 
@@ -23,6 +23,12 @@ Skills are **automated executable capabilities** that leverage the knowledge bas
 │  ┌─────────────────────────────────────────────────────────┐    │
 │  │  SKILL.md - Complete specification                       │    │
 │  │  - What it does, inputs, outputs, constraints            │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                              │                                   │
+│                              ▼                                   │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │  EXECUTION-FLOW.md - Deterministic execution steps       │    │
+│  │  - Step-by-step process, module resolution, validation   │    │
 │  └─────────────────────────────────────────────────────────┘    │
 │                              │                                   │
 │                              ▼                                   │
@@ -66,6 +72,7 @@ Do NOT create a Skill for:
 knowledge/skills/
 └── skill-{domain}-{NNN}-{type}-{target}-{framework}-{library}/
     ├── SKILL.md            # Complete specification (required)
+    ├── EXECUTION-FLOW.md   # Deterministic execution steps (required) ← NEW
     ├── OVERVIEW.md         # Quick reference (required)
     ├── README.md           # External-facing documentation (required)
     ├── prompts/            # AI prompts (required)
@@ -77,6 +84,10 @@ knowledge/skills/
         ├── README.md
         └── validate.sh     # Main orchestrator
 ```
+
+> **NEW in v2.1:** Every skill MUST have an `EXECUTION-FLOW.md` that defines the deterministic 
+> step-by-step execution process. See [orchestration/execution-framework.md](../../../orchestration/execution-framework.md) 
+> for the generic framework that all skills follow.
 
 ## Naming Convention
 
@@ -206,6 +217,126 @@ User-facing documentation explaining what the skill does and how to use it.
 ### 4. prompts/ - AI Orchestration
 
 This is where the **prompt engineering** happens.
+
+### 5. EXECUTION-FLOW.md - Deterministic Execution (REQUIRED)
+
+**NEW in v2.1:** Every skill MUST have an `EXECUTION-FLOW.md` that defines the deterministic, 
+step-by-step execution process. This ensures reproducibility and traceability.
+
+See the [orchestration/execution-framework.md](../../../orchestration/execution-framework.md) for the generic framework.
+
+#### Purpose
+
+The EXECUTION-FLOW.md ensures:
+- **Determinism:** Same input → Same output, every time
+- **Traceability:** Every decision is documented and auditable
+- **Reproducibility:** Any agent can execute the skill identically
+- **Debugging:** Clear steps make it easy to identify issues
+
+#### Required Sections
+
+```markdown
+# Execution Flow: skill-{domain}-{NNN}-{name}
+
+**Skill Type:** {GENERATE|ADD|REMOVE|ANALYZE|...}  
+**Version:** X.Y  
+**Last Updated:** YYYY-MM-DD
+
+---
+
+## Overview
+
+[Brief description of what this execution flow does]
+
+---
+
+## Prerequisites
+
+[What must exist before execution begins]
+
+| Input | Source | Required | Description |
+|-------|--------|----------|-------------|
+| `input-file.json` | User | ✅ | Configuration |
+
+---
+
+## Execution Steps
+
+### Step 1: Validate Input
+
+```
+ACTION: [What is done]
+INPUT:  [What is consumed]
+OUTPUT: [What is produced]
+
+RULES:
+1. [Specific rule]
+2. [Specific rule]
+```
+
+### Step 2: [Next Step]
+
+[Continue for all steps...]
+
+---
+
+## Error Handling
+
+| Error | Action |
+|-------|--------|
+| [Error type] | [How to handle] |
+
+---
+
+## Outputs Summary
+
+| Output | Path | Purpose |
+|--------|------|---------|
+| [Output name] | [Path] | [Why it exists] |
+```
+
+#### Skill Type Determines Structure
+
+| Skill Type | Key Differences |
+|------------|-----------------|
+| **GENERATE** | Creates new project, multiple modules, Template Catalog processing |
+| **ADD** | Modifies existing code, single module typically, targeted changes |
+| **REMOVE** | Removes code/config, inverse of ADD |
+| **ANALYZE** | Reads code, produces report, no modifications |
+| **VALIDATE** | Runs checks, produces validation report |
+
+#### Example: GENERATE Skill Flow
+
+For skills that generate new projects (like `skill-code-020`):
+
+1. **Validate Input** - Check generation-request.json
+2. **Resolve Modules** - Determine which modules based on features
+3. **Build Variable Context** - Extract all template variables
+4. **Process Each Module** - For each module, process its Template Catalog
+5. **Merge Configuration Files** - Combine application.yml, pom.xml
+6. **Generate Manifest** - Create traceability manifest.json
+7. **Run Validations** - Execute Tier 1, 2, 3 validators
+8. **Generate Execution Audit** - Create execution-audit.json
+
+#### Example: ADD Skill Flow
+
+For skills that add features to existing code (like `skill-code-001`):
+
+1. **Validate Input** - Check transformation-request.json
+2. **Resolve Module** - Single module (fixed)
+3. **Locate Target** - Find file to modify
+4. **Select Template** - Based on pattern variant
+5. **Build Variable Context** - Extract variables
+6. **Generate Code Modifications** - Prepare changes
+7. **Apply Modifications** - Modify files
+8. **Run Validations** - Execute validators
+9. **Generate Execution Audit** - Create audit
+
+#### Reference
+
+- Generic framework: `knowledge/orchestration/execution-framework.md`
+- Discovery rules: `knowledge/orchestration/discovery-rules.md`
+- Audit schema: `knowledge/orchestration/audit-schema.json`
 
 ---
 
@@ -833,6 +964,7 @@ Every generated file MUST include a traceability header:
 Before marking a Skill as "Active":
 
 - [ ] SKILL.md is complete with all sections
+- [ ] **EXECUTION-FLOW.md defines deterministic execution steps** ← NEW
 - [ ] OVERVIEW.md provides quick reference
 - [ ] README.md has user-facing documentation
 - [ ] prompts/system.md has role, context, constraints
@@ -844,8 +976,8 @@ Before marking a Skill as "Active":
 - [ ] Traceability profile is specified
 - [ ] Input schema is defined
 - [ ] Output structure is documented
-- [ ] **Template Mapping section is complete** (for generation skills)
-- [ ] **Every output file has a template entry** (for generation skills)
+- [ ] **Module Resolution section is complete** (for generation skills)
+- [ ] **Every output file traces to a template** (for generation skills)
 
 ---
 

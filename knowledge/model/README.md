@@ -7,7 +7,7 @@ This directory contains the **complete model definition** for Enablement 2.0, an
 ```
 model/
 ├── README.md                          # This file
-├── ENABLEMENT-MODEL-v1.2.md           # Master document - COMPLETE CONCEPTUAL MODEL
+├── ENABLEMENT-MODEL-v1.3.md           # Master document - COMPLETE CONCEPTUAL MODEL
 │
 └── standards/
     ├── ASSET-STANDARDS-v1.3.md        # Structure and naming for ALL asset types
@@ -37,7 +37,7 @@ model/
 
 ## Master Document
 
-**ENABLEMENT-MODEL-v1.2.md** is the single source of truth for:
+**ENABLEMENT-MODEL-v1.3.md** is the single source of truth for:
 
 - Asset hierarchy (ADR → ERI → Module → Skill → Validator)
 - Capability hierarchy (Capability → Feature → Component → Module)
@@ -88,7 +88,7 @@ This directory contains **META-LEVEL** documentation:
 
 Before creating any asset:
 
-1. Read `ENABLEMENT-MODEL-v1.2.md` for conceptual understanding
+1. Read `ENABLEMENT-MODEL-v1.3.md` for conceptual understanding
 2. Read `standards/ASSET-STANDARDS-v1.3.md` for structure
 3. Read `standards/authoring/{asset-type}.md` for creation guide
 4. Use validators from `knowledge/validators/` after creation
@@ -107,7 +107,7 @@ For manual design/development:
 
 Documents include version in filename:
 
-- `ENABLEMENT-MODEL-v1.2.md` = Version 1.1
+- `ENABLEMENT-MODEL-v1.3.md` = Version 1.1
 - `ASSET-STANDARDS-v1.3.md` = Version 1.2
 
 Internal version in document metadata MUST match filename version.

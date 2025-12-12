@@ -1,7 +1,7 @@
 # ENABLEMENT-MODEL.md
 
-**Version:** 1.2  
-**Date:** 2025-11-28  
+**Version:** 1.3  
+**Date:** 2025-12-12  
 **Status:** Active  
 **Purpose:** Master document defining the complete Enablement 2.0 model
 
@@ -20,10 +20,11 @@
 4. [Skill Domains and Types](#4-skill-domains-and-types)
 5. [Validation System](#5-validation-system)
 6. [Traceability](#6-traceability)
-7. [Workflows](#7-workflows)
-8. [Asset Creation](#8-asset-creation)
-9. [Knowledge Base Structure](#9-knowledge-base-structure)
-10. [Appendices](#10-appendices)
+7. [Orchestration Layer](#7-orchestration-layer) ← NEW
+8. [Workflows](#8-workflows)
+9. [Asset Creation](#9-asset-creation)
+10. [Knowledge Base Structure](#10-knowledge-base-structure)
+11. [Appendices](#11-appendices)
 
 ---
 
@@ -63,6 +64,13 @@ Enablement 2.0 is an SDLC automation platform that enables:
 │  ┌─────────────────────────────────────────────────────────────────┐    │
 │  │  Capabilities ──> Features ──> Components ──> Modules           │    │
 │  │  (What)          (Group)      (Abstract)     (Concrete)         │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+│                                                                          │
+│  ORCHESTRATION LAYER (NEW)                                               │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │  Discovery ──> Skill Selection ──> Execution Flow ──> Audit     │    │
+│  │  (Rules)       (Matching)         (Deterministic)    (Trace)    │    │
+│  │  See: knowledge/orchestration/                                   │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                                                          │
 │  EXECUTION LAYER (Swarms)                                                │
@@ -1210,7 +1218,105 @@ Every generated project includes:
 
 ---
 
-## 7. Workflows
+## 7. Orchestration Layer
+
+The Orchestration Layer defines **how skills are discovered, selected, and executed**. It sits between user requests and skill execution, ensuring deterministic and traceable behavior.
+
+### 7.1 Purpose
+
+The Orchestration Layer ensures:
+
+| Goal | Description |
+|------|-------------|
+| **Determinism** | Same input → Same output, every time |
+| **Discoverability** | User prompts map to appropriate skills |
+| **Traceability** | Every execution step is auditable |
+| **Reproducibility** | Any agent can execute skills identically |
+
+### 7.2 Components
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                     ORCHESTRATION LAYER                                  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌──────────────────┐     ┌──────────────────┐     ┌─────────────────┐  │
+│  │  Discovery Rules  │ ──> │  Skill Selection │ ──> │ Execution Flow │  │
+│  │  (Prompt → Skill) │     │  (Match & Rank)  │     │ (Step-by-step) │  │
+│  └──────────────────┘     └──────────────────┘     └─────────────────┘  │
+│                                                              │           │
+│                                                              ▼           │
+│                                                     ┌─────────────────┐  │
+│                                                     │   Audit Trail   │  │
+│                                                     │ (execution-audit)│  │
+│                                                     └─────────────────┘  │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.3 Key Files
+
+| File | Purpose |
+|------|---------|
+| `orchestration/discovery-rules.md` | Maps user intents to skills |
+| `orchestration/execution-framework.md` | Generic execution flow for all skills |
+| `orchestration/prompt-template.md` | Standard input format |
+| `orchestration/audit-schema.json` | Schema for execution audits |
+
+### 7.4 Execution Flow Per Skill
+
+Every Skill MUST have an `EXECUTION-FLOW.md` that specializes the generic framework:
+
+```
+Generic Framework (orchestration/execution-framework.md)
+                    │
+                    ▼
+    ┌───────────────────────────────┐
+    │   SKILL's EXECUTION-FLOW.md   │
+    │                               │
+    │   Step 1: Validate Input      │
+    │   Step 2: Resolve Modules     │
+    │   Step 3: Build Context       │
+    │   Step 4: Process Templates   │
+    │   Step 5: Merge Configs       │
+    │   Step 6: Run Validations     │
+    │   Step 7: Generate Audit      │
+    └───────────────────────────────┘
+```
+
+### 7.5 Module Resolution
+
+Skills resolve which modules to use based on input:
+
+```
+Input: generation-request.json
+  │
+  ├── features.resilience.circuitBreaker: true  ──> mod-001-circuit-breaker
+  ├── features.resilience.retry: true           ──> mod-002-retry
+  ├── features.persistence.type: "jpa"          ──> mod-016-persistence-jpa
+  └── (always)                                  ──> mod-015-hexagonal-base
+```
+
+Each resolved module contributes its Template Catalog to the generation.
+
+### 7.6 Template Catalog Processing
+
+Modules own their templates. The skill processes each module's Template Catalog:
+
+```
+Module: mod-001-circuit-breaker
+  │
+  └── Template Catalog:
+        ├── CircuitBreakerConfig.java.tpl  ──> src/.../config/CircuitBreakerConfig.java
+        ├── circuit-breaker.yml.tpl        ──> (merge into) application.yml
+        └── pom-dependencies.xml.tpl       ──> (merge into) pom.xml
+```
+
+> **Reference:** See `knowledge/model/standards/authoring/SKILL.md` for complete EXECUTION-FLOW.md specification.
+
+---
+
+## 8. Workflows
 
 ### 7.1 Simple Workflow: CODE/ADD
 
@@ -1497,7 +1603,7 @@ Every generated project includes:
 
 ---
 
-## 8. Asset Creation
+## 9. Asset Creation
 
 **IMPORTANT: Creation Order**
 
@@ -1894,7 +2000,7 @@ END
 
 ---
 
-## 9. Knowledge Base Structure
+## 10. Knowledge Base Structure
 
 ### 9.1 Complete Structure
 
@@ -1904,7 +2010,7 @@ knowledge/
 │
 ├── model/                                       # Enablement Model definition
 │   ├── README.md                               # Model overview
-│   ├── ENABLEMENT-MODEL-v1.2.md               # ⭐ This document (master)
+│   ├── ENABLEMENT-MODEL-v1.3.md               # ⭐ This document (master)
 │   └── standards/                              # Operational standards
 │       ├── ASSET-STANDARDS-v1.3.md            # Technical asset structure
 │       ├── authoring/                          # Asset creation guides
@@ -2040,7 +2146,7 @@ With the new naming convention (`skill-{domain}-{NNN}-*`), each domain has its o
 
 ---
 
-## 10. Appendices
+## 11. Appendices
 
 ### 10.1 Glossary
 
@@ -2084,7 +2190,7 @@ With the new naming convention (`skill-{domain}-{NNN}-*`), each domain has its o
 ### For AI Agents
 
 **Before creating any asset:**
-1. Read this document completely (ENABLEMENT-MODEL-v1.2.md)
+1. Read this document completely (ENABLEMENT-MODEL-v1.3.md)
 2. Consult `model/standards/ASSET-STANDARDS-v1.3.md` for technical structure
 3. Follow the process defined in section 8
 4. Verify with checklists before delivering

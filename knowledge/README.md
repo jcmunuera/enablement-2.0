@@ -1,7 +1,7 @@
 # Knowledge Base Structure
 
-**Version:** 1.0.0  
-**Last Updated:** 2025-12-01  
+**Version:** 1.1.0  
+**Last Updated:** 2025-12-12  
 **Status:** Active
 
 ---
@@ -11,19 +11,26 @@
 ```
 knowledge/
 ├── model/                 # Enablement Model Definition
-│   ├── ENABLEMENT-MODEL-v1.2.md    # Master document
+│   ├── ENABLEMENT-MODEL-v1.3.md    # Master document
 │   └── standards/                   # Operational standards
+├── orchestration/         # Execution rules and discovery (NEW)
+│   ├── discovery-rules.md          # Prompt → Skill selection
+│   ├── execution-framework.md      # Generic execution flow
+│   ├── prompt-template.md          # User input template
+│   └── audit-schema.json           # Audit trail schema
 ├── ADRs/                  # Architecture Decision Records
 ├── ERIs/                  # Enterprise Reference Implementations
 ├── capabilities/          # Capability definitions
 ├── patterns/              # Architectural Patterns
-├── validators/            # Validation system (3 tiers)
+├── validators/            # Validation system (4 tiers)
 │   ├── tier-1-universal/    # Tier 1: Universal checks
-│   ├── tier-2-technology/  # Tier 2: Artifact-specific checks
-│   └── tier-3-modules/    # Tier 3: Reference to module validators
+│   ├── tier-2-technology/   # Tier 2: Artifact-specific checks
+│   └── tier-3-modules/      # Tier 3: Reference to module validators
 └── skills/                # Automated Skills
     ├── modules/           # Reusable templates + Tier 3 validation
     └── skill-{domain}-{NNN}-.../    # Skills by domain
+        ├── SKILL.md                 # Specification
+        └── EXECUTION-FLOW.md        # Deterministic execution steps (NEW)
 ```
 
 ---
@@ -126,13 +133,13 @@ The model directory contains the complete Enablement 2.0 definition:
 
 | Document | Purpose |
 |----------|---------|
-| **ENABLEMENT-MODEL-v1.2.md** | Master document - complete conceptual model |
+| **ENABLEMENT-MODEL-v1.3.md** | Master document - complete conceptual model |
 | **standards/ASSET-STANDARDS-v1.3.md** | Detailed structure for each asset type |
 | **standards/authoring/** | Asset creation guides (ADR, ERI, MODULE, SKILL, etc.) |
 | **standards/validation/** | Validation standards by domain |
 | **standards/traceability/** | Traceability standards by domain |
 
-**Read `ENABLEMENT-MODEL-v1.2.md` first** before creating any asset.
+**Read `ENABLEMENT-MODEL-v1.3.md` first** before creating any asset.
 
 ---
 
@@ -174,37 +181,41 @@ cd {generated-project}/.enablement/validation
 
 ## 📚 **Current Inventory**
 
-### **ADRs (4):**
+### **ADRs (5):**
 - `adr-001-api-design-standards` - API design standards
 - `adr-004-resilience-patterns` - Resilience patterns for distributed systems
 - `adr-009-service-architecture-patterns` - Hexagonal Light architecture
 - `adr-011-persistence-patterns` - Persistence patterns (JPA + System API)
+- `adr-012-api-integration-patterns` - API integration patterns (REST, gRPC, Async)
 
-### **ERIs (6):**
+### **ERIs (7):**
 - `eri-code-001-hexagonal-light-java-spring` - Hexagonal architecture for Java/Spring
 - `eri-code-008-circuit-breaker-java-resilience4j` - Circuit Breaker
 - `eri-code-009-retry-java-resilience4j` - Retry pattern
 - `eri-code-010-timeout-java-resilience4j` - Timeout pattern
 - `eri-code-011-rate-limiter-java-resilience4j` - Rate Limiter
 - `eri-code-012-persistence-patterns-java-spring` - Persistence (JPA + System API)
+- `eri-code-013-api-integration-rest-java-spring` - REST API integration (RestClient/Feign/RestTemplate)
 
-### **Modules (7):**
+### **Modules (8):**
 - `mod-001-circuit-breaker-java-resilience4j` - Circuit Breaker template
 - `mod-002-retry-java-resilience4j` - Retry template
 - `mod-003-timeout-java-resilience4j` - Timeout template
 - `mod-004-rate-limiter-java-resilience4j` - Rate Limiter template
 - `mod-015-hexagonal-base-java-spring` - Hexagonal architecture template
 - `mod-016-persistence-jpa-spring` - JPA persistence template
-- `mod-017-persistence-systemapi` - System API persistence template (Feign/RestTemplate/RestClient)
+- `mod-017-persistence-systemapi` - System API persistence template
+- `mod-018-api-integration-rest-java-spring` - REST API integration template
 
 ### **Skills (2):**
 - `skill-code-001-add-circuit-breaker-java-resilience4j` - Add circuit breaker to existing service
 - `skill-code-020-generate-microservice-java-spring` - Generate new microservice (v1.2.0)
 
-### **Capabilities (3):**
+### **Capabilities (4):**
 - `resilience` - Fault tolerance patterns (circuit breaker, retry, timeout, rate limiter)
 - `persistence` - Data access patterns (JPA, System API)
 - `api_architecture` - API layers and service architecture
+- `integration` - API integration patterns (REST, gRPC, Async)
 
 ### **Validation Stacks:**
 - `java-maven` - Maven compilation and tests
@@ -234,11 +245,12 @@ See `model/standards/` for detailed requirements:
 
 For questions about structure or conventions, refer to:
 - This README
-- `model/ENABLEMENT-MODEL-v1.2.md` - Complete conceptual model
+- `model/ENABLEMENT-MODEL-v1.3.md` - Complete conceptual model
 - `model/standards/ASSET-STANDARDS-v1.3.md` - Asset structure
 - `model/standards/validation/` - Validation standards by domain
 - `model/standards/traceability/` - Traceability standards by domain
 - `model/standards/authoring/` - Asset creation guides
+- `orchestration/` - Execution rules and discovery (how skills are selected and executed)
 
 ---
 
@@ -247,7 +259,7 @@ For questions about structure or conventions, refer to:
 | Document | Purpose |
 |----------|---------|
 | **README.md** (this file) | Overview and navigation |
-| **model/ENABLEMENT-MODEL-v1.2.md** | Master conceptual model |
+| **model/ENABLEMENT-MODEL-v1.3.md** | Master conceptual model |
 | **model/standards/ASSET-STANDARDS-v1.3.md** | Mandatory asset structure |
 | **model/standards/validation/** | Validation standards (by domain) |
 | **model/standards/traceability/** | Traceability standards (by domain) |

@@ -108,7 +108,7 @@ Skills:
 
 ## Related Documentation
 
-- **Model:** `../model/ENABLEMENT-MODEL-v1.2.md`
+- **Model:** `../model/ENABLEMENT-MODEL-v1.3.md`
 - **Standards:** `../model/standards/ASSET-STANDARDS-v1.3.md`
 - **ADRs:** `../ADRs/`
 - **ERIs:** `../ERIs/`

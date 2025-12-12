@@ -4,7 +4,7 @@
 **Date:** 2025-11-28  
 **Status:** Active  
 **Purpose:** Define mandatory structure and content for all Enablement 2.0 knowledge base assets  
-**Master Document:** See `ENABLEMENT-MODEL-v1.2.md` for complete conceptual model
+**Master Document:** See `ENABLEMENT-MODEL-v1.3.md` for complete conceptual model
 
 ---
 
@@ -1287,7 +1287,7 @@ This document is part of Enablement 2.0 model framework:
 
 ### Master Document
 
-- **ENABLEMENT-MODEL-v1.2.md** - Complete conceptual model
+- **ENABLEMENT-MODEL-v1.3.md** - Complete conceptual model
   - Asset hierarchy and relationships
   - Capability hierarchy (Capability → Feature → Component → Module)
   - Skill domains and types
@@ -1313,7 +1313,7 @@ This document is part of Enablement 2.0 model framework:
 ### How These Documents Work Together
 
 ```
-ENABLEMENT-MODEL-v1.2.md (Master)
+ENABLEMENT-MODEL-v1.3.md (Master)
     ↓
 Defines: Conceptual model, asset hierarchy, capability hierarchy, 
          skill domains, validation system, workflows

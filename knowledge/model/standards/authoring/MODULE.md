@@ -1,7 +1,7 @@
 # Authoring Guide: MODULE
 
-**Version:** 1.4  
-**Last Updated:** 2025-12-01  
+**Version:** 1.5  
+**Last Updated:** 2025-12-12  
 **Asset Type:** Module
 
 ---
@@ -661,13 +661,14 @@ Skill                                            validation/*-check.sh
 
 ### Synchronization with SKILLs
 
-1. **Every template MUST be referenced** in at least one SKILL's Template Mapping
-2. **When adding templates:** Update dependent SKILLs' Template Mapping section
-3. **When removing templates:** Check all SKILLs for orphan references
-4. **SKILL's Template Mapping is authoritative** - Claude must use mapped templates, not improvise
+1. **Every template MUST be in Template Catalog** with its output path
+2. **When adding templates:** Add entry to Template Catalog section
+3. **When removing templates:** Remove from Template Catalog, check SKILLs for orphan references
+4. **Template Catalog is authoritative** - Agents must use cataloged templates, not improvise
 
-> **IMPORTANT:** If a template exists in a module but is not referenced in any SKILL,
-> it will NOT be used during generation. Always keep SKILLs and MODULEs in sync.
+> **IMPORTANT:** The Template Catalog in MODULE.md is the single source of truth for 
+> template → output path mapping. SKILLs reference modules via Module Resolution, 
+> then use each module's Template Catalog to determine outputs.
 
 ---
 

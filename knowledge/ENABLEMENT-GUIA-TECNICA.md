@@ -161,7 +161,7 @@ El ciclo de vida del desarrollo de software (SDLC) enfrenta varios desafíos cr�
 knowledge/
 │
 ├── model/                              # META-NIVEL (Especificaciones)
-│   ├── ENABLEMENT-MODEL-v1.2.md       # Documento maestro
+│   ├── ENABLEMENT-MODEL-v1.3.md       # Documento maestro
 │   └── standards/
 │       ├── ASSET-STANDARDS-v1.3.md    # Estructura de assets
 │       ├── authoring/                  # Guías de creación
@@ -851,7 +851,7 @@ TOTAL: 11/11 verificaciones pasadas
 
 | Documento | Propósito | Ubicación |
 |-----------|-----------|-----------|
-| ENABLEMENT-MODEL-v1.2.md | Modelo maestro | `model/` |
+| ENABLEMENT-MODEL-v1.3.md | Modelo maestro | `model/` |
 | ASSET-STANDARDS-v1.3.md | Estructura de assets | `model/standards/` |
 | authoring/SKILL.md | Cómo crear skills | `model/standards/authoring/` |
 | validators/README.md | Sistema de validación | `knowledge/validators/` |
