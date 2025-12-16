@@ -1,20 +1,24 @@
 {
   "main": {
-    "id": "d6651ac600f9c88d",
+    "id": "27e4ecc68c57aa03",
     "type": "split",
     "children": [
       {
-        "id": "b43dedb882436680",
+        "id": "3f54f7d14c0f7f85",
         "type": "tabs",
         "children": [
           {
-            "id": "148a79f6b4210bed",
+            "id": "f1eed73311924aa9",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "model/ENABLEMENT-TECHNICAL-GUIDE.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "ENABLEMENT-TECHNICAL-GUIDE"
             }
           }
         ]
@@ -23,15 +27,15 @@
     "direction": "vertical"
   },
   "left": {
-    "id": "10b7504bc41f3847",
+    "id": "4c199c34917984dc",
     "type": "split",
     "children": [
       {
-        "id": "582f6a754a2a53ef",
+        "id": "1537bfb4686b4daa",
         "type": "tabs",
         "children": [
           {
-            "id": "cec495b8644babba",
+            "id": "1cf114aa5871bdae",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -44,7 +48,7 @@
             }
           },
           {
-            "id": "a3671b9c87650941",
+            "id": "605abb2f879aa7e2",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -61,7 +65,7 @@
             }
           },
           {
-            "id": "57c99a6454d6bda3",
+            "id": "a89432c8f0de71bd",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
@@ -77,19 +81,20 @@
     "width": 300
   },
   "right": {
-    "id": "e3c0d312bde107ca",
+    "id": "2bc3a77375b0fadf",
     "type": "split",
     "children": [
       {
-        "id": "da0ac5b71f51c9dd",
+        "id": "159f12d0055928a9",
         "type": "tabs",
         "children": [
           {
-            "id": "485bd3d3fcfa9331",
+            "id": "664bb39309fac872",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
+                "file": "model/ENABLEMENT-TECHNICAL-GUIDE.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -99,24 +104,25 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks"
+              "title": "Backlinks for ENABLEMENT-TECHNICAL-GUIDE"
             }
           },
           {
-            "id": "aff555da9ba8ad00",
+            "id": "090fe4fd8ddbfcc4",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "model/ENABLEMENT-TECHNICAL-GUIDE.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links"
+              "title": "Outgoing links from ENABLEMENT-TECHNICAL-GUIDE"
             }
           },
           {
-            "id": "1c71a76e7deb5497",
+            "id": "fdca3b015ae3cf3c",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -131,7 +137,7 @@
             }
           },
           {
-            "id": "9d0384eaf06f8d47",
+            "id": "d31ef38a15fd3b71",
             "type": "leaf",
             "state": {
               "type": "all-properties",
@@ -145,18 +151,18 @@
             }
           },
           {
-            "id": "dbea675c2db01205",
+            "id": "02ef45c56dbd8611",
             "type": "leaf",
             "state": {
               "type": "outline",
               "state": {
-                "file": "knowledge/capabilities/api_architecture.md",
+                "file": "model/ENABLEMENT-TECHNICAL-GUIDE.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of api_architecture"
+              "title": "Outline of ENABLEMENT-TECHNICAL-GUIDE"
             }
           }
         ]
@@ -177,43 +183,9 @@
       "bases:Create new base": false
     }
   },
-  "active": "148a79f6b4210bed",
+  "active": "f1eed73311924aa9",
   "lastOpenFiles": [
-    "skills/skill-code-020-generate-microservice-java-spring/examples/example-01-customer-domain-api/template/src/test/java/com/company/customer/domain/service/CustomerDomainServiceTest.java",
-    "skills/skill-code-020-generate-microservice-java-spring/examples/example-01-customer-domain-api/template/src/main/java/com/company/customer/infrastructure/config/ApplicationConfig.java",
-    "skills/skill-code-020-generate-microservice-java-spring/examples/example-01-customer-domain-api/template/src/main/java/com/company/customer/domain/service/CustomerDomainService.java",
-    "skills/skill-code-020-generate-microservice-java-spring/examples/example-01-customer-domain-api/template/src/main/java/com/company/customer/domain/repository/CustomerRepository.java",
-    "skills/skill-code-020-generate-microservice-java-spring/examples/example-01-customer-domain-api/template/src/main/java/com/company/customer/domain/model/CustomerRegistration.java",
-    "skills/skill-code-020-generate-microservice-java-spring/examples/example-01-customer-domain-api/template/src/main/java/com/company/customer/domain/model/CustomerId.java",
-    "skills/skill-code-020-generate-microservice-java-spring/examples/example-01-customer-domain-api/template/src/main/java/com/company/customer/domain/model/Customer.java",
-    "skills/skill-code-020-generate-microservice-java-spring/examples/example-01-customer-domain-api/template/src/main/java/com/company/customer/domain/exception/DuplicateEmailException.java",
-    "skills/skill-code-020-generate-microservice-java-spring/examples/example-01-customer-domain-api/template/src/main/java/com/company/customer/domain/exception/CustomerNotFoundException.java",
-    "skills/skill-code-020-generate-microservice-java-spring/examples/example-01-customer-domain-api/template/src/main/java/com/company/customer/application/service/CustomerApplicationService.java",
-    "skills/skill-code-020-generate-microservice-java-spring/examples/example-01-customer-domain-api/template/src/test/java/com/company/customer/domain/service",
-    "skills/skill-code-020-generate-microservice-java-spring/examples/example-01-customer-domain-api/README.md",
-    "skills/skill-code-020-generate-microservice-java-spring/validation/README.md",
-    "skills/skill-code-020-generate-microservice-java-spring/prompts/SPEC.md",
-    "skills/skill-code-020-generate-microservice-java-spring/examples/README.md",
-    "skills/skill-code-001-add-circuit-breaker-java-resilience4j/validation/README.md",
-    "skills/skill-code-001-add-circuit-breaker-java-resilience4j/prompts/SPEC.md",
-    "skills/skill-code-001-add-circuit-breaker-java-resilience4j/prompts/README.md",
-    "skills/skill-code-001-add-circuit-breaker-java-resilience4j/examples/README.md",
-    "skills/skill-code-020-generate-microservice-java-spring/SKILL.md",
-    "skills/skill-code-020-generate-microservice-java-spring/OVERVIEW.md",
-    "skills/skill-code-001-add-circuit-breaker-java-resilience4j/OVERVIEW.md",
-    "skills/skill-code-001-add-circuit-breaker-java-resilience4j/SKILL.md",
-    "skills/README.md",
-    "runtime/validators/tier-2-technology/deployments/docker/VALIDATOR.md",
-    "runtime/validators/tier-2-technology/code-projects/java-spring/VALIDATOR.md",
-    "runtime/validators/tier-1-universal/code-projects/project-structure/VALIDATOR.md",
-    "runtime/validators/tier-1-universal/code-projects/naming-conventions/VALIDATOR.md",
-    "runtime/validators/tier-1-universal/traceability/VALIDATOR.md",
-    "runtime/flows/code/REMOVE.md",
-    "runtime/flows/code/REFACTOR.md",
-    "runtime/flows/code/MIGRATE.md",
-    "runtime/flows/code/GENERATE.md",
-    "runtime/flows/code/ADD.md",
-    "runtime/validators/README.md",
-    "runtime/discovery/prompt-template.md"
+    "model/ENABLEMENT-EXECUTIVE-BRIEF.md",
+    "GETTING-STARTED.md"
   ]
 }

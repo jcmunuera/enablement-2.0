@@ -1,125 +1,94 @@
 # Enablement 2.0 Model
 
-This directory contains the **complete model definition** for Enablement 2.0, an SDLC automation platform.
+> Meta-model definition: how the system works, standards, and authoring guides
 
-## Document Hierarchy
+## Purpose
+
+This directory contains the **system definition** for Enablement 2.0:
+- Master model document
+- Asset standards
+- Authoring guides
+- Domain definitions
+- Executive and technical overviews
+
+## Structure
 
 ```
 model/
 ├── README.md                          # This file
-├── ENABLEMENT-MODEL-v1.3.md           # Master document - COMPLETE CONCEPTUAL MODEL
 │
-└── standards/
-    ├── ASSET-STANDARDS-v1.3.md        # Structure and naming for ALL asset types
-    │
-    ├── authoring/                     # How to CREATE assets
-    │   ├── README.md                  # Index + common principles
-    │   ├── ADR.md                     # ⏳ Pending
-    │   ├── ERI.md                     # ⏳ Pending
-    │   ├── MODULE.md                  # ⏳ Pending
-    │   ├── SKILL.md                   # ⏳ Pending (CRITICAL)
-    │   ├── VALIDATOR.md               # ⏳ Pending
-    │   ├── CAPABILITY.md              # ⏳ Pending
-    │   └── PATTERN.md                 # ⏳ Pending
-    │
-    ├── validation/                    # Validation SYSTEM (meta-level)
-    │   └── README.md                  # 4-tier system architecture
-    │
-    └── traceability/                  # Traceability MODEL
-        ├── README.md                  # System overview
-        ├── BASE-MODEL.md              # Common fields for ALL skills
-        └── profiles/                  # Output-type specific extensions
-            ├── code-project.md        # For generation skills
-            ├── code-transformation.md # For add/remove skills
-            ├── document.md            # For design/gov skills
-            └── report.md              # For qa skills
+├── ENABLEMENT-MODEL-v1.5.md           # ⭐ Master document
+├── ENABLEMENT-EXECUTIVE-BRIEF.md      # Executive summary (EN)
+├── ENABLEMENT-TECHNICAL-GUIDE.md      # Technical architecture (EN)
+├── ENABLEMENT-RESUMEN-EJECUTIVO.md    # Executive summary (ES)
+├── ENABLEMENT-GUIA-TECNICA.md         # Technical architecture (ES)
+│
+├── standards/
+│   ├── ASSET-STANDARDS-v1.3.md        # Structure and naming
+│   ├── authoring/                     # How to CREATE assets
+│   │   ├── ADR.md
+│   │   ├── ERI.md
+│   │   ├── MODULE.md
+│   │   └── SKILL.md
+│   ├── validation/                    # Validation standards (doc)
+│   └── traceability/                  # Traceability standards (doc)
+│
+└── domains/                           # Domain definitions
+    ├── README.md
+    ├── code/
+    │   ├── DOMAIN.md                  # CODE domain specification
+    │   ├── capabilities/              # Domain capabilities
+    │   │   ├── resilience.md
+    │   │   ├── persistence.md
+    │   │   ├── api_architecture.md
+    │   │   └── integration.md
+    │   └── module-structure.md
+    ├── design/                        # (Planned)
+    ├── qa/                            # (Planned)
+    └── governance/                    # (Planned)
 ```
 
-## Master Document
+## Key Documents
 
-**ENABLEMENT-MODEL-v1.3.md** is the single source of truth for:
+| Document | Audience | Purpose |
+|----------|----------|---------|
+| **ENABLEMENT-MODEL-v1.5.md** | All | Complete system specification |
+| **ENABLEMENT-EXECUTIVE-BRIEF.md** | Leadership | Business value, ROI |
+| **ENABLEMENT-TECHNICAL-GUIDE.md** | Architects | Technical architecture |
+| **standards/ASSET-STANDARDS-v1.3.md** | Developers | Naming, structure |
+| **standards/authoring/*.md** | Developers | How to create assets |
 
-- Asset hierarchy (ADR → ERI → Module → Skill → Validator)
-- Capability hierarchy (Capability → Feature → Component → Module)
-- Skill domains and types (CODE, DESIGN, QA, GOVERNANCE)
-- Four-tier validation system
-- Traceability model
-- Workflow definitions
-- Asset creation processes
+## Reading Order
 
-**Read this first** before creating any asset.
+### For Executives (15 min)
+1. `ENABLEMENT-EXECUTIVE-BRIEF.md`
 
-## Asset Types
+### For Architects (1-2 hours)
+1. `ENABLEMENT-MODEL-v1.5.md`
+2. `ENABLEMENT-TECHNICAL-GUIDE.md`
+3. `standards/ASSET-STANDARDS-v1.3.md`
 
-| Asset | Purpose | Location |
-|-------|---------|----------|
-| **ADR** | Architectural Decision Record | `knowledge/ADRs/` |
-| **ERI** | Enterprise Reference Implementation | `knowledge/ERIs/` |
-| **Module** | Reusable code templates | `knowledge/skills/modules/` |
-| **Skill** | Executable capability | `knowledge/skills/` |
-| **Validator** | Artifact validation | `knowledge/validators/` |
-| **Capability** | Feature grouping | `knowledge/capabilities/` |
-| **Pattern** | Design patterns | `knowledge/patterns/` |
+### For Developers (2-4 hours)
+1. `ENABLEMENT-MODEL-v1.5.md` (sections 1-5)
+2. `standards/ASSET-STANDARDS-v1.3.md`
+3. `standards/authoring/{asset-type}.md`
 
-## Standards Categories
+## Related Directories
 
-| Category | Purpose | When to Use |
-|----------|---------|-------------|
-| **ASSET-STANDARDS** | Structure, naming, directory layout | When organizing any asset |
-| **authoring/** | Templates, checklists, creation process | When creating new assets |
-| **validation/** | System architecture (meta) | Understanding validation system |
-| **traceability/** | Model + profiles | When implementing traceability |
-
-## Model vs Knowledge
-
-This directory contains **META-LEVEL** documentation:
-
-| This Directory (model/) | knowledge/ Directory |
-|-------------------------|---------------------|
-| HOW to create things | THE THINGS created |
-| Specifications | Implementations |
-| Standards | Assets |
-
-**Example:**
-- `model/standards/validation/README.md` = How the validation system works
-- `knowledge/validators/` = Actual validator implementations
-
-## For AI Agents
-
-Before creating any asset:
-
-1. Read `ENABLEMENT-MODEL-v1.3.md` for conceptual understanding
-2. Read `standards/ASSET-STANDARDS-v1.3.md` for structure
-3. Read `standards/authoring/{asset-type}.md` for creation guide
-4. Use validators from `knowledge/validators/` after creation
-5. Apply traceability from `standards/traceability/`
-
-## For Humans
-
-For manual design/development:
-
-- Consult ADRs for strategic architectural decisions
-- Consult ERIs for technology-specific reference implementation
-- Follow constraints defined in ERI annexes
-- Use authoring guides as checklists
+| Directory | Content |
+|-----------|---------|
+| `/knowledge/` | ADRs, ERIs (pure knowledge) |
+| `/skills/` | Executable skills |
+| `/modules/` | Reusable templates |
+| `/runtime/` | Discovery, flows, validators |
 
 ## Versioning
 
 Documents include version in filename:
-
-- `ENABLEMENT-MODEL-v1.3.md` = Version 1.1
-- `ASSET-STANDARDS-v1.3.md` = Version 1.2
-
-Internal version in document metadata MUST match filename version.
-
-## Status Legend
-
-- ✅ Active - Complete and usable
-- ⏳ Pending - Placeholder, to be completed
-- 🔄 Draft - Work in progress
+- `ENABLEMENT-MODEL-v1.5.md` = Version 1.5
+- `ASSET-STANDARDS-v1.3.md` = Version 1.3
 
 ---
 
-**Last Updated:** 2025-11-27  
-**Version:** 3.0  
-**Maintainer:** Fusion C4E Team
+**Last Updated:** 2025-12-16  
+**Version:** 4.0
