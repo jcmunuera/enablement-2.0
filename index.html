@@ -42,30 +42,6 @@
       border-radius: 3px;
     }
     
-    /* Status badges */
-    .markdown-section td:contains("✅"), 
-    .markdown-section td:contains("Active") {
-      color: #4CAF50;
-    }
-    
-    .markdown-section td:contains("🔜"),
-    .markdown-section td:contains("Planned") {
-      color: #FF9800;
-    }
-    
-    /* Cover page customization */
-    .cover {
-      background: linear-gradient(135deg, #3F51B5 0%, #1A237E 100%) !important;
-    }
-    
-    .cover h1 {
-      color: #fff;
-    }
-    
-    .cover p {
-      color: rgba(255,255,255,0.8);
-    }
-    
     /* Mermaid diagrams */
     .mermaid {
       text-align: center;
@@ -81,13 +57,9 @@
       name: 'Enablement 2.0',
       repo: 'https://github.com/jcmunuera/enablement-2.0',
       
-      // Load from root, not /docs
-      basePath: '/',
-      
       // Sidebar
-      loadSidebar: 'docs/_sidebar.md',
+      loadSidebar: true,
       subMaxLevel: 3,
-      sidebarDisplayLevel: 2,
       
       // Cover page
       coverpage: 'docs/_coverpage.md',
@@ -99,36 +71,15 @@
         paths: 'auto',
         placeholder: 'Buscar...',
         noData: 'No hay resultados',
-        depth: 3,
-        hideOtherSidebarContent: false
+        depth: 3
       },
       
       // Other settings
       auto2top: true,
-      executeScript: true,
-      mergeNavbar: true,
       maxLevel: 4,
       
-      // Homepage
-      homepage: 'README.md',
-      
-      // Aliases for cleaner URLs
-      alias: {
-        '/model': '/model/README.md',
-        '/knowledge': '/knowledge/README.md',
-        '/skills': '/skills/README.md',
-        '/modules': '/modules/README.md',
-        '/runtime': '/runtime/README.md'
-      },
-      
-      // Tabs plugin config
-      tabs: {
-        persist: true,
-        sync: true,
-        theme: 'classic',
-        tabComments: true,
-        tabHeadings: true
-      }
+      // Homepage - README.md in root
+      homepage: 'README.md'
     }
   </script>
   
@@ -138,14 +89,12 @@
   <!-- Plugins -->
   <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/docsify-copy-code@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/docsify-pagination@2/dist/docsify-pagination.min.js"></script>
   
   <!-- Syntax highlighting -->
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-java.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-yaml.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-markdown.min.js"></script>
   
   <!-- Mermaid diagrams -->
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
