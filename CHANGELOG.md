@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.0] - 2025-12-17
+
+### 🧠 Model Philosophy Revision
+
+Major revision of discovery and execution philosophy.
+
+#### Added
+
+**New Documents**
+- `model/SYSTEM-PROMPT.md` - Agent context specification
+- `runtime/discovery/discovery-guidance.md` - Interpretive discovery guidance
+
+#### Changed
+
+**Discovery Philosophy**
+- Discovery is now INTERPRETIVE, not rule-based
+- Domain identification based on semantic analysis, not keywords
+- Skill selection through OVERVIEW.md matching, not IF/THEN rules
+- Added multi-domain operation support
+- Added out-of-scope detection
+
+**Execution Model**
+- GENERATE skills now use HOLISTIC execution
+- Modules are KNOWLEDGE to consult, not steps to execute
+- All features generated together in one pass
+- Validation remains sequential (Tier-1, Tier-2, Tier-3 per module)
+- Clear distinction: GENERATE (holistic) vs ADD (atomic)
+
+**Updated Documents**
+- ENABLEMENT-MODEL v1.5 → v1.6 (major philosophy changes)
+- GENERATE.md v1.0 → v2.0 (holistic execution)
+- discovery-rules.md → discovery-guidance.md (interpretive)
+
+#### Key Concepts in v1.6
+
+| Concept | v1.5 | v1.6 |
+|---------|------|------|
+| Discovery | Rule-based (IF keyword THEN domain) | Interpretive (semantic analysis) |
+| Module execution | Sequential (process each in order) | Holistic (consult all, generate once) |
+| Multi-domain | Not addressed | Explicit support with decomposition |
+| Out-of-scope | Not addressed | Explicit detection and handling |
+
+---
+
 ## [2.1.0] - 2025-12-16
 
 ### 🏗️ Major Restructuring

@@ -170,46 +170,127 @@ tags:
 ---
 ```
 
-### 2. OVERVIEW.md - Quick Reference
+### 2. OVERVIEW.md - Quick Reference (CRITICAL for Discovery)
+
+> **UPDATED in v2.3:** OVERVIEW.md is the PRIMARY document for skill discovery.
+> The agent reads this file to determine if a skill matches user intent.
+> Write it with discovery in mind.
+
+**OVERVIEW.md Structure:**
 
 ```markdown
 # skill-{domain}-{NNN}-{type}-{target}
 
-**Domain:** {domain}  
-**Type:** {type}  
-**Version:** X.Y.Z
+## Overview
+
+**Skill ID:** skill-{domain}-{NNN}-{type}-{target}-{framework}-{library}  
+**Type:** {TYPE}  
+**Framework:** {framework} (if applicable)  
+**Architecture:** {architecture pattern}
+
+---
 
 ## Purpose
 
-[One paragraph: what this skill does]
+[One clear paragraph: what this skill does. Be specific about the OUTPUT.]
 
-## Input
+---
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `serviceName` | string | ✅ | Name of the service |
+## When to Use
 
-## Output
+✅ **Use this skill when:**
+- [Specific condition 1]
+- [Specific condition 2]
+- [Specific condition 3]
 
-[What is generated/produced]
+❌ **Do NOT use when:**
+- [Condition where another skill is better]
+- [Condition where skill doesn't apply]
+- [Edge case to avoid]
 
-## Modules Used
+---
 
-- mod-{domain}-{NNN}-... ({purpose})
+## Capabilities
 
-## Validators
+| Capability | Description |
+|------------|-------------|
+| **Feature 1** | What it does |
+| **Feature 2** | What it does |
 
-- Tier 1: project-structure, naming-conventions
-- Tier 2: java-spring, docker
-- Tier 3: {module-specific}
+---
 
-## Quick Start
+## Input Summary
 
-```bash
-# Example invocation
-{example command or API call}
+```json
+{
+  "key": "example",
+  ...
+}
 ```
+
+---
+
+## Output Summary
+
 ```
+{output-structure}/
+├── file1
+└── file2
+```
+
+---
+
+## Dependencies
+
+### Knowledge Dependencies
+- **ADR-XXX:** [relevance]
+- **ERI-XXX:** [relevance]
+
+### Module Dependencies
+- **mod-XXX:** [purpose]
+
+---
+
+## Tags
+
+`tag1` `tag2` `tag3`
+
+---
+
+## Version
+
+**Current:** X.Y.Z  
+**Status:** Active  
+**Last Updated:** YYYY-MM-DD
+```
+
+**Discovery-Critical Sections:**
+
+| Section | Discovery Importance |
+|---------|---------------------|
+| **Purpose** | PRIMARY - Agent matches user intent against this |
+| **When to Use** | HIGH - Explicit conditions for selection |
+| **When NOT to Use** | HIGH - Prevents wrong selection |
+| **Tags** | MEDIUM - Keyword matching support |
+| **Output Summary** | MEDIUM - Verifies output type matches user need |
+
+**Writing Tips for Discovery:**
+
+1. **Purpose:** Write what the skill PRODUCES, not how it works
+   - Good: "Generates a complete Spring Boot microservice project"
+   - Bad: "Uses templates to create code files"
+
+2. **When to Use:** Be specific about scenarios
+   - Good: "Creating a new microservice from scratch"
+   - Bad: "When you need code"
+
+3. **When NOT to Use:** Redirect to correct skill
+   - Good: "Modifying existing code (use ADD skills)"
+   - Bad: "When it doesn't apply"
+
+4. **Tags:** Include synonyms and related terms
+   - Good: `generation` `creation` `spring-boot` `java` `microservice`
+   - Bad: `skill` `code`
 
 ### 3. README.md - External Documentation
 

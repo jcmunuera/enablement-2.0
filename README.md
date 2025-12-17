@@ -33,9 +33,10 @@ enablement-2.0/
 │   └── ERIs/              # Enterprise Reference Implementations (tactical)
 │
 ├── model/                  # META-MODEL (defines the Enablement system)
-│   ├── ENABLEMENT-MODEL.md    # Master document
-│   ├── standards/             # Asset standards and authoring guides
-│   └── domains/               # Domain definitions (CODE, DESIGN, QA, GOV)
+│   ├── ENABLEMENT-MODEL-v1.6.md   # Master document
+│   ├── SYSTEM-PROMPT.md           # Agent context specification
+│   ├── standards/                 # Asset standards and authoring guides
+│   └── domains/                   # Domain definitions (CODE, DESIGN, QA, GOV)
 │
 ├── skills/                 # SKILLS (executable units for agents)
 │   └── skill-{domain}-{NNN}-...
@@ -44,7 +45,7 @@ enablement-2.0/
 │   └── mod-code-{NNN}-...
 │
 ├── runtime/                # RUNTIME (orchestration and execution)
-│   ├── discovery/         # Prompt → Domain → Skill mapping
+│   ├── discovery/         # Interpretive discovery guidance
 │   ├── flows/             # Execution flows by domain/type
 │   └── validators/        # Tier-1 and Tier-2 validators
 │
@@ -71,19 +72,20 @@ enablement-2.0/
 │  EXECUTION LAYER (what to do)                                        │
 │  ┌─────────────────────────────────────────────────────────────┐    │
 │  │  Skills ──────────> Modules ──────────> Output              │    │
-│  │  (Executable)       (Templates)         (Generated Code)    │    │
+│  │  (Executable)       (Knowledge)         (Generated Code)    │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 │                              │                                       │
 │                              ▼                                       │
 │  RUNTIME LAYER (how to execute)                                      │
 │  ┌─────────────────────────────────────────────────────────────┐    │
 │  │  Discovery ──> Flow ──> Validation                           │    │
+│  │  (Interpretive) (Holistic/Atomic)  (Sequential)              │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Current Inventory (v2.1.0)
+### Current Inventory (v2.2.0)
 
 | Asset Type | Count | Location |
 |------------|-------|----------|
@@ -125,7 +127,7 @@ ls runtime/
 
 ### Understand the Model
 
-1. Start with: `model/ENABLEMENT-MODEL-v1.4.md`
+1. Start with: `model/ENABLEMENT-MODEL-v1.6.md`
 2. Then: `model/standards/ASSET-STANDARDS-v1.3.md`
 3. To create assets: `model/standards/authoring/`
 
@@ -137,19 +139,19 @@ ls runtime/
 ┌─────────────────────────────────────────────────────────────────────┐
 │  1. INPUT: User prompt                                               │
 │                                                                      │
-│  2. DISCOVERY: Identify domain and skill                            │
-│     └── runtime/discovery/                                          │
+│  2. DISCOVERY: Interpret domain and skill (semantic)                │
+│     └── runtime/discovery/discovery-guidance.md                     │
 │                                                                      │
-│  3. LOAD: Skill specification + prompts                             │
-│     └── skills/{skill}/SKILL.md, prompts/                           │
+│  3. LOAD: Skill specification + OVERVIEW.md                         │
+│     └── skills/{skill}/SKILL.md, OVERVIEW.md                        │
 │                                                                      │
-│  4. FLOW: Get execution steps for skill type                        │
+│  4. FLOW: Get execution approach for skill type                     │
 │     └── runtime/flows/{domain}/{TYPE}.md                            │
 │                                                                      │
-│  5. EXECUTE: Process modules, generate output                       │
-│     └── modules/{mod}/templates/                                    │
+│  5. EXECUTE: Consult modules, generate output (holistic for GEN)    │
+│     └── modules/{mod}/MODULE.md, templates/                         │
 │                                                                      │
-│  6. VALIDATE: Run validators                                        │
+│  6. VALIDATE: Run validators (sequential)                           │
 │     └── runtime/validators/ + modules/{mod}/validation/             │
 │                                                                      │
 │  7. OUTPUT: Generated code + traceability manifest                  │
@@ -191,7 +193,9 @@ See [docs/METHODOLOGY.md](docs/METHODOLOGY.md) for details on:
 - [x] Resilience patterns (Circuit Breaker, Retry, Timeout, Rate Limiter)
 - [x] Persistence patterns (JPA, System API)
 - [x] Clear separation: knowledge / model / skills / runtime
-- [ ] Code Generation PoC
+- [x] Interpretive discovery model (v1.6)
+- [x] Holistic execution for GENERATE skills
+- [ ] Complete Code Generation PoC
 
 ### Next Phases
 - [ ] Observability patterns
@@ -218,5 +222,5 @@ Internal project - All rights reserved.
 
 ---
 
-**Version:** 2.1.0  
-**Last Updated:** 2025-12-16
+**Version:** 2.2.0  
+**Last Updated:** 2025-12-17

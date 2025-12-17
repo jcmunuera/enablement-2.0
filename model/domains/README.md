@@ -1,7 +1,7 @@
 # Domains
 
-**Version:** 1.0  
-**Last Updated:** 2025-12-12  
+**Version:** 2.0  
+**Last Updated:** 2025-12-17  
 **Status:** Active
 
 ---
@@ -36,13 +36,64 @@ Each domain follows this structure:
 
 ```
 domains/{domain}/
-├── DOMAIN.md              # Domain definition
+├── DOMAIN.md              # Domain definition with Discovery Guidance
 ├── capabilities/          # Feature groups for this domain
 │   └── {capability}.md
-├── skill-types/           # Execution flows by skill type
-│   └── {TYPE}.md
 └── module-structure.md    # Module structure specific to this domain
 ```
+
+> **Note:** Execution flows are now centralized in `runtime/flows/{domain}/`
+
+---
+
+## DOMAIN.md Structure
+
+Each DOMAIN.md includes:
+
+### Required Sections
+
+| Section | Purpose |
+|---------|---------|
+| **Purpose** | What this domain does |
+| **Discovery Guidance** | How the agent identifies this domain (NEW in v1.1) |
+| **Skill Types** | Table of skill types with purpose, input, output |
+| **Module Structure** | What modules in this domain contain |
+| **Output Types** | What artifacts this domain produces |
+| **Naming Conventions** | Asset naming patterns for this domain |
+| **Current Inventory** | List of ERIs, Modules, Skills |
+
+### Discovery Guidance Section
+
+> **NEW in v1.1:** Each DOMAIN.md now includes semantic guidance for discovery.
+
+The Discovery Guidance section helps the agent identify when a request belongs to this domain:
+
+```markdown
+## Discovery Guidance
+
+### When is a request {DOMAIN} domain?
+
+| Signal | Examples |
+|--------|----------|
+| **Output type** | What artifacts are produced |
+| **Action intent** | What action is implied |
+| **Artifacts mentioned** | What concepts are referenced |
+| **SDLC phase** | What development phase |
+
+### Typical Requests ({DOMAIN})
+
+✅ Examples of requests that belong to this domain...
+
+### NOT {DOMAIN} Domain (Common Confusions)
+
+❌ Examples of requests that look like this domain but aren't...
+
+### Key Distinction
+
+How to distinguish this domain from similar ones...
+```
+
+This guidance enables **interpretive discovery** - the agent reads these descriptions to understand domain scope, rather than following rigid IF/THEN rules.
 
 ---
 
@@ -50,26 +101,30 @@ domains/{domain}/
 
 | Asset | Domain Indicator | Location |
 |-------|------------------|----------|
-| ADR | `domains:` in metadata | `ADRs/` (centralized) |
-| ERI | `eri-{domain}-XXX` in name | `ERIs/` (centralized) |
-| Capability | Located in domain folder | `domains/{domain}/capabilities/` |
-| Module | `mod-{domain}-XXX` in name | `skills/modules/` (centralized) |
-| Skill | `skill-{domain}-XXX` in name | `skills/` (centralized) |
+| ADR | `domains:` in metadata | `knowledge/ADRs/` |
+| ERI | `eri-{domain}-XXX` in name | `knowledge/ERIs/` |
+| Capability | Located in domain folder | `model/domains/{domain}/capabilities/` |
+| Module | `mod-{domain}-XXX` in name | `modules/` |
+| Skill | `skill-{domain}-XXX` in name | `skills/` |
+| Flow | Located in runtime | `runtime/flows/{domain}/` |
 
 ---
 
 ## Creating a New Domain
 
-To add a new domain (e.g., SECURITY):
+> **Note:** The current four domains (CODE, DESIGN, QA, GOVERNANCE) cover the complete SDLC. Creating new domains should be rare.
+
+To add a new domain:
 
 1. Create folder structure:
    ```bash
-   mkdir -p domains/security/{capabilities,skill-types}
+   mkdir -p model/domains/{domain}/capabilities
+   mkdir -p runtime/flows/{domain}
    ```
 
 2. Create `DOMAIN.md` following the template below
 
-3. Define skill types in `skill-types/`
+3. Create execution flows in `runtime/flows/{domain}/`
 
 4. Define module structure in `module-structure.md`
 
@@ -91,38 +146,106 @@ swarm_alignment: "{SWARM} Swarm"
 # Domain: {NAME}
 
 ## Purpose
-[What this domain does]
+
+[What this domain does - one paragraph]
+
+---
+
+## Discovery Guidance
+
+### When is a request {DOMAIN} domain?
+
+| Signal | Examples |
+|--------|----------|
+| **Output type** | [What artifacts are produced] |
+| **Action intent** | [What action is implied] |
+| **Artifacts mentioned** | [What concepts are referenced] |
+| **SDLC phase** | [What development phase] |
+
+### Typical Requests ({DOMAIN})
+
+✅ These requests belong to {DOMAIN} domain:
+
+```
+"Example request 1"
+→ Output: [type]
+→ Skill type: [TYPE]
+```
+
+### NOT {DOMAIN} Domain (Common Confusions)
+
+❌ These requests are NOT {DOMAIN} domain:
+
+```
+"Example that looks like {DOMAIN} but isn't"
+→ Output is [type] → [OTHER] domain
+```
+
+### Key Distinction
+
+[How to distinguish this domain from similar ones]
+
+---
 
 ## Skill Types
-[Table of skill types with purpose, input, output]
+
+| Type | Purpose | Input | Output |
+|------|---------|-------|--------|
+| **TYPE1** | [purpose] | [input] | [output] |
+
+---
 
 ## Module Structure
+
 [What modules in this domain contain]
 
+---
+
 ## Output Types
-[What artifacts this domain produces]
 
-## Applicable Concerns
-[Cross-cutting concerns that apply]
+| Type | Description | Example |
+|------|-------------|---------|
+| `type-1` | [description] | [example] |
 
-## Validators
-[Validation tiers applicable]
+---
+
+## Naming Conventions
+
+| Asset | Pattern | Example |
+|-------|---------|---------|
+| ERI | `eri-{domain}-{NNN}-{pattern}` | `eri-{domain}-001-...` |
+| Module | `mod-{domain}-{NNN}-{pattern}` | `mod-{domain}-001-...` |
+| Skill | `skill-{domain}-{NNN}-{type}-{target}` | `skill-{domain}-001-...` |
+
+---
+
+## Current Inventory
+
+### ERIs
+- (list)
+
+### Modules
+- (list)
+
+### Skills
+- (list)
 ```
 
 ---
 
-## Cross-Domain Considerations
+## Cross-Domain Operations
 
-Some concepts span multiple domains:
+Some requests span multiple domains. See [ENABLEMENT-MODEL-v1.6.md Section 10](../ENABLEMENT-MODEL-v1.6.md#10-multi-domain-operations) for details on:
 
-- **Concerns** (security, performance, observability) → See `../concerns/`
-- **Cross-domain Flows** → Orchestrated sequences using skills from multiple domains
-- **Universal Validators** → Tier 1 validators apply to all domains
+- How to detect multi-domain requests
+- Decomposition into domain chain
+- Context passing between domains
+- Unified traceability
 
 ---
 
 ## Related
 
-- [Concerns](../concerns/README.md) - Cross-cutting aspects
-- [ENABLEMENT-MODEL](../model/ENABLEMENT-MODEL-v1.3.md) - Complete model
-- [Orchestration](../orchestration/README.md) - Execution framework
+- [ENABLEMENT-MODEL-v1.6.md](../ENABLEMENT-MODEL-v1.6.md) - Complete model
+- [discovery-guidance.md](../../runtime/discovery/discovery-guidance.md) - Discovery process
+- [runtime/flows/](../../runtime/flows/) - Execution flows by domain

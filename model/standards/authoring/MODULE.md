@@ -1,7 +1,7 @@
 # Authoring Guide: MODULE
 
-**Version:** 1.6  
-**Last Updated:** 2025-12-16  
+**Version:** 1.7  
+**Last Updated:** 2025-12-17  
 **Asset Type:** Module
 
 ---
@@ -9,6 +9,29 @@
 ## Overview
 
 Modules are **reusable content generation templates** derived from ERIs. They encapsulate implementation patterns with variable placeholders, embedded validation (Tier 3), and can be composed by multiple Skills. While often associated with code generation, modules can also produce documents, reports, configurations, or any structured content.
+
+### Module Role by Skill Type
+
+> **NEW in v1.7:** Modules function differently depending on skill type.
+
+| Skill Type | Module Role | How Used |
+|------------|-------------|----------|
+| **GENERATE** | Knowledge source | Agent CONSULTS module templates as GUIDANCE. Generates code holistically in one pass, considering all modules together. Templates are not executed sequentially. |
+| **ADD** | Transformation guide | Module templates APPLIED directly to add feature to existing code. More deterministic transformation. |
+| **REMOVE** | Identification guide | Used to identify what patterns to remove. |
+| **REFACTOR** | Pattern reference | Guidance for code transformation. |
+
+**For GENERATE skills:**
+- The agent reads MODULE.md to understand the pattern
+- The agent reads templates to understand code structure
+- The agent generates ALL code in ONE pass considering ALL modules
+- Templates are GUIDANCE, not scripts to execute
+- Validation (Tier-3) runs AFTER generation to verify compliance
+
+**For ADD skills:**
+- Templates are more directly applied
+- Execution is more deterministic
+- Single module typically used
 
 ## When to Create a Module
 

@@ -1,10 +1,10 @@
 ---
 id: code
 name: "CODE"
-version: 1.0
+version: 1.1
 status: Active
 created: 2025-01-15
-updated: 2025-12-12
+updated: 2025-12-17
 swarm_alignment: "CODE Swarm"
 ---
 
@@ -13,6 +13,72 @@ swarm_alignment: "CODE Swarm"
 ## Purpose
 
 Code generation, modification, and migration. This domain produces executable code artifacts following organizational standards defined in ADRs and implemented according to ERIs.
+
+---
+
+## Discovery Guidance
+
+> **NEW in v1.1:** Semantic guidance for domain identification.
+
+### When is a request CODE domain?
+
+The agent should identify CODE domain when:
+
+| Signal | Examples |
+|--------|----------|
+| **Output is source code** | Java classes, Spring projects, configurations, tests |
+| **Action is implementation** | Generate, create, add, modify, refactor, migrate CODE |
+| **Artifacts are code-related** | Microservice, API, class, method, endpoint, configuration |
+| **SDLC phase is implementation** | Building, coding, programming |
+
+### Typical Requests (CODE)
+
+✅ These requests belong to CODE domain:
+
+```
+"Genera un microservicio Customer con circuit-breaker y retry"
+→ Output: source code project
+→ Skill type: GENERATE
+
+"Añade circuit-breaker al servicio de pagos"
+→ Output: modified source code
+→ Skill type: ADD
+
+"Refactoriza el servicio para usar arquitectura hexagonal"
+→ Output: restructured source code
+→ Skill type: REFACTOR
+
+"Migra el proyecto de Spring Boot 2 a Spring Boot 3"
+→ Output: migrated source code
+→ Skill type: MIGRATE
+```
+
+### NOT CODE Domain (Common Confusions)
+
+❌ These requests are NOT CODE domain:
+
+```
+"Genera el diagrama de arquitectura del microservicio"
+→ Output is DIAGRAM, not code → DESIGN domain
+
+"Analiza la calidad del código"
+→ Output is REPORT, not code → QA domain
+
+"Diseña la arquitectura de integración"
+→ Output is DESIGN DOCUMENT, not code → DESIGN domain
+
+"Genera un reporte de cobertura"
+→ Output is REPORT, not code → QA domain
+```
+
+### Key Distinction
+
+The word "genera" (generate) does NOT automatically mean CODE:
+- "Genera código" → CODE ✓
+- "Genera diagrama" → DESIGN (output is diagram)
+- "Genera reporte" → QA (output is report)
+
+**Focus on the OUTPUT TYPE, not the action verb.**
 
 ---
 

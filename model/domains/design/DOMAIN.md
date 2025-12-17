@@ -1,10 +1,10 @@
 ---
 id: design
 name: "DESIGN"
-version: 1.0
+version: 1.1
 status: Planned
 created: 2025-12-12
-updated: 2025-12-12
+updated: 2025-12-17
 swarm_alignment: "DESIGN Swarm"
 ---
 
@@ -13,6 +13,79 @@ swarm_alignment: "DESIGN Swarm"
 ## Purpose
 
 Architecture design, system transformation, and design documentation. This domain produces architectural artifacts including designs, diagrams, transformation plans, and ADR drafts.
+
+---
+
+## Discovery Guidance
+
+> **NEW in v1.1:** Semantic guidance for domain identification.
+
+### When is a request DESIGN domain?
+
+The agent should identify DESIGN domain when:
+
+| Signal | Examples |
+|--------|----------|
+| **Output is design artifact** | Diagrams, architecture documents, specs, ADRs |
+| **Action is architectural** | Design, architect, plan, model, document architecture |
+| **Artifacts are design-related** | Architecture, diagram, HLD, LLD, C4, sequence diagram |
+| **SDLC phase is design** | Pre-implementation, architectural planning |
+
+### Typical Requests (DESIGN)
+
+✅ These requests belong to DESIGN domain:
+
+```
+"Diseña la arquitectura de integración entre sistemas"
+→ Output: architecture design document
+→ Skill type: ARCHITECTURE
+
+"Genera el diagrama C4 del microservicio Customer"
+→ Output: C4 diagram (visual artifact, not code)
+→ Skill type: DOCUMENTATION
+
+"Genera el diagrama de secuencia del flujo de pago"
+→ Output: sequence diagram
+→ Skill type: DOCUMENTATION
+
+"Crea un ADR para la decisión de usar event sourcing"
+→ Output: ADR draft document
+→ Skill type: DOCUMENTATION
+
+"Planifica la migración de monolito a microservicios"
+→ Output: transformation plan
+→ Skill type: TRANSFORM
+```
+
+### NOT DESIGN Domain (Common Confusions)
+
+❌ These requests are NOT DESIGN domain:
+
+```
+"Genera un microservicio Customer"
+→ Output is CODE, not design → CODE domain
+
+"Implementa la arquitectura hexagonal en el servicio"
+→ Action is IMPLEMENT (code), not design → CODE domain
+
+"Analiza si la arquitectura cumple los estándares"
+→ Action is ANALYZE (quality) → QA domain
+
+"Genera documentación del API (Swagger)"
+→ Could be CODE (OpenAPI generation) or DESIGN (spec design)
+→ Ask for clarification if unclear
+```
+
+### Key Distinction: Design vs Implementation
+
+| Request | Domain | Reason |
+|---------|--------|--------|
+| "Diseña un microservicio" | DESIGN | Output is design/plan |
+| "Genera un microservicio" | CODE | Output is actual code |
+| "Genera el diagrama del microservicio" | DESIGN | Output is diagram |
+| "Genera el código del microservicio" | CODE | Output is code |
+
+**Focus on what the user will RECEIVE, not just the action verb.**
 
 ---
 

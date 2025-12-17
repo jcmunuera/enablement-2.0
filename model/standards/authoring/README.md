@@ -1,7 +1,7 @@
 # Authoring Standards
 
-**Version:** 2.0  
-**Last Updated:** 2025-11-28
+**Version:** 2.1  
+**Last Updated:** 2025-12-17
 
 ---
 
@@ -17,24 +17,34 @@ This directory contains **authoring guides** for creating assets in the Enableme
 
 ---
 
+## What's New in v2.1
+
+> **Key changes reflecting model v1.6 philosophy:**
+
+| Guide | Change |
+|-------|--------|
+| **SKILL.md** | OVERVIEW.md now marked as CRITICAL for discovery. Detailed guidance on writing for semantic interpretation. |
+| **MODULE.md** | Clarified module role by skill type: knowledge source for GENERATE (holistic), transformation guide for ADD (atomic). |
+
+---
+
 ## Authoring Guides Index
 
 ### Core Asset Types
 
-| Asset Type | Guide | Status | Description |
-|------------|-------|--------|-------------|
-| ADR | [ADR.md](./ADR.md) | ✅ Active | Architecture Decision Records |
-| ERI | [ERI.md](./ERI.md) | ✅ Active | Enterprise Reference Implementations |
-| Module | [MODULE.md](./MODULE.md) | ✅ Active | Reusable code templates |
-| Skill | [SKILL.md](./SKILL.md) | ✅ Active | Automation skills (**CRITICAL**) |
-| Validator | [VALIDATOR.md](./VALIDATOR.md) | ✅ Active | Artifact validation components |
+| Asset Type | Guide | Version | Description |
+|------------|-------|---------|-------------|
+| ADR | [ADR.md](./ADR.md) | 1.0 | Architecture Decision Records |
+| ERI | [ERI.md](./ERI.md) | 1.0 | Enterprise Reference Implementations |
+| Module | [MODULE.md](./MODULE.md) | **1.7** | Reusable code templates |
+| Skill | [SKILL.md](./SKILL.md) | **2.3** | Automation skills (**CRITICAL**) |
+| Validator | [VALIDATOR.md](./VALIDATOR.md) | 1.0 | Artifact validation components |
 
 ### Complementary Asset Types
 
-| Asset Type | Guide | Status | Description |
-|------------|-------|--------|-------------|
-| Capability | [CAPABILITY.md](./CAPABILITY.md) | ✅ Active | Feature groupings |
-| Pattern | [PATTERN.md](./PATTERN.md) | ✅ Active | Architecture patterns |
+| Asset Type | Guide | Version | Description |
+|------------|-------|---------|-------------|
+| Capability | [CAPABILITY.md](./CAPABILITY.md) | 1.0 | Feature groupings |
 
 ---
 
@@ -137,25 +147,38 @@ When reviewing or extending assets:
 
 ---
 
-## Critical: Skills and Prompt Derivation
+## Critical: Discovery and Execution
 
-The **SKILL.md** guide is particularly important because it documents:
+### SKILL.md and Discovery
 
-- How to derive prompts from the knowledge base
-- How ADR constraints become prompt constraints
-- How ERI patterns become prompt context
-- How to orchestrate validators
+The **SKILL.md** guide is particularly important because:
+
+1. **OVERVIEW.md is the key to discovery** - The agent reads OVERVIEW.md to match user intent with skill purpose
+2. **Writing for semantic interpretation** - Skills must be written so the LLM can interpret them correctly
+3. **When to Use / When NOT to Use** - These sections directly affect skill selection
 
 **Read SKILL.md carefully before creating any skill.**
+
+### MODULE.md and Execution
+
+The **MODULE.md** guide clarifies:
+
+1. **Modules as knowledge for GENERATE** - Templates are guidance, not scripts
+2. **Modules as transformation for ADD** - More deterministic application
+3. **Tier-3 validation** - Runs AFTER generation to verify compliance
+
+**Understand module role before creating templates.**
 
 ---
 
 ## Related Documents
 
+- [../../ENABLEMENT-MODEL-v1.6.md](../../ENABLEMENT-MODEL-v1.6.md) - Master model document
+- [../../SYSTEM-PROMPT.md](../../SYSTEM-PROMPT.md) - Agent context specification
 - [../ASSET-STANDARDS-v1.3.md](../ASSET-STANDARDS-v1.3.md) - Naming conventions and directory structure
 - [../validation/](../validation/) - Validation system architecture
 - [../traceability/](../traceability/) - Traceability model and profiles
 
 ---
 
-**Last Updated:** 2025-11-28
+**Last Updated:** 2025-12-17
