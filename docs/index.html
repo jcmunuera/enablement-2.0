@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Enablement 2.0</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="AI-powered SDLC platform for automated code generation with governance">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  
+  <!-- Theme -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  
+  <!-- Custom styles -->
+  <style>
+    :root {
+      --theme-color: #3F51B5;
+      --theme-color-dark: #303F9F;
+    }
+    
+    .sidebar {
+      padding-top: 20px;
+    }
+    
+    .sidebar-nav > ul > li > a {
+      font-weight: bold;
+      color: var(--theme-color);
+    }
+    
+    .markdown-section h1 {
+      border-bottom: 2px solid var(--theme-color);
+      padding-bottom: 10px;
+    }
+    
+    .markdown-section table {
+      display: table;
+      width: 100%;
+    }
+    
+    .markdown-section code {
+      background-color: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    
+    /* Status badges */
+    .markdown-section td:contains("✅"), 
+    .markdown-section td:contains("Active") {
+      color: #4CAF50;
+    }
+    
+    .markdown-section td:contains("🔜"),
+    .markdown-section td:contains("Planned") {
+      color: #FF9800;
+    }
+    
+    /* Cover page customization */
+    .cover {
+      background: linear-gradient(135deg, #3F51B5 0%, #1A237E 100%) !important;
+    }
+    
+    .cover h1 {
+      color: #fff;
+    }
+    
+    .cover p {
+      color: rgba(255,255,255,0.8);
+    }
+    
+    /* Mermaid diagrams */
+    .mermaid {
+      text-align: center;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">Cargando documentación...</div>
+  
+  <script>
+    window.$docsify = {
+      name: 'Enablement 2.0',
+      repo: 'https://github.com/jcmunuera/enablement-2.0',
+      
+      // Load from root, not /docs
+      basePath: '/',
+      
+      // Sidebar
+      loadSidebar: 'docs/_sidebar.md',
+      subMaxLevel: 3,
+      sidebarDisplayLevel: 2,
+      
+      // Cover page
+      coverpage: 'docs/_coverpage.md',
+      onlyCover: false,
+      
+      // Search
+      search: {
+        maxAge: 86400000,
+        paths: 'auto',
+        placeholder: 'Buscar...',
+        noData: 'No hay resultados',
+        depth: 3,
+        hideOtherSidebarContent: false
+      },
+      
+      // Other settings
+      auto2top: true,
+      executeScript: true,
+      mergeNavbar: true,
+      maxLevel: 4,
+      
+      // Homepage
+      homepage: 'README.md',
+      
+      // Aliases for cleaner URLs
+      alias: {
+        '/model': '/model/README.md',
+        '/knowledge': '/knowledge/README.md',
+        '/skills': '/skills/README.md',
+        '/modules': '/modules/README.md',
+        '/runtime': '/runtime/README.md'
+      },
+      
+      // Tabs plugin config
+      tabs: {
+        persist: true,
+        sync: true,
+        theme: 'classic',
+        tabComments: true,
+        tabHeadings: true
+      }
+    }
+  </script>
+  
+  <!-- Docsify core -->
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/docsify.min.js"></script>
+  
+  <!-- Plugins -->
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-copy-code@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify-pagination@2/dist/docsify-pagination.min.js"></script>
+  
+  <!-- Syntax highlighting -->
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-java.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-yaml.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-markdown.min.js"></script>
+  
+  <!-- Mermaid diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: false });
+    window.$docsify.markdown = {
+      renderer: {
+        code: function(code, lang) {
+          if (lang === 'mermaid') {
+            return '<div class="mermaid">' + code + '</div>';
+          }
+          return this.origin.code.apply(this, arguments);
+        }
+      }
+    };
+  </script>
+</body>
+</html>
