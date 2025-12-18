@@ -8,7 +8,8 @@
 * **Model** 
   * [Model Overview](model/README.md)
   * [Enablement Model v1.6](model/ENABLEMENT-MODEL-v1.6.md)
-  * [System Prompt](model/SYSTEM-PROMPT.md)
+  * [Consumer Prompt](model/CONSUMER-PROMPT.md)
+  * [Author Prompt](model/AUTHOR-PROMPT.md)
   * [Executive Brief](model/ENABLEMENT-EXECUTIVE-BRIEF.md)
   * [Technical Guide](model/ENABLEMENT-TECHNICAL-GUIDE.md)
 
@@ -27,6 +28,7 @@
     * [ERI Guide](model/standards/authoring/ERI.md)
     * [Module Guide](model/standards/authoring/MODULE.md)
     * [Skill Guide](model/standards/authoring/SKILL.md)
+    * [Flow Guide](model/standards/authoring/FLOW.md)
     * [Validator Guide](model/standards/authoring/VALIDATOR.md)
 
 * **Knowledge Base**

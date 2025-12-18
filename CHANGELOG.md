@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.1] - 2025-12-18
+
+### 🎭 Two-Role Model
+
+Formalized separation of Consumer and Author interaction roles.
+
+#### Added
+
+**New Documents**
+- `model/AUTHOR-PROMPT.md` - System prompt for C4E authoring sessions
+- `model/standards/authoring/FLOW.md` - Authoring guide for execution flows
+
+#### Changed
+
+**Renamed**
+- `model/SYSTEM-PROMPT.md` → `model/CONSUMER-PROMPT.md` (consistent nomenclature)
+
+**Updated**
+- `model/README.md` v5.1 - Documents two-role model
+- `model/standards/authoring/README.md` v2.2 - Added FLOW.md
+- `_sidebar.md` - Updated navigation with new prompts
+- All references to SYSTEM-PROMPT.md updated
+
+#### Two Roles
+
+| Role | Prompt | Purpose |
+|------|--------|---------|
+| CONSUMER | `CONSUMER-PROMPT.md` | Use skills to produce SDLC outputs |
+| AUTHOR | `AUTHOR-PROMPT.md` | Create/evolve model and knowledge assets |
+
+---
+
 ## [2.2.0] - 2025-12-17
 
 ### 🧠 Model Philosophy Revision
@@ -16,7 +48,7 @@ Major revision of discovery and execution philosophy.
 #### Added
 
 **New Documents**
-- `model/SYSTEM-PROMPT.md` - Agent context specification
+- `model/CONSUMER-PROMPT.md` - Consumer agent system prompt (was SYSTEM-PROMPT.md)
 - `runtime/discovery/discovery-guidance.md` - Interpretive discovery guidance
 
 #### Changed

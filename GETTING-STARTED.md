@@ -254,7 +254,8 @@ enablement-2.0/
 ├── model/                          ← META-MODEL
 │   ├── README.md                   ← Model overview
 │   ├── ENABLEMENT-MODEL-v1.6.md    ← ⭐ Master document
-│   ├── SYSTEM-PROMPT.md            ← Agent context specification
+│   ├── CONSUMER-PROMPT.md          ← Consumer agent system prompt
+│   ├── AUTHOR-PROMPT.md            ← Author/C4E system prompt
 │   ├── ENABLEMENT-EXECUTIVE-BRIEF.md  ← For executives
 │   ├── ENABLEMENT-TECHNICAL-GUIDE.md  ← For architects
 │   │
