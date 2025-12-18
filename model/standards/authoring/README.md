@@ -183,17 +183,18 @@ The **MODULE.md** guide clarifies:
 The **FLOW.md** guide is critical for maintaining consistency:
 
 1. **Execution flows define HOW skills execute** - Each skill type needs a documented flow
-2. **SYSTEM-PROMPT.md must be updated** - When adding a new flow, the agent context must reflect it
+2. **CONSUMER-PROMPT.md must be updated** - When adding a new flow, the agent context must reflect it
 3. **Post-creation checklist** - FLOW.md includes mandatory steps to update related documents
 
-**⚠️ Creating a flow without updating SYSTEM-PROMPT.md will break the agent's ability to discover and execute the new skill type.**
+**⚠️ Creating a flow without updating CONSUMER-PROMPT.md will break the agent's ability to discover and execute the new skill type.**
 
 ---
 
 ## Related Documents
 
 - [../../ENABLEMENT-MODEL-v1.6.md](../../ENABLEMENT-MODEL-v1.6.md) - Master model document
-- [../../SYSTEM-PROMPT.md](../../SYSTEM-PROMPT.md) - Agent context specification
+- [../../CONSUMER-PROMPT.md](../../CONSUMER-PROMPT.md) - Consumer agent system prompt
+- [../../AUTHOR-PROMPT.md](../../AUTHOR-PROMPT.md) - Author system prompt
 - [../ASSET-STANDARDS-v1.3.md](../ASSET-STANDARDS-v1.3.md) - Naming conventions and directory structure
 - [../validation/](../validation/) - Validation system architecture
 - [../traceability/](../traceability/) - Traceability model and profiles

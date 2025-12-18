@@ -111,9 +111,9 @@ Every execution flow document MUST include:
 
 > ⚠️ **CRITICAL:** After creating a new execution flow, you MUST complete these steps.
 
-### 1. Update SYSTEM-PROMPT.md
+### 1. Update CONSUMER-PROMPT.md
 
-Location: `model/SYSTEM-PROMPT.md`
+Location: `model/CONSUMER-PROMPT.md`
 
 Update the **Domain-Specific Execution** table:
 
@@ -161,7 +161,7 @@ Before considering the flow complete:
 - [ ] Execution philosophy is clearly stated
 - [ ] Step-by-step flow is documented
 - [ ] Error handling is defined
-- [ ] **SYSTEM-PROMPT.md updated** ← Don't forget!
+- [ ] **CONSUMER-PROMPT.md updated** ← Don't forget!
 - [ ] **DOMAIN.md updated** ← Don't forget!
 - [ ] At least one example skill listed
 
@@ -188,7 +188,7 @@ See `runtime/flows/code/ADD.md` for a complete example of atomic execution flow.
 
 | Mistake | Impact | Prevention |
 |---------|--------|------------|
-| Not updating SYSTEM-PROMPT.md | Agent doesn't know flow exists | Use checklist above |
+| Not updating CONSUMER-PROMPT.md | Agent doesn't know flow exists | Use checklist above |
 | Missing execution philosophy | Unclear how to execute | Always start with philosophy |
 | No ASCII flow diagram | Hard to understand sequence | Include visual representation |
 | No module resolution | Agent can't map features to modules | Include resolution table |
@@ -197,7 +197,7 @@ See `runtime/flows/code/ADD.md` for a complete example of atomic execution flow.
 
 ## Related Documents
 
-- `model/SYSTEM-PROMPT.md` - Must be updated when adding flows
+- `model/CONSUMER-PROMPT.md` - Must be updated when adding flows
 - `model/domains/{domain}/DOMAIN.md` - Must list skill types
 - `authoring/SKILL.md` - Skills reference flows
 - `authoring/VALIDATOR.md` - Flows define validation requirements

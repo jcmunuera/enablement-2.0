@@ -1,8 +1,8 @@
-# SYSTEM-PROMPT.md
+# CONSUMER-PROMPT.md
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Date:** 2025-12-18  
-**Purpose:** System prompt specification for Enablement 2.0 agents
+**Purpose:** System prompt for consumer agents executing skills
 
 ---
 

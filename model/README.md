@@ -6,11 +6,26 @@
 
 This directory contains the **system definition** for Enablement 2.0:
 - Master model document
-- Agent context specification
+- Agent context specifications (Consumer and Author roles)
 - Asset standards
 - Authoring guides
 - Domain definitions
 - Executive and technical overviews
+
+## Two Interaction Roles
+
+The platform supports two distinct interaction roles:
+
+| Role | Purpose | Prompt Document | Users |
+|------|---------|-----------------|-------|
+| **CONSUMER** | Use skills to produce SDLC outputs | `CONSUMER-PROMPT.md` | Developers, Solution Architects, Engineering Portal |
+| **AUTHOR** | Create/evolve model and knowledge assets | `AUTHOR-PROMPT.md` | C4E Team (platform owners) |
+
+### Consumer Role
+Executes existing skills to generate code, designs, reports, etc. The agent follows discovery → skill selection → execution flows.
+
+### Author Role  
+Creates new knowledge assets (ADRs, ERIs, Modules, Skills, Flows, etc.) following authoring guides. Must always consult `model/standards/authoring/` before creating any asset.
 
 ## Structure
 
@@ -20,7 +35,8 @@ model/
 │
 ├── ENABLEMENT-MODEL-v1.6.md           # ⭐ Master document (current)
 ├── ENABLEMENT-MODEL-v1.5.md           # Previous version (reference)
-├── SYSTEM-PROMPT.md                   # Agent context specification
+├── CONSUMER-PROMPT.md                 # Consumer agent system prompt
+├── AUTHOR-PROMPT.md                   # ⭐ Author/C4E system prompt (NEW)
 ├── ENABLEMENT-EXECUTIVE-BRIEF.md      # Executive summary
 ├── ENABLEMENT-TECHNICAL-GUIDE.md      # Technical architecture
 │
@@ -32,6 +48,7 @@ model/
 │   │   ├── ERI.md                     # ERI authoring guide
 │   │   ├── MODULE.md                  # Module authoring guide (v1.7)
 │   │   ├── SKILL.md                   # Skill authoring guide (v2.3) ⭐
+│   │   ├── FLOW.md                    # Flow authoring guide (v1.0) ⭐
 │   │   ├── CAPABILITY.md              # Capability authoring guide
 │   │   └── VALIDATOR.md               # Validator authoring guide
 │   ├── validation/                    # Validation standards
@@ -60,13 +77,23 @@ model/
 | Document | Audience | Purpose |
 |----------|----------|---------|
 | **ENABLEMENT-MODEL-v1.6.md** | All | Complete system specification |
-| **SYSTEM-PROMPT.md** | Developers | Agent context and behavior |
+| **CONSUMER-PROMPT.md** | Consumer agents | System prompt for skill execution |
+| **AUTHOR-PROMPT.md** | C4E Team | System prompt for authoring sessions |
 | **ENABLEMENT-EXECUTIVE-BRIEF.md** | Leadership | Business value, ROI |
 | **ENABLEMENT-TECHNICAL-GUIDE.md** | Architects | Technical architecture |
-| **standards/ASSET-STANDARDS-v1.3.md** | Developers | Naming, structure |
-| **standards/authoring/*.md** | Developers | How to create assets |
+| **standards/ASSET-STANDARDS-v1.3.md** | All | Naming, structure |
+| **standards/authoring/*.md** | Authors | How to create assets |
 
-## What's New in v1.6
+## What's New in v1.6.1
+
+| Change | Description |
+|--------|-------------|
+| **AUTHOR-PROMPT.md** | New system prompt for C4E authoring sessions |
+| **CONSUMER-PROMPT.md** | Renamed from SYSTEM-PROMPT.md, refactored |
+| **FLOW.md authoring guide** | How to create execution flows |
+| **Two-role model** | Clear separation of Consumer vs Author prompts |
+
+### Previous (v1.6)
 
 | Change | Description |
 |--------|-------------|
@@ -85,10 +112,16 @@ model/
 2. `ENABLEMENT-TECHNICAL-GUIDE.md`
 3. `standards/ASSET-STANDARDS-v1.3.md`
 
-### For Developers (2-4 hours)
+### For Developers / Consumers (2-4 hours)
 1. `ENABLEMENT-MODEL-v1.6.md` (sections 1-5, 8-10)
-2. `standards/ASSET-STANDARDS-v1.3.md`
-3. `standards/authoring/{asset-type}.md`
+2. `CONSUMER-PROMPT.md` (understand how agents work)
+3. `standards/ASSET-STANDARDS-v1.3.md`
+
+### For C4E / Authors (2-4 hours)
+1. `ENABLEMENT-MODEL-v1.6.md` (full document)
+2. `AUTHOR-PROMPT.md` ⭐ (load at start of every authoring session)
+3. `standards/authoring/README.md`
+4. `standards/authoring/{asset-type}.md` (as needed)
 
 ## Related Directories
 
@@ -107,5 +140,5 @@ Documents include version in filename:
 
 ---
 
-**Last Updated:** 2025-12-17  
-**Version:** 5.0
+**Last Updated:** 2025-12-18  
+**Version:** 5.1
