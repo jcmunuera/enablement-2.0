@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.0] - 2025-12-19
+
+### 🚀 Scalable Discovery
+
+Major restructuring for scalable skill discovery supporting 200+ skills.
+
+#### Added
+
+**New Files**
+- `runtime/discovery/skill-index.yaml` - Pre-computed index for efficient skill discovery
+- `skills/code/README.md` - CODE domain skills overview with layer explanation
+- `model/standards/ASSET-STANDARDS-v1.4.md` - Updated asset standards
+
+**Layer Taxonomy (CODE Domain)**
+
+| Layer | Name | Technologies |
+|-------|------|--------------|
+| `soe` | System of Engagement | Angular, React, Vue |
+| `soi` | System of Integration | Java Spring, Node.js |
+| `sor` | System of Record | COBOL, CICS, DB2 |
+
+#### Changed
+
+**Skill Structure**
+- Skills now organized: `skills/{domain}/{layer}/skill-{NNN}-{name}/`
+- Naming simplified: domain and layer implicit in path
+- Existing skills migrated to `skills/code/soi/`
+
+**Updated Documents**
+- `discovery-guidance.md` v3.0 - Layer-based discovery process
+- `CONSUMER-PROMPT.md` v1.3 - Layer identification step added
+- `authoring/SKILL.md` v2.4 - Hierarchical structure, index registration
+
+**Migrated Skills**
+
+| Before | After |
+|--------|-------|
+| `skills/skill-code-001-add-circuit-breaker-*` | `skills/code/soi/skill-001-circuit-breaker-*` |
+| `skills/skill-code-020-generate-microservice-*` | `skills/code/soi/skill-020-microservice-*` |
+
+#### Discovery Optimization
+
+```
+Before: Agent reads ALL skill OVERVIEW.md files (O(n))
+After:  Agent queries skill-index.yaml by layer, then reads filtered candidates only
+```
+
+With 200 skills across 3 layers, this reduces candidates from 200 to ~60-70 per layer.
+
+---
+
 ## [2.2.1] - 2025-12-18
 
 ### 🎭 Two-Role Model

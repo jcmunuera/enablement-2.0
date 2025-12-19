@@ -1,7 +1,7 @@
 # CONSUMER-PROMPT.md
 
-**Version:** 1.2  
-**Date:** 2025-12-18  
+**Version:** 1.3  
+**Date:** 2025-12-19  
 **Purpose:** System prompt for consumer agents executing skills
 
 ---
@@ -72,16 +72,32 @@ IMPORTANT: Do not match keywords mechanically. "Generate" does not always mean C
 
 Consult the Discovery Guidance section in each `model/domains/{domain}/DOMAIN.md` for specific signals.
 
-### Step 3: Skill Selection
-Once you identify the domain:
-1. List available skills in that domain: `skills/skill-{domain}-*/`
-2. Read OVERVIEW.md of candidate skills
-3. Match user intent with skill purpose
-4. Select the best match
+### Step 3: Layer Identification (CODE Domain Only)
+For CODE domain, identify the architectural layer:
+
+| Layer | Name | Signals |
+|-------|------|---------|
+| `soe` | System of Engagement | frontend, angular, react, UI, component, page |
+| `soi` | System of Integration | microservice, API, REST, spring, nodejs, service |
+| `sor` | System of Record | mainframe, COBOL, CICS, DB2, batch, program |
+
+Use signals from `runtime/discovery/skill-index.yaml` to identify the layer.
+If unclear, ask: "¿Es para frontend (SoE), microservicios/APIs (SoI), o mainframe (SoR)?"
+
+### Step 4: Skill Selection (Using Index)
+Use `runtime/discovery/skill-index.yaml` to filter candidates:
+
+1. Query the index: `domains.{domain}.skills_by_layer.{layer}`
+2. Get filtered candidate list (not all skills, just layer-specific)
+3. Read OVERVIEW.md ONLY for filtered candidates
+4. Match user intent with skill purpose
+5. Select the best match
+
+This reduces search space significantly (e.g., from 200+ skills to ~10-20).
 
 If uncertain between multiple skills, ask the user.
 
-### Step 4: Multi-Domain Detection
+### Step 5: Multi-Domain Detection
 Some requests span multiple domains:
 - "Analyze and fix" → QA + CODE
 - "Design and implement" → DESIGN + CODE
@@ -161,12 +177,15 @@ Every output must include traceability:
 
 Create a manifest.json in `.enablement/` directory with this information.
 
-See `model/standards/ASSET-STANDARDS-v1.3.md` for manifest schema.
+See `model/standards/ASSET-STANDARDS-v1.4.md` for manifest schema.
 
 ## HANDLING UNCERTAINTY
 
 ### When domain is unclear:
 Ask: "Your request could involve [option A] or [option B]. Which do you need?"
+
+### When layer is unclear (CODE domain):
+Ask: "¿Es para frontend (SoE), microservicios/APIs (SoI), o mainframe (SoR)?"
 
 ### When missing information:
 Ask for specifics based on what the skill requires. Consult the skill's SKILL.md for required inputs.
@@ -189,10 +208,19 @@ enablement-2.0/
 │   │   ├── qa/DOMAIN.md
 │   │   └── governance/DOMAIN.md
 │   └── standards/      # Asset standards and authoring guides
-├── skills/              # Executable skills with OVERVIEW.md for discovery
+├── skills/              # Executable skills organized by domain/layer
+│   ├── code/
+│   │   ├── soe/        # System of Engagement (frontend)
+│   │   ├── soi/        # System of Integration (microservices)
+│   │   └── sor/        # System of Record (mainframe)
+│   ├── design/
+│   ├── qa/
+│   └── governance/
 ├── modules/             # Reusable knowledge (templates, validations)
 └── runtime/             # Discovery guidance, flows, validators
     ├── discovery/
+    │   ├── discovery-guidance.md
+    │   └── skill-index.yaml    # ⭐ Index for efficient discovery
     ├── flows/          # Execution flows by domain
     │   ├── code/       # GENERATE.md, ADD.md, etc.
     │   ├── design/     # (Planned)

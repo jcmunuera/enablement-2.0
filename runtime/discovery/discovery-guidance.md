@@ -1,16 +1,18 @@
 # Discovery Guidance
 
-**Version:** 2.0  
-**Date:** 2025-12-17  
-**Replaces:** discovery-rules.md (v1.0)
+**Version:** 3.0  
+**Date:** 2025-12-19  
+**Replaces:** discovery-guidance.md (v2.0)
 
 ---
 
 ## Overview
 
-This document provides **guidance** for the discovery process - how the agent interprets user prompts to identify the appropriate domain and skill. 
+This document provides **guidance** for the discovery process - how the agent interprets user prompts to identify the appropriate domain, layer, and skill. 
 
 > **Important:** Discovery is INTERPRETIVE, not rule-based. The agent uses semantic understanding to match user intent with platform capabilities. There are no IF/THEN rules.
+
+> **New in v3.0:** Layer-based filtering for CODE domain and skill-index.yaml for efficient discovery at scale.
 
 ---
 
@@ -18,20 +20,54 @@ This document provides **guidance** for the discovery process - how the agent in
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    DISCOVERY IS INTERPRETATION                            │
+│                    DISCOVERY IS INTERPRETATION                           │
 ├─────────────────────────────────────────────────────────────────────────┤
 │                                                                          │
 │  The agent:                                                              │
-│  • Understands the FULL semantic context of the user's request           │
-│  • Considers what TYPE OF OUTPUT the user expects                        │
-│  • Matches intent against domain purposes and skill descriptions         │
-│  • Asks for clarification when uncertain                                 │
-│  • Recognizes out-of-scope requests                                      │
+│  • Understands the FULL semantic context of the user's request          │
+│  • Considers what TYPE OF OUTPUT the user expects                       │
+│  • Identifies the LAYER for CODE domain (SoE, SoI, SoR)                 │
+│  • Uses the skill-index.yaml to filter candidates efficiently           │
+│  • Matches intent against skill OVERVIEW.md descriptions                │
+│  • Asks for clarification when uncertain                                │
+│  • Recognizes out-of-scope requests                                     │
 │                                                                          │
 │  The agent does NOT:                                                     │
-│  • Match keywords to domains with IF/THEN rules                          │
-│  • Use pattern matching or regular expressions                           │
-│  • Assume domain based on single words                                   │
+│  • Match keywords to domains with IF/THEN rules                         │
+│  • Use pattern matching or regular expressions                          │
+│  • Assume domain based on single words                                  │
+│  • Read ALL skill OVERVIEW.md files (uses index to filter first)        │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Discovery Process (Updated)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         DISCOVERY FLOW                                   │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  1. SCOPE         Is this SDLC-related?                                 │
+│        │          └─ No → Inform user, stop                             │
+│        ▼                                                                 │
+│  2. DOMAIN        What type of output? (CODE/DESIGN/QA/GOVERNANCE)      │
+│        │                                                                 │
+│        ▼                                                                 │
+│  3. LAYER         (CODE only) SoE / SoI / SoR?                          │
+│        │          └─ Use signals from skill-index.yaml                  │
+│        ▼                                                                 │
+│  4. INDEX         Query skill-index.yaml for candidates                 │
+│     LOOKUP        └─ domains.{domain}.skills_by_layer.{layer}           │
+│        │                                                                 │
+│        ▼                                                                 │
+│  5. SEMANTIC      Read OVERVIEW.md of filtered candidates only          │
+│     MATCH         └─ Select best match                                  │
+│        │                                                                 │
+│        ▼                                                                 │
+│  6. EXECUTE       Load skill, determine flow, execute                   │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -151,20 +187,113 @@ Interpretation:
 
 ---
 
+## Layer Identification (CODE Domain)
+
+For CODE domain requests, identify the architectural layer before skill selection.
+
+### The Three Layers
+
+| Layer | Name | Description | Technologies |
+|-------|------|-------------|--------------|
+| **SoE** | System of Engagement | UI, digital channels, presentation | Angular, React, Vue, Microfrontends |
+| **SoI** | System of Integration | Microservices, APIs, orchestration, business logic | Java Spring, Node.js, Quarkus |
+| **SoR** | System of Record | Core systems, mainframe, master data | COBOL, CICS, DB2, JCL |
+
+### Layer Signals
+
+The agent uses signals from `skill-index.yaml` to identify the layer:
+
+**SoE Signals:**
+- Keywords: frontend, angular, react, componente, página, UI, formulario, SPA
+- Artifacts: component, page, module, store, template
+
+**SoI Signals:**
+- Keywords: microservicio, API, REST, servicio, spring, nodejs, orquestación, dominio, hexagonal
+- Artifacts: service, controller, endpoint, repository, entity, adapter, port
+
+**SoR Signals:**
+- Keywords: mainframe, COBOL, CICS, DB2, JCL, batch, programa, copybook, Z/OS
+- Artifacts: program, copybook, job, procedure, transaction, cursor
+
+### Layer Examples
+
+**Example 1: Clear SoI**
+```
+User: "Genera un microservicio Customer con Spring Boot"
+
+Layer signals:
+- "microservicio" → SoI keyword
+- "Spring Boot" → SoI technology
+
+→ Layer: SoI
+→ Filter: skills/code/soi/*
+```
+
+**Example 2: Clear SoR**
+```
+User: "Crea un programa COBOL para consulta de clientes en CICS"
+
+Layer signals:
+- "programa COBOL" → SoR keyword
+- "CICS" → SoR technology
+
+→ Layer: SoR
+→ Filter: skills/code/sor/*
+```
+
+**Example 3: Ambiguous Layer**
+```
+User: "Genera una aplicación para gestión de clientes"
+
+Layer signals:
+- "aplicación" → Could be SoE (UI app) or SoI (backend service)
+- No technology specified
+
+→ Layer: UNCLEAR
+→ Ask: "¿Es una aplicación frontend (web/móvil) o un servicio backend?"
+```
+
+---
+
 ## Skill Selection
 
-Once domain is identified, select the specific skill.
+Once domain and layer are identified, select the specific skill using the index.
 
 ### Process
 
-1. **List candidates**: Find skills in `skills/skill-{domain}-*/`
-2. **Read OVERVIEW.md**: Each skill has an OVERVIEW.md with:
-   - Purpose
-   - When to use
-   - When NOT to use
-   - Tags
-3. **Match intent**: Compare user request with skill purposes
-4. **Select best match**: Choose the skill that best fits
+1. **Query index**: Read `runtime/discovery/skill-index.yaml`
+2. **Filter by layer**: Get skills from `domains.{domain}.skills_by_layer.{layer}`
+3. **Optional refinement**: Filter by capability or technology if specified
+4. **Read OVERVIEW.md**: Only for filtered candidates
+5. **Match intent**: Compare user request with skill purposes
+6. **Select best match**: Choose the skill that best fits
+
+### Using skill-index.yaml
+
+```yaml
+# Example: User requests a microservice with Spring Boot
+
+# Step 1: Domain = CODE, Layer = SoI
+# Step 2: Query index
+domains:
+  code:
+    skills_by_layer:
+      soi:
+        - skill-001-circuit-breaker-java-resilience4j
+        - skill-002-retry-java-resilience4j
+        - skill-020-microservice-java-spring
+        # ... only 5 candidates instead of 200+
+
+# Step 3: User wants to "generate" → filter to GENERATE flow skills
+flows:
+  code:
+    GENERATE:
+      skills:
+        - skill-020-microservice-java-spring  # Only 1 candidate!
+
+# Step 4: Read OVERVIEW.md of skill-020
+# Step 5: Confirm match
+```
 
 ### OVERVIEW.md Importance
 
@@ -308,10 +437,23 @@ Discovery can improve over time:
 |--------|----------|
 | **Nature** | Interpretive, not rule-based |
 | **Domain identification** | Based on output type and action intent |
-| **Skill selection** | Read OVERVIEW.md, match purpose |
+| **Layer identification** | SoE/SoI/SoR for CODE domain using signals |
+| **Skill filtering** | Use skill-index.yaml to reduce candidates |
+| **Skill selection** | Read OVERVIEW.md only for filtered candidates |
 | **Ambiguity** | Ask for clarification |
 | **Out of scope** | Inform user, don't attempt |
 | **Multi-domain** | Decompose into sequence |
+
+---
+
+## Related Documents
+
+| Document | Purpose |
+|----------|---------|
+| `runtime/discovery/skill-index.yaml` | Pre-computed index for efficient discovery |
+| `model/domains/{domain}/DOMAIN.md` | Domain-specific discovery signals |
+| `skills/{domain}/{layer}/*/OVERVIEW.md` | Skill descriptions for semantic matching |
+| `model/CONSUMER-PROMPT.md` | Full agent context specification |
 
 ---
 

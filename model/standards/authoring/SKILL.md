@@ -1,9 +1,20 @@
 # Authoring Guide: SKILL
 
-**Version:** 2.2  
-**Last Updated:** 2025-12-16  
+**Version:** 2.4  
+**Last Updated:** 2025-12-19  
 **Asset Type:** Skill  
 **Priority:** CRITICAL
+
+---
+
+## What's New in v2.4
+
+| Change | Description |
+|--------|-------------|
+| **Hierarchical structure** | Skills now at `skills/{domain}/{layer}/skill-{NNN}-{name}/` |
+| **Layer taxonomy** | CODE domain uses SoE/SoI/SoR layers |
+| **Simplified naming** | `skill-{NNN}-{name}` (domain/layer implicit in path) |
+| **Index registration** | Required registration in `skill-index.yaml` |
 
 ---
 
@@ -70,33 +81,62 @@ Do NOT create a Skill for:
 
 ## Directory Structure
 
+Skills are organized hierarchically by domain and layer:
+
 ```
 skills/
-└── skill-{domain}-{NNN}-{type}-{target}-{framework}-{library}/
-    ├── SKILL.md            # Complete specification (required)
-    ├── OVERVIEW.md         # Quick reference (required)
-    ├── README.md           # External-facing documentation (required)
-    ├── prompts/            # AI prompts (required)
-    │   ├── system.md       # System prompt
-    │   ├── user.md         # User prompt template
-    │   └── examples/       # Few-shot examples
-    │       └── *.md
-    └── validation/         # Validation orchestration (required)
-        ├── README.md
-        └── validate.sh     # Main orchestrator
+├── code/
+│   ├── soe/                    # System of Engagement (frontend)
+│   │   └── skill-{NNN}-{name}/
+│   ├── soi/                    # System of Integration (microservices)
+│   │   └── skill-{NNN}-{name}/
+│   └── sor/                    # System of Record (mainframe)
+│       └── skill-{NNN}-{name}/
+├── design/                     # Flat structure (no layers)
+│   └── skill-{NNN}-{name}/
+├── qa/
+│   └── skill-{NNN}-{name}/
+└── governance/
+    └── skill-{NNN}-{name}/
 ```
 
-> **UPDATED in v2.2:** Execution flows are now centralized at domain level in 
-> `domains/{domain}/flows/{TYPE}.md`. Skills reference these flows instead of 
-> having individual EXECUTION-FLOW.md files. See [Section: Execution Flow Reference](#execution-flow-reference).
+### Skill Internal Structure
+
+```
+skill-{NNN}-{name}/
+├── SKILL.md            # Complete specification (required)
+├── OVERVIEW.md         # Quick reference for discovery (required) ⭐
+├── README.md           # External-facing documentation (required)
+├── prompts/            # AI prompts (required)
+│   ├── system.md       # System prompt
+│   ├── user.md         # User prompt template
+│   └── examples/       # Few-shot examples
+│       └── *.md
+└── validation/         # Validation orchestration (required)
+    ├── README.md
+    └── validate.sh     # Main orchestrator
+```
+
+> **UPDATED in v2.4:** Skills are now organized under `skills/{domain}/{layer}/`.
+> For CODE domain, layer is one of: `soe`, `soi`, `sor`.
+> Other domains use flat structure (no layer subdirectory).
+
+### Layer Taxonomy (CODE Domain Only)
+
+| Layer | Name | Description | Technologies |
+|-------|------|-------------|--------------|
+| `soe` | System of Engagement | UI, frontend, digital channels | Angular, React, Vue |
+| `soi` | System of Integration | Microservices, APIs, orchestration | Java Spring, Node.js, Quarkus |
+| `sor` | System of Record | Core systems, mainframe | COBOL, CICS, DB2, JCL |
 
 ## Naming Convention
 
 ```
-skill-{domain}-{NNN}-{type}-{target}-{framework}-{library}
+skills/{domain}/{layer}/skill-{NNN}-{name}/
 ```
 
-- `{domain}`: `code`, `design`, `qa`, `gov`
+- `{domain}`: `code`, `design`, `qa`, `governance`
+- `{layer}`: `soe`, `soi`, `sor` (CODE domain only)
 - `{NNN}`: 3-digit number (unique within domain)
 - `{type}`: Action type (see below)
 - `{target}`: What is acted upon
@@ -979,21 +1019,37 @@ Every generated file MUST include a traceability header:
 
 Before marking a Skill as "Active":
 
+### Structure
+- [ ] Skill is in correct location: `skills/{domain}/{layer}/skill-{NNN}-{name}/`
 - [ ] SKILL.md is complete with all sections
-- [ ] **SKILL.md references appropriate domain skill-type for execution flow**
-- [ ] OVERVIEW.md provides quick reference
+- [ ] SKILL.md references appropriate execution flow
+- [ ] OVERVIEW.md provides quick reference for discovery ⭐
 - [ ] README.md has user-facing documentation
+
+### Prompts
 - [ ] prompts/system.md has role, context, constraints
 - [ ] prompts/user.md has request template
 - [ ] prompts/examples/ has at least one example
+
+### Validation
 - [ ] validation/validate.sh orchestrates all tiers
 - [ ] All referenced modules exist
 - [ ] All referenced validators exist
+
+### Content
 - [ ] Traceability profile is specified
 - [ ] Input schema is defined
 - [ ] Output structure is documented
 - [ ] **Module Resolution section is complete** (for generation skills)
 - [ ] **Every output file traces to a template** (for generation skills)
+
+### Index Registration (REQUIRED) ⭐
+- [ ] Added to `runtime/discovery/skill-index.yaml`:
+  - [ ] `layers.{layer}.skills`
+  - [ ] `domains.{domain}.skills_by_layer.{layer}`
+  - [ ] `capabilities.{capability}.skills` (if applicable)
+  - [ ] `technologies.{tech}.skills` (if applicable)
+  - [ ] `flows.{domain}.{FLOW}.skills`
 
 ---
 
@@ -1015,7 +1071,8 @@ Module              Validator           Traceability
 
 ## Related
 
-- `model/standards/ASSET-STANDARDS-v1.3.md` - Skill structure specification
+- `model/standards/ASSET-STANDARDS-v1.4.md` - Skill structure specification
+- `runtime/discovery/skill-index.yaml` - Skill index for discovery
 - `model/standards/traceability/` - Traceability profiles
 - `authoring/MODULE.md` - How to create modules
 - `authoring/VALIDATOR.md` - How to create validators

@@ -1,10 +1,21 @@
 # ASSET-STANDARDS.md
 
-**Version:** 1.3  
-**Date:** 2025-11-28  
+**Version:** 1.4  
+**Date:** 2025-12-19  
 **Status:** Active  
 **Purpose:** Define mandatory structure and content for all Enablement 2.0 knowledge base assets  
-**Master Document:** See `ENABLEMENT-MODEL-v1.3.md` for complete conceptual model
+**Master Document:** See `ENABLEMENT-MODEL-v1.6.md` for complete conceptual model
+
+---
+
+## What's New in v1.4
+
+| Change | Description |
+|--------|-------------|
+| **Skill structure** | Skills now organized by domain and layer: `skills/{domain}/{layer}/` |
+| **Layer taxonomy** | CODE domain uses SoE/SoI/SoR layers |
+| **Skill naming** | Simplified: `skill-{NNN}-{name}` (domain/layer implicit in path) |
+| **Skill index** | New `runtime/discovery/skill-index.yaml` for efficient discovery |
 
 ---
 
@@ -18,11 +29,10 @@ This document defines the **mandatory standards** for creating and maintaining a
 |------|---------|----------|
 | **ADR** | Architectural Decision Record | `/knowledge/ADRs/adr-XXX-{topic}/` |
 | **ERI** | Enterprise Reference Implementation | `/knowledge/ERIs/eri-{domain}-XXX-{pattern}-{framework}-{library}/` |
-| **Module** | Reusable content templates | `/knowledge/skills/modules/mod-XXX-{pattern}-{framework}-{library}/` |
-| **Skill** | Executable capability | `/knowledge/skills/skill-{domain}-{NNN}-{type}-{target}-{framework}-{library}/` |
-| **Capability** | High-level technical objective grouping | `/knowledge/capabilities/{capability_name}.md` |
-| **Pattern** | Design pattern documentation | `/knowledge/patterns/ptr-XXX-{pattern}/` |
-| **Validator** | Artifact validation components | `/knowledge/validators/tier-{N}-{category}/{name}/` |
+| **Module** | Reusable content templates | `/modules/mod-{domain}-{NNN}-{pattern}-{framework}-{library}/` |
+| **Skill** | Executable capability | `/skills/{domain}/{layer}/skill-{NNN}-{name}/` |
+| **Capability** | High-level technical objective grouping | `/model/domains/{domain}/capabilities/{capability}.md` |
+| **Validator** | Artifact validation components | `/runtime/validators/tier-{N}-{category}/{name}/` |
 
 ---
 
@@ -495,10 +505,41 @@ Since documents and reports have skill-specific formats, their validation is **n
 
 ## 4. Skill Standard
 
+### Directory Structure
+
+Skills are organized hierarchically by domain and layer:
+
+```
+skills/
+├── README.md                    # Skills overview and layer explanation
+├── code/
+│   ├── README.md               # CODE domain skills, explains SoE/SoI/SoR
+│   ├── soe/                    # System of Engagement (frontend)
+│   │   └── skill-{NNN}-{name}/
+│   ├── soi/                    # System of Integration (microservices)
+│   │   └── skill-{NNN}-{name}/
+│   └── sor/                    # System of Record (mainframe)
+│       └── skill-{NNN}-{name}/
+├── design/                     # DESIGN domain (flat for now)
+│   └── skill-{NNN}-{name}/
+├── qa/                         # QA domain (flat for now)
+│   └── skill-{NNN}-{name}/
+└── governance/                 # GOVERNANCE domain (flat for now)
+    └── skill-{NNN}-{name}/
+```
+
+### Layer Taxonomy (CODE Domain)
+
+| Layer | Name | Description |
+|-------|------|-------------|
+| `soe` | System of Engagement | UI, digital channels, frontend (Angular, React, Vue) |
+| `soi` | System of Integration | Microservices, APIs, orchestration (Java Spring, Node.js) |
+| `sor` | System of Record | Core systems, mainframe (COBOL, CICS, DB2) |
+
 ### Naming Convention
 
 ```
-skill-{domain}-{NNN}-{type}-{target}-{framework}-{library}/
+skills/{domain}/{layer}/skill-{NNN}-{name}/
 ├── OVERVIEW.md          # Discovery document (required)
 ├── SKILL.md             # Full specification (required)
 ├── README.md            # Quick start guide (required)
@@ -518,23 +559,63 @@ skill-{domain}-{NNN}-{type}-{target}-{framework}-{library}/
 
 | Component | Description | Values |
 |-----------|-------------|--------|
-| `{domain}` | Skill domain | `code`, `design`, `qa`, `gov` |
+| `{domain}` | Skill domain (directory level 1) | `code`, `design`, `qa`, `governance` |
+| `{layer}` | Architectural layer (directory level 2, CODE only) | `soe`, `soi`, `sor` |
 | `{NNN}` | Sequential number within domain | `001`-`999` |
-| `{type}` | Action type | `add`, `remove`, `generate`, `transform`, `analyze`, etc. |
-| `{target}` | What is generated/modified | `circuit-breaker`, `microservice`, etc. |
-| `{framework}` | Main framework | `java-spring`, `nodejs-express`, etc. |
-| `{library}` | Specific library | `resilience4j`, `opossum`, etc. |
+| `{name}` | Descriptive name (kebab-case) | `circuit-breaker-java-resilience4j`, `microservice-java-spring` |
 
 **Examples:**
-- `skill-code-001-add-circuit-breaker-java-resilience4j/`
-- `skill-code-020-generate-microservice-java-spring/`
-- `skill-design-001-architecture-microservice/`
-- `skill-qa-001-analyze-architecture-compliance/`
+- `skills/code/soi/skill-001-circuit-breaker-java-resilience4j/`
+- `skills/code/soi/skill-020-microservice-java-spring/`
+- `skills/code/soe/skill-040-microfrontend-angular/`
+- `skills/code/sor/skill-050-cobol-cics-program/`
+- `skills/design/skill-001-c4-diagram/`
+- `skills/qa/skill-001-code-quality-analysis/`
 
-**Note:** The `checks/` subdirectory is no longer used. Skills now orchestrate validations from:
-- `knowledge/validators/tier-1-universal/`
-- `knowledge/validators/tier-2-technology/{category}/{stack}/`
-- `knowledge/skills/modules/{module}/validation/`
+### Skill Index Registration (REQUIRED)
+
+When creating a new skill, you MUST register it in `runtime/discovery/skill-index.yaml`:
+
+1. Add to `layers.{layer}.skills` list
+2. Add to `domains.{domain}.skills_by_layer.{layer}` list
+3. Add to `capabilities.{capability}.skills` if applicable
+4. Add to `technologies.{tech}.skills` if applicable
+5. Add to `flows.{domain}.{FLOW}.skills` based on execution flow
+
+**Example registration for a new SOI skill:**
+
+```yaml
+# In skill-index.yaml
+
+layers:
+  soi:
+    skills:
+      - skill-001-circuit-breaker-java-resilience4j
+      - skill-NEW-your-new-skill           # Add here
+
+domains:
+  code:
+    skills_by_layer:
+      soi:
+        - skill-001-circuit-breaker-java-resilience4j
+        - skill-NEW-your-new-skill         # Add here
+
+capabilities:
+  resilience:                              # If applicable
+    skills:
+      - skill-NEW-your-new-skill           # Add here
+
+technologies:
+  java-spring:                             # If applicable
+    skills:
+      - skill-NEW-your-new-skill           # Add here
+
+flows:
+  code:
+    ADD:                                   # Based on flow type
+      skills:
+        - skill-NEW-your-new-skill         # Add here
+```
 
 ### Type-Specific Example Structure
 

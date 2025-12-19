@@ -1,0 +1,389 @@
+# Skill Index
+#
+# Version: 1.0
+# Date: 2025-12-19
+# Purpose: Pre-computed index for O(1) skill discovery
+#
+# This index enables efficient skill discovery by providing multiple
+# taxonomies (layer, domain, capability, technology) that the agent
+# can query to reduce the search space before reading OVERVIEW.md files.
+#
+# MAINTENANCE: When adding a new skill, register it in ALL applicable
+# sections of this index. See model/standards/authoring/SKILL.md for details.
+
+---
+
+# =============================================================================
+# LAYERS
+# =============================================================================
+# Layers represent the architectural tier where the skill operates.
+# This is the PRIMARY filter for CODE domain skills.
+#
+# Layer identification signals are documented below each layer.
+# The agent uses these signals to identify the layer from user requests.
+
+layers:
+  soe:
+    name: "System of Engagement"
+    description: "UI, digital channels, user experience, presentation layer"
+    technologies:
+      - angular
+      - react
+      - vue
+      - microfrontend
+      - web-components
+    signals:
+      keywords:
+        - frontend
+        - front-end
+        - angular
+        - react
+        - vue
+        - microfrontend
+        - micro-frontend
+        - componente
+        - component
+        - página
+        - page
+        - UI
+        - interfaz
+        - pantalla
+        - screen
+        - formulario
+        - form
+        - SPA
+        - web app
+      artifacts:
+        - component
+        - page
+        - module
+        - store
+        - reducer
+        - template
+        - style
+        - directive
+    skills: []
+    # Future skills:
+    # - skill-040-microfrontend-angular
+    # - skill-041-microfrontend-react
+
+  soi:
+    name: "System of Integration"
+    description: "Microservices, APIs, orchestration, business logic, middleware"
+    technologies:
+      - java-spring
+      - java-quarkus
+      - nodejs-express
+      - nodejs-nestjs
+      - kotlin
+    signals:
+      keywords:
+        - microservicio
+        - microservice
+        - API
+        - REST
+        - servicio
+        - service
+        - backend
+        - spring
+        - springboot
+        - spring boot
+        - quarkus
+        - nodejs
+        - node
+        - express
+        - nestjs
+        - orquestación
+        - orchestration
+        - integración
+        - integration
+        - dominio
+        - domain
+        - hexagonal
+        - kafka
+        - rabbitmq
+        - event
+        - evento
+      artifacts:
+        - service
+        - controller
+        - endpoint
+        - repository
+        - entity
+        - dto
+        - adapter
+        - port
+        - use-case
+        - aggregate
+    skills:
+      - code/soi/skill-001-circuit-breaker-java-resilience4j
+      - code/soi/skill-020-microservice-java-spring
+      # Future skills (not yet created):
+      # - code/soi/skill-002-retry-java-resilience4j
+      # - code/soi/skill-003-timeout-java-resilience4j
+      # - code/soi/skill-004-rate-limiter-java-resilience4j
+
+  sor:
+    name: "System of Record"
+    description: "Core systems, mainframe, master data, COBOL/CICS/DB2 on Z/OS"
+    technologies:
+      - cobol
+      - cics
+      - db2
+      - jcl
+      - vsam
+      - ims
+    signals:
+      keywords:
+        - mainframe
+        - COBOL
+        - CICS
+        - DB2
+        - JCL
+        - batch
+        - programa
+        - program
+        - copybook
+        - Z/OS
+        - zOS
+        - IBM
+        - transacción
+        - transaction
+        - VSAM
+        - IMS
+        - core
+        - legacy
+        - host
+      artifacts:
+        - program
+        - copybook
+        - job
+        - procedure
+        - transaction
+        - map
+        - BMS
+        - cursor
+        - DCLGEN
+    skills: []
+    # Future skills:
+    # - skill-050-cobol-cics-program
+    # - skill-051-cobol-batch-program
+    # - skill-052-jcl-job
+
+# =============================================================================
+# DOMAINS
+# =============================================================================
+# Domains represent the type of SDLC activity.
+# For CODE domain, layer is the primary sub-classification.
+# Other domains may have their own sub-classifications in the future.
+
+domains:
+  code:
+    description: "Source code generation and transformation"
+    layers: [soe, soi, sor]
+    skills_by_layer:
+      soe: []
+      soi:
+        - code/soi/skill-001-circuit-breaker-java-resilience4j
+        - code/soi/skill-020-microservice-java-spring
+      sor: []
+
+  design:
+    description: "Architecture design and documentation"
+    skills: []
+    # Future skills:
+    # - skill-001-c4-diagram
+    # - skill-002-sequence-diagram
+
+  qa:
+    description: "Quality analysis and validation"
+    skills: []
+    # Future skills:
+    # - skill-001-code-quality-analysis
+    # - skill-002-security-scan
+
+  governance:
+    description: "Compliance and policy verification"
+    skills: []
+    # Future skills:
+    # - skill-001-compliance-report
+    # - skill-002-adr-validation
+
+# =============================================================================
+# CAPABILITIES
+# =============================================================================
+# Cross-cutting capabilities that may span multiple skills.
+# Useful for requests like "add resilience" without specifying which pattern.
+
+capabilities:
+  resilience:
+    description: "Fault tolerance patterns (circuit breaker, retry, timeout, rate limiter)"
+    skills:
+      - code/soi/skill-001-circuit-breaker-java-resilience4j
+      # Future:
+      # - code/soi/skill-002-retry-java-resilience4j
+      # - code/soi/skill-003-timeout-java-resilience4j
+      # - code/soi/skill-004-rate-limiter-java-resilience4j
+
+  persistence:
+    description: "Data persistence patterns (JPA, System API integration)"
+    skills: []
+    # Note: persistence is handled by modules within generate skills
+    # No standalone ADD skills for persistence yet
+
+  observability:
+    description: "Logging, metrics, tracing, correlation"
+    skills: []
+    # Future: skill for adding observability to existing code
+
+  security:
+    description: "Authentication, authorization, secure coding"
+    skills: []
+    # Future: skill for adding security patterns
+
+  api-design:
+    description: "API design patterns, OpenAPI, contracts"
+    skills: []
+    # Future: skills for API-first development
+
+# =============================================================================
+# TECHNOLOGIES
+# =============================================================================
+# Technology-specific grouping for filtering when technology is explicit.
+
+technologies:
+  java-spring:
+    description: "Java with Spring Boot framework"
+    layer: soi
+    skills:
+      - code/soi/skill-001-circuit-breaker-java-resilience4j
+      - code/soi/skill-020-microservice-java-spring
+
+  java-quarkus:
+    description: "Java with Quarkus framework"
+    layer: soi
+    skills: []
+
+  nodejs-express:
+    description: "Node.js with Express framework"
+    layer: soi
+    skills: []
+
+  angular:
+    description: "Angular framework for SPA/microfrontends"
+    layer: soe
+    skills: []
+
+  react:
+    description: "React library for UI components"
+    layer: soe
+    skills: []
+
+  cobol:
+    description: "COBOL on Z/OS mainframe"
+    layer: sor
+    skills: []
+
+  cics:
+    description: "CICS transaction processing"
+    layer: sor
+    skills: []
+
+# =============================================================================
+# EXECUTION FLOWS
+# =============================================================================
+# Maps skills to their execution flows.
+# This helps the agent know which flow to read after selecting a skill.
+
+flows:
+  code:
+    GENERATE:
+      description: "Holistic generation - create complete artifacts"
+      flow_document: "runtime/flows/code/GENERATE.md"
+      skills:
+        - code/soi/skill-020-microservice-java-spring
+    ADD:
+      description: "Atomic addition - add specific capability to existing code"
+      flow_document: "runtime/flows/code/ADD.md"
+      skills:
+        - code/soi/skill-001-circuit-breaker-java-resilience4j
+        # Future:
+        # - code/soi/skill-002-retry-java-resilience4j
+        # - code/soi/skill-003-timeout-java-resilience4j
+        # - code/soi/skill-004-rate-limiter-java-resilience4j
+    REFACTOR:
+      description: "Transform existing code structure"
+      flow_document: "runtime/flows/code/REFACTOR.md"
+      skills: []
+    MIGRATE:
+      description: "Migrate between technologies or versions"
+      flow_document: "runtime/flows/code/MIGRATE.md"
+      skills: []
+    REMOVE:
+      description: "Remove capabilities from existing code"
+      flow_document: "runtime/flows/code/REMOVE.md"
+      skills: []
+
+# =============================================================================
+# DISCOVERY ALGORITHM
+# =============================================================================
+# Recommended discovery process using this index:
+#
+# 1. SCOPE: Validate request is SDLC-related
+#
+# 2. DOMAIN: Identify domain (CODE, DESIGN, QA, GOVERNANCE)
+#    - Based on output type and action intent
+#
+# 3. LAYER (for CODE domain):
+#    - Scan layers[*].signals.keywords for matches
+#    - Scan layers[*].signals.artifacts for matches
+#    - If unclear, ask user: "¿Es para frontend, microservicios, o mainframe?"
+#
+# 4. FILTER:
+#    - Get candidate skills from domains.{domain}.skills_by_layer.{layer}
+#    - Or from layers.{layer}.skills
+#
+# 5. CAPABILITY (optional refinement):
+#    - If user mentions capability (e.g., "resilience"), filter further
+#
+# 6. TECHNOLOGY (optional refinement):
+#    - If user specifies technology, filter further
+#
+# 7. SEMANTIC MATCH:
+#    - Read OVERVIEW.md only for filtered candidates
+#    - Match user intent with skill purpose
+#
+# Example:
+#   User: "Genera un microservicio Java con Spring Boot"
+#   1. SCOPE: SDLC ✓
+#   2. DOMAIN: CODE (output is code)
+#   3. LAYER: SOI (keywords: microservicio, spring boot)
+#   4. FILTER: domains.code.skills_by_layer.soi → 5 skills
+#   5. CAPABILITY: not specified
+#   6. TECHNOLOGY: java-spring → still 5 skills
+#   7. SEMANTIC MATCH: Read 5 OVERVIEW.md → skill-020-microservice-java-spring
+
+# =============================================================================
+# MAINTENANCE NOTES
+# =============================================================================
+# 
+# When adding a new skill:
+# 1. Add to layers.{layer}.skills
+# 2. Add to domains.{domain}.skills_by_layer.{layer}
+# 3. Add to capabilities.{capability}.skills (if applicable)
+# 4. Add to technologies.{tech}.skills
+# 5. Add to flows.{domain}.{FLOW}.skills
+#
+# When adding a new layer:
+# 1. Create new entry in layers section
+# 2. Add layer to domains.code.layers list
+# 3. Add layer to domains.code.skills_by_layer
+#
+# When adding a new capability:
+# 1. Create new entry in capabilities section
+# 2. Add relevant existing skills
+#
+# When adding a new technology:
+# 1. Create new entry in technologies section
+# 2. Add to appropriate layer's technologies list
+# 3. Add relevant existing skills
