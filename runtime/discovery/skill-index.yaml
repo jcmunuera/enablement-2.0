@@ -356,29 +356,51 @@ flows:
 #    - Scan layers[*].signals.artifacts for matches
 #    - If unclear, ask user: "¿Es para frontend, microservicios, o mainframe?"
 #
-# 4. FILTER:
+# 4. FUSION API CHECK (for SoI layer):
+#    **NEW in v2.2** - Before selecting between skill-020 and skill-021:
+#    a) Check if prompt contains "Fusion" + API layer name → skill-021
+#    b) Check if prompt contains API layer WITHOUT "Fusion" → ASK for clarification
+#    c) Check if prompt indicates internal service → skill-020 (no mod-019)
+#    d) Default: ASK for clarification
+#    See skill_metadata.skill-021-api-rest-java-spring.fusion_api_rules for details.
+#
+# 5. FILTER:
 #    - Get candidate skills from domains.{domain}.skills_by_layer.{layer}
 #    - Or from layers.{layer}.skills
 #
-# 5. CAPABILITY (optional refinement):
+# 6. CAPABILITY (optional refinement):
 #    - If user mentions capability (e.g., "resilience"), filter further
 #
-# 6. TECHNOLOGY (optional refinement):
+# 7. TECHNOLOGY (optional refinement):
 #    - If user specifies technology, filter further
 #
-# 7. SEMANTIC MATCH:
+# 8. SEMANTIC MATCH:
 #    - Read OVERVIEW.md only for filtered candidates
 #    - Match user intent with skill purpose
 #
-# Example:
-#   User: "Genera un microservicio Java con Spring Boot"
+# Example 1 (Fusion API):
+#   User: "Genera una Fusion Domain API para Customer"
 #   1. SCOPE: SDLC ✓
 #   2. DOMAIN: CODE (output is code)
+#   3. LAYER: SOI (keywords: API)
+#   4. FUSION CHECK: Contains "Fusion" + "Domain" → skill-021, apiLayer=domain
+#   5-8. Proceed with skill-021
+#
+# Example 2 (Ambiguous):
+#   User: "Genera una Domain API para Customer"
+#   1. SCOPE: SDLC ✓
+#   2. DOMAIN: CODE
+#   3. LAYER: SOI
+#   4. FUSION CHECK: Contains "Domain API" without "Fusion" → ASK
+#      "¿Te refieres a una API del modelo Fusion?"
+#
+# Example 3 (Internal Service):
+#   User: "Genera un microservicio Java con Spring Boot"
+#   1. SCOPE: SDLC ✓
+#   2. DOMAIN: CODE
 #   3. LAYER: SOI (keywords: microservicio, spring boot)
-#   4. FILTER: domains.code.skills_by_layer.soi → 5 skills
-#   5. CAPABILITY: not specified
-#   6. TECHNOLOGY: java-spring → still 5 skills
-#   7. SEMANTIC MATCH: Read 5 OVERVIEW.md → skill-020-microservice-java-spring
+#   4. FUSION CHECK: Contains "microservicio" (internal) → skill-020
+#   5-8. Proceed with skill-020 (no mod-019)
 
 # =============================================================================
 # MAINTENANCE NOTES
@@ -458,13 +480,77 @@ skill_metadata:
         - Kafka
   
   # ---------------------------------------------------------------------------
-  # skill-021: REST API (Extends skill-020)
+  # skill-021: Fusion REST API (Extends skill-020)
   # ---------------------------------------------------------------------------
+  # IMPORTANT: This skill applies ONLY to Fusion APIs (see ADR-001).
+  # Use skill-020 for internal microservices without API exposure.
   skill-021-api-rest-java-spring:
     path: code/soi/skill-021-api-rest-java-spring
     extends: skill-020-microservice-java-spring
+    
+    # -------------------------------------------------------------------------
+    # Fusion API Identification Rules (from ADR-001)
+    # -------------------------------------------------------------------------
+    # This skill should ONLY be activated when the request explicitly 
+    # references a Fusion API. See ADR-001 "Fusion API Identification" section.
+    fusion_api_rules:
+      
+      # HIGH confidence - Apply skill-021 directly
+      explicit_fusion_pattern:
+        description: "Prompt contains 'Fusion' + API layer name in any order/case/language"
+        model_name: "Fusion"
+        model_layers:
+          - experience
+          - bff
+          - composable
+          - domain
+          - system
+        examples:
+          - "Fusion Domain API"
+          - "Domain API Fusion"
+          - "API de Dominio Fusion"
+          - "API Fusion de Dominio"
+          - "fusion domain api"
+          - "FUSION SYSTEM API"
+          - "Fusion BFF"
+          - "API de Experiencia Fusion"
+        action: "Apply skill-021 with corresponding apiLayer"
+      
+      # MEDIUM confidence - Requires clarification
+      ambiguous_pattern:
+        description: "Prompt contains API layer name WITHOUT 'Fusion'"
+        examples:
+          - "Domain API"
+          - "System API"
+          - "Experience API"
+          - "BFF"
+          - "API de Dominio"
+        action: "ASK: ¿Te refieres a una API del modelo Fusion (Experience/Composable/Domain/System)?"
+      
+      # Use skill-020 instead (no API exposure)
+      internal_service_pattern:
+        description: "Prompt indicates internal service"
+        keywords:
+          - microservicio
+          - microservice
+          - servicio interno
+          - internal service
+          - API interna
+          - internal API
+          - bounded context service
+        action: "Use skill-020 without mod-019"
+    
     keywords:
       positive:
+        # Fusion-specific (HIGH weight)
+        - Fusion API
+        - Fusion Domain
+        - Fusion System
+        - Fusion BFF
+        - Fusion Experience
+        - Fusion Composable
+        - API Fusion
+        # Generic API terms (require Fusion to be HIGH confidence)
         - API
         - REST API
         - REST
@@ -491,6 +577,8 @@ skill_metadata:
       negative:
         - internal microservice
         - microservicio interno
+        - servicio interno
+        - internal service
         - gRPC
         - async
         - eventos
@@ -501,27 +589,33 @@ skill_metadata:
         type: enum
         values: [experience, composable, domain, system]
         required: true
-        discovery_hints:
+        inference_rules:
+          description: "How to infer apiLayer from prompt when Fusion API confirmed"
           experience:
-            - BFF
-            - frontend
-            - mobile
-            - web
-            - UI
+            keywords: [BFF, frontend, mobile, web, UI, experiencia, experience]
           composable:
-            - orchestration
-            - workflow
-            - orquestación
+            keywords: [orchestration, workflow, orquestación, composable, multi-domain]
           domain:
-            - domain API
-            - API de dominio
-            - business capability
-            - SAGA
+            keywords: [domain, dominio, business capability, negocio]
           system:
-            - system API
-            - mainframe
-            - legacy
-            - SoR
+            keywords: [system, sistema, mainframe, legacy, SoR, integración]
+        layer_features:
+          experience:
+            hateoas: true
+            pagination: true
+            compensation: false
+          composable:
+            hateoas: false
+            pagination: true
+            compensation: false
+          domain:
+            hateoas: true
+            pagination: true
+            compensation: opt-in  # Only if features.compensation.enabled = true
+          system:
+            hateoas: false
+            pagination: true
+            compensation: false
 
 # =============================================================================
 # INPUT VALIDATION RULES

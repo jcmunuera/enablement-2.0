@@ -1,11 +1,11 @@
-# Skill: REST API Generator (4-Layer Model)
+# Skill: Fusion REST API Generator (4-Layer Model)
 
 **Skill ID:** skill-021-api-rest-java-spring  
 **Extends:** skill-020-microservice-java-spring  
 **Domain:** code  
 **Layer:** soi  
 **Type:** GENERATE  
-**Version:** 2.1.0  
+**Version:** 2.2.0  
 **Status:** Active
 **Last Updated:** 2025-12-22
 
@@ -13,9 +13,14 @@
 
 ## Overview
 
-Extends `skill-020-microservice-java-spring` to generate REST APIs following the 4-layer API model (Experience, Composable, Domain, System) defined in ADR-001.
+Extends `skill-020-microservice-java-spring` to generate REST APIs following the **Fusion API Model** (4-layer: Experience, Composable, Domain, System) defined in ADR-001.
 
-**This skill inherits ALL capabilities from skill-020** and adds API-specific patterns:
+> **IMPORTANT:** This skill applies ONLY when the request explicitly references a **Fusion API**.
+> See ADR-001 "Fusion API Identification" section for inference rules.
+> If the request does not mention "Fusion" with an API layer name, either ask for clarification
+> or use skill-020 for internal microservices.
+
+**This skill inherits ALL capabilities from skill-020** and adds Fusion API-specific patterns:
 - Pagination (PageResponse, filtering, sorting)
 - HATEOAS (hypermedia links)
 - Compensation (SAGA participation for Domain APIs)
@@ -34,6 +39,37 @@ skill-020-microservice-java-spring (inherited)
     ├── mod-019: API Public Exposure (pagination, HATEOAS)
     └── mod-020: Compensation (Domain layer only)
 ```
+
+---
+
+## Pre-conditions (Activation Rules)
+
+This skill should ONLY be activated when the request explicitly references a **Fusion API**. 
+Follow the inference rules defined in `runtime/discovery/skill-index.yaml` (section `fusion_api_rules`).
+
+### When to Use This Skill
+
+| Prompt Contains | Action | Skill |
+|-----------------|--------|-------|
+| "Fusion" + API layer (Domain/System/BFF/Experience/Composable) | ✅ Apply directly | skill-021 |
+| API layer WITHOUT "Fusion" (e.g., "Domain API") | ⚠️ ASK for clarification | - |
+| "microservicio", "servicio interno", "API interna" | ❌ Use base skill | skill-020 |
+
+### Examples
+
+**Use skill-021:**
+- "Genera una Fusion Domain API para Customer"
+- "Implementar la API de Sistema Fusion para Parties"
+- "Create a Fusion BFF for mobile channel"
+
+**ASK for clarification:**
+- "Genera una Domain API para Customer" → Ask: "¿Te refieres a una API del modelo Fusion?"
+- "Create a System API for Parties" → Ask: "Is this a Fusion System API?"
+
+**Use skill-020 (NOT this skill):**
+- "Genera un microservicio para Customer"
+- "Implementar un servicio interno de notificaciones"
+- "Create an internal API for event processing"
 
 ---
 

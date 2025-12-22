@@ -1,10 +1,10 @@
 ---
 id: adr-001-api-design
-title: "ADR-001: API Design - Model, Types & Standards"
-sidebar_label: API Design
-version: 3.0
+title: "ADR-001: API Design - Fusion API Model, Types & Standards"
+sidebar_label: Fusion API Model
+version: 3.1
 date: 2025-05-27
-updated: 2025-12-19
+updated: 2025-12-22
 status: Accepted
 author: Architecture Team
 decision_type: pattern
@@ -13,6 +13,7 @@ tags:
   - api
   - architecture
   - microservices
+  - fusion-api-model
   - api-led-connectivity
   - rest
   - grpc
@@ -26,11 +27,11 @@ implemented_by:
   - eri-code-014-api-public-exposure-java-spring
 ---
 
-# ADR-001: API Design - Model, Types & Standards
+# ADR-001: API Design - Fusion API Model, Types & Standards
 
 **Status:** Accepted  
 **Date:** 2025-05-27  
-**Updated:** 2025-12-19 (v3.0 - Added API Types and REST Standards)  
+**Updated:** 2025-12-22 (v3.1 - Named model as "Fusion API Model", added inference rules)  
 **Deciders:** Architecture Team
 
 ---
@@ -64,11 +65,19 @@ In our microservices-based application architecture, we need a consistent approa
 
 ## Decision
 
-We adopt a **4-layer API architecture** with support for **multiple API types** and **standardized patterns per type**.
+We adopt the **Fusion API Model**: a **4-layer API architecture** with support for **multiple API types** and **standardized patterns per type**.
+
+> **Naming Convention:** The term "Fusion" identifies our opinionated API model. When referencing 
+> APIs that follow this architecture, use the prefix "Fusion" to distinguish them from generic 
+> API terminology (e.g., "Fusion Domain API" instead of just "Domain API").
 
 ---
 
-## Part 1: API Layer Model
+## Part 1: Fusion API Layer Model
+
+### Model Overview
+
+The **Fusion API Model** defines four distinct API layers, each with specific responsibilities and constraints. This model enables consistent API design across the organization while supporting the complexity of enterprise integrations.
 
 ### Layer Architecture
 
@@ -212,6 +221,44 @@ We adopt a **4-layer API architecture** with support for **multiple API types** 
 - ✅ CAN handle integration protocols
 - ❌ CANNOT implement business logic
 - ❌ CANNOT be called by Experience or Composable APIs directly
+
+---
+
+### Fusion API Identification
+
+The 4-layer API architecture defined in this ADR is named the **Fusion API Model**. This naming convention helps distinguish our opinionated API patterns from generic industry terminology.
+
+#### Naming Convention
+
+When referencing APIs that follow this architecture, use the prefix **"Fusion"** to explicitly indicate adherence to this model:
+
+- "Fusion Domain API" (not just "Domain API")
+- "Fusion System API" (not just "System API")
+- "Fusion Experience API" or "Fusion BFF"
+- "Fusion Composable API"
+
+This explicit naming avoids ambiguity with common industry terms like "Domain API" or "BFF" which may have different meanings in other contexts.
+
+#### Fusion API vs Internal Microservices
+
+| Type | Description | API Exposure |
+|------|-------------|--------------|
+| **Fusion API** | APIs following the 4-layer model | Public exposure with HATEOAS, pagination |
+| **Internal Microservice** | Services within a bounded context | No public exposure patterns |
+
+#### Layer-Feature Matrix
+
+When implementing a Fusion API, the following features apply based on layer:
+
+| Fusion API Layer | HATEOAS | Pagination | Compensation |
+|------------------|---------|------------|--------------|
+| Experience/BFF   | ✅ Required | ✅ Required | ❌ N/A |
+| Composable       | ❌ Optional | ✅ Required | ❌ N/A |
+| Domain           | ✅ Required | ✅ Required | ⚠️ Opt-in |
+| System           | ❌ Optional | ✅ Required | ❌ N/A |
+
+> **Note:** Operational rules for identifying Fusion APIs from user requests are defined in the 
+> runtime discovery configuration (`runtime/discovery/skill-index.yaml`), not in this ADR.
 
 ---
 
@@ -657,6 +704,7 @@ APIs for internal service-to-service communication.
 | 2025-05-27 | 1.0 | Initial version with 4-layer model | Architecture Team |
 | 2025-11-24 | 2.0 | Made framework-agnostic, added error response format | Architecture Team |
 | 2025-12-19 | 3.0 | Added API Types (REST/gRPC/AsyncAPI), REST Standards (Pagination, HATEOAS, Filtering), API Exposure Levels, cleaned orphan references | C4E Team |
+| 2025-12-22 | 3.1 | Named model as "Fusion API Model", added Fusion API Identification section with inference rules for deterministic skill selection | C4E Team |
 
 ---
 
