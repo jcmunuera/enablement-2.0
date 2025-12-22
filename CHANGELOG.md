@@ -7,6 +7,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.0] - 2025-12-22
+
+### 🎯 Determinism & Model Coherence
+
+Major update ensuring deterministic code generation and full model coherence between ERIs and Modules.
+
+#### Added
+
+**New Documents**
+- `model/standards/DETERMINISM-RULES.md` - Global mandatory patterns for consistent code generation
+
+**Implementation Options in ERIs**
+- ERI-010 (Timeout): `client-timeout` (default), `annotation-async`
+- ERI-012 (Persistence): `jpa`, `systemapi` (DISPARATE → separate modules)
+- ERI-013 (API Integration): `restclient` (default), `feign`, `resttemplate` (deprecated)
+
+**Module Variants**
+- mod-code-003: `client-timeout` (default), `annotation-async`
+- mod-code-018: `restclient` (default), `feign`, `resttemplate`
+
+#### Changed
+
+**Authoring Guides**
+- `ERI.md` v1.1 → v1.2: Formal `implementation_options` structure with default and `recommended_when`
+- `MODULE.md` v1.7 → v1.8: `derived_from` now REQUIRED, variant derivation from ERI
+- `FLOW.md` v1.0 → v1.1: Required Variant Resolution Step for flows using modules
+- `SKILL.md` v2.5 → v2.6: Variant Handling in Module Resolution section
+
+**Execution Flows**
+- `GENERATE.md` v2.0 → v2.1: Added STEP 3.5 RESOLVE VARIANTS
+- `ADD.md` v1.0 → v1.1: Added STEP 3.5 RESOLVE VARIANT
+
+**Consumer Behavior**
+- `CONSUMER-PROMPT.md` v1.3 → v1.4: Variant Selection Behavior, Determinism Rules
+
+**Modules (added YAML frontmatter with `derived_from`)**
+- mod-code-001 → eri-code-008 (circuit-breaker)
+- mod-code-015 → eri-code-001 (hexagonal-base)
+- mod-code-019 → eri-code-014 (api-public-exposure)
+- mod-code-020 → eri-code-015 (compensation)
+
+**Module Templates Updated**
+- mod-code-003: New `client/` templates for client-level timeout
+- mod-code-015: `EntityId` now `record(UUID)`, simplified enums, Response variants
+- mod-code-017: DTOs as `record`, code mapping in Mapper
+- mod-code-018: Formalized variant structure in frontmatter
+
+**Skills**
+- skill-020 v1.2.0 → v1.3.0: Resilience annotations now mandatory (not just comments)
+- skill-021 v2.0.0 → v2.1.0: mod-020 compensation is opt-in (`features.compensation.enabled`)
+
+**Discovery**
+- `skill-index.yaml` v2.0 → v2.1: Input validation rules, formalized discovery process
+
+#### Coherence Rules Established
+
+```
+ADR (decision)
+  ↓
+ERI (reference implementation)
+  • Defines implementation_options (if multiple)
+  • Sets default and recommended_when
+  • Indicates EQUIVALENT (→ 1 module with variants) or DISPARATE (→ N modules)
+  ↓
+MODULE (executable templates)
+  • MUST have derived_from (REQUIRED)
+  • Inherits variants from ERI (cannot invent new ones)
+  • Formalizes for runtime
+  ↓
+SKILL (orchestration)
+  • Resolves variants at execution time
+```
+
+#### Determinism Patterns
+
+| Element | Pattern | Rationale |
+|---------|---------|-----------|
+| Entity IDs | `record(UUID)` | Type safety, immutability |
+| DTOs | `record` | Immutability, no Lombok |
+| Enums | Simple (no attributes) | Code mapping in Mapper |
+| Mappers | `@Component` with switch | Single responsibility |
+| Annotations | `@generated`, `@module` | Traceability |
+
+---
+
 ## [2.3.0] - 2025-12-19
 
 ### 🚀 Scalable Discovery
@@ -257,8 +342,8 @@ First version of the Knowledge Base on GitHub. Corresponds to internal version v
 
 ## Upcoming
 
-### [2.2.0] - Planned
-- Code Generation PoC results
+### [2.5.0] - Planned
+- PoC v3.2 validation with determinism rules
 - Complete stub flows (REMOVE, REFACTOR, MIGRATE)
 
 ### [3.0.0] - Future
