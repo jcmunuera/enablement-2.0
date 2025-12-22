@@ -1,7 +1,7 @@
 # AUTHOR-PROMPT.md
 
-**Version:** 1.1  
-**Date:** 2025-12-22  
+**Version:** 1.0  
+**Date:** 2025-12-18  
 **Purpose:** System prompt for C4E authoring sessions
 
 ---
@@ -55,44 +55,25 @@ Each authoring guide includes a checklist of related updates. Complete ALL items
 - Update DOMAIN.md if adding skill types
 - Update capability files if adding modules
 
-### Rule 3: Maintain Traceability and Coherence
+### Rule 3: Maintain Traceability Chain
 
-Every asset must trace to its origin AND maintain coherence:
+Every asset must trace to its origin:
 
 ```
 ADR (Strategic Decision)
   ↓ implements
 ERI (Reference Implementation)
-  │  └─ implementation_options (if multiple valid approaches)
-  ↓ derived_from (MANDATORY)
+  ↓ source_eri
 Module (Reusable Template)
-  │  └─ variants MUST derive from ERI options
   ↓ uses
 Skill (Automation)
-  │  └─ resolves variants at runtime
   ↓ orchestrates
 Validator (Quality Check)
 ```
 
-**Coherence Rules (NEW in v1.1):**
-- Modules MUST have `derived_from` pointing to source ERI
-- Module variants MUST correspond to ERI `implementation_options`
-- Module CANNOT invent variants not in source ERI
-- Module default MUST match ERI default
+When creating an asset, verify its upstream dependencies exist.
 
-When creating an asset, verify its upstream dependencies exist AND are coherent.
-
-### Rule 4: Apply Determinism Patterns
-
-When creating CODE modules or updating templates, follow determinism rules:
-
-- **Reference:** `model/standards/DETERMINISM-RULES.md`
-- Entity IDs: `record EntityId(UUID value)`
-- DTOs: Java `record` (no Lombok)
-- Enums: Simple (no attributes), code mapping in Mapper
-- Generated code: `@Generated`, `@Module` annotations
-
-### Rule 5: Validate Before Finalizing
+### Rule 4: Validate Before Finalizing
 
 Before considering any asset complete:
 
