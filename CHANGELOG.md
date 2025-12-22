@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.4.1] - 2025-12-22
+
+### 📚 Documentation Update
+
+Updated supporting documentation to reflect v2.4.0 changes.
+
+#### Changed
+
+**Master Documents**
+- `ENABLEMENT-MODEL-v1.6.md` → `ENABLEMENT-MODEL-v1.7.md`
+  - New §10: Coherence and Determinism
+  - Asset derivation chain formalized
+  - Variant Resolution process documented
+  - Coherence and Determinism added to Core Principles
+
+**Support Documents**
+- `model/README.md` v5.1 → v5.2: Updated versions, added DETERMINISM-RULES
+- `model/standards/authoring/README.md` v2.2 → v2.3: Coherence rules, updated versions
+- `model/AUTHOR-PROMPT.md` v1.0 → v1.1: Added coherence rules, determinism patterns
+- `_sidebar.md`: Added Determinism Rules link, updated to v1.7
+
+---
+
 ## [2.4.0] - 2025-12-22
 
 ### 🎯 Determinism & Model Coherence

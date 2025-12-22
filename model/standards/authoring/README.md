@@ -1,7 +1,7 @@
 # Authoring Standards
 
-**Version:** 2.2  
-**Last Updated:** 2025-12-18
+**Version:** 2.3  
+**Last Updated:** 2025-12-22
 
 ---
 
@@ -14,24 +14,36 @@ This directory contains **authoring guides** for creating assets in the Enableme
 - Checklists for completeness validation
 - Examples of well-formed assets
 - Relationship requirements (what other assets must exist/be referenced)
+- **Coherence rules** (how assets relate to each other)
 
 ---
 
-## What's New in v2.2
+## What's New in v2.3
 
-> **Key changes:**
-
-| Guide | Change |
-|-------|--------|
-| **FLOW.md** | **NEW** - Authoring guide for execution flows with mandatory CONSUMER-PROMPT.md update checklist |
-| **README.md** | Added FLOW.md to index and quick reference |
-
-### Previous (v2.1)
+> **Key changes:** Coherence and Determinism support
 
 | Guide | Change |
 |-------|--------|
-| **SKILL.md** | OVERVIEW.md now marked as CRITICAL for discovery. Detailed guidance on writing for semantic interpretation. |
-| **MODULE.md** | Clarified module role by skill type: knowledge source for GENERATE (holistic), transformation guide for ADD (atomic). |
+| **ERI.md v1.2** | `implementation_options` structure for multi-option ERIs |
+| **MODULE.md v1.8** | `derived_from` now REQUIRED. Variant derivation from ERI. |
+| **FLOW.md v1.1** | Variant Resolution Step required in flows |
+| **SKILL.md v2.6** | Variant Handling in Module Resolution |
+
+### Key Concepts
+
+**Coherence:** Modules MUST derive from ERIs. Module variants MUST inherit from ERI options.
+
+```
+ERI (implementation_options) → MODULE (variants)
+                            ↑
+                      derived_from (REQUIRED)
+```
+
+### Previous (v2.2)
+
+| Guide | Change |
+|-------|--------|
+| **FLOW.md** | Authoring guide for execution flows with mandatory CONSUMER-PROMPT.md update checklist |
 
 ---
 
@@ -42,11 +54,11 @@ This directory contains **authoring guides** for creating assets in the Enableme
 | Asset Type | Guide | Version | Description |
 |------------|-------|---------|-------------|
 | ADR | [ADR.md](./ADR.md) | 1.0 | Architecture Decision Records |
-| ERI | [ERI.md](./ERI.md) | 1.0 | Enterprise Reference Implementations |
-| Module | [MODULE.md](./MODULE.md) | **1.7** | Reusable code templates |
-| Skill | [SKILL.md](./SKILL.md) | **2.3** | Automation skills (**CRITICAL**) |
+| ERI | [ERI.md](./ERI.md) | **1.2** | Enterprise Reference Implementations ⭐ |
+| Module | [MODULE.md](./MODULE.md) | **1.8** | Reusable code templates ⭐ |
+| Skill | [SKILL.md](./SKILL.md) | **2.6** | Automation skills ⭐ |
 | Validator | [VALIDATOR.md](./VALIDATOR.md) | 1.0 | Artifact validation components |
-| **Flow** | [FLOW.md](./FLOW.md) | **1.0** | Execution flows by skill type (**NEW**) |
+| Flow | [FLOW.md](./FLOW.md) | **1.1** | Execution flows by skill type ⭐ |
 
 ### Complementary Asset Types
 
@@ -64,13 +76,32 @@ Assets should be created in this order to ensure dependencies exist:
 1. ADR (Strategic Decision)
    ↓
 2. ERI (Reference Implementation)
+   │  └─ Define implementation_options if multiple valid approaches
    ↓
 3. Module (Reusable Template)
+   │  └─ MUST have derived_from pointing to ERI
+   │  └─ If ERI has options, Module has variants
    ↓
 4. Validator (Quality Checks)      ← Can be created alongside Module
    ↓
 5. Skill (Automation)
+   │  └─ Resolves variants at runtime
 ```
+
+> **IMPORTANT:** Before creating a Module, verify the source ERI exists and check if it has `implementation_options`. Modules CANNOT invent variants not defined in the ERI.
+
+---
+
+## Coherence Rules
+
+When creating assets, ensure coherence between related assets:
+
+| Rule | Description |
+|------|-------------|
+| **Module → ERI** | Every Module MUST have `derived_from` pointing to an ERI |
+| **Variants → Options** | Module variants MUST derive from ERI `implementation_options` |
+| **No Invention** | Module CANNOT offer variants not in source ERI |
+| **Default Inheritance** | Module default MUST match ERI default |
 
 ---
 
@@ -192,13 +223,14 @@ The **FLOW.md** guide is critical for maintaining consistency:
 
 ## Related Documents
 
-- [../../ENABLEMENT-MODEL-v1.6.md](../../ENABLEMENT-MODEL-v1.6.md) - Master model document
+- [../../ENABLEMENT-MODEL-v1.7.md](../../ENABLEMENT-MODEL-v1.7.md) - Master model document
 - [../../CONSUMER-PROMPT.md](../../CONSUMER-PROMPT.md) - Consumer agent system prompt
 - [../../AUTHOR-PROMPT.md](../../AUTHOR-PROMPT.md) - Author system prompt
 - [../ASSET-STANDARDS-v1.4.md](../ASSET-STANDARDS-v1.4.md) - Naming conventions and directory structure
+- [../DETERMINISM-RULES.md](../DETERMINISM-RULES.md) - Code generation patterns (**NEW**)
 - [../validation/](../validation/) - Validation system architecture
 - [../traceability/](../traceability/) - Traceability model and profiles
 
 ---
 
-**Last Updated:** 2025-12-17
+**Last Updated:** 2025-12-22

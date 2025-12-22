@@ -7,7 +7,7 @@
 
 * **Model** 
   * [Model Overview](model/README.md)
-  * [Enablement Model v1.6](model/ENABLEMENT-MODEL-v1.6.md)
+  * [Enablement Model v1.7](model/ENABLEMENT-MODEL-v1.7.md)
   * [Consumer Prompt](model/CONSUMER-PROMPT.md)
   * [Author Prompt](model/AUTHOR-PROMPT.md)
   * [Executive Brief](model/ENABLEMENT-EXECUTIVE-BRIEF.md)
@@ -22,6 +22,7 @@
 
 * **Standards**
   * [Asset Standards v1.4](model/standards/ASSET-STANDARDS-v1.4.md)
+  * [Determinism Rules](model/standards/DETERMINISM-RULES.md)
   * **Authoring Guides**
     * [Overview](model/standards/authoring/README.md)
     * [ADR Guide](model/standards/authoring/ADR.md)

@@ -1,15 +1,16 @@
 # ENABLEMENT-MODEL.md
 
-**Version:** 1.6  
-**Date:** 2025-12-17  
+**Version:** 1.7  
+**Date:** 2025-12-22  
 **Status:** Active  
 **Purpose:** Master document defining the complete Enablement 2.0 model
 
 > **This is the MASTER document.** For detailed operational standards, see:
-> - `standards/ASSET-STANDARDS-v1.4.md` - Technical structure for each asset type
+> - `standards/ASSET-STANDARDS-v1.5.md` - Technical structure for each asset type
+> - `standards/DETERMINISM-RULES.md` - Determinism patterns for code generation (**NEW**)
 > - `standards/validation/README.md` - Validation system architecture
 > - `standards/traceability/README.md` - Traceability model and profiles
-> - `CONSUMER-PROMPT.md` - Consumer agent system prompt (NEW)
+> - `CONSUMER-PROMPT.md` - Consumer agent system prompt
 
 ---
 
@@ -22,11 +23,12 @@
 5. [Skill Domains and Types](#5-skill-domains-and-types)
 6. [Validation System](#6-validation-system)
 7. [Traceability](#7-traceability)
-8. [Discovery and Orchestration](#8-discovery-and-orchestration) ← REVISED in v1.6
-9. [Execution Model](#9-execution-model) ← REVISED in v1.6
-10. [Multi-Domain Operations](#10-multi-domain-operations) ← NEW in v1.6
-11. [Knowledge Base Structure](#11-knowledge-base-structure)
-12. [Appendices](#12-appendices)
+8. [Discovery and Orchestration](#8-discovery-and-orchestration)
+9. [Execution Model](#9-execution-model) ← Variant Resolution added in v1.7
+10. [Coherence and Determinism](#10-coherence-and-determinism) ← **NEW in v1.7**
+11. [Multi-Domain Operations](#11-multi-domain-operations)
+12. [Knowledge Base Structure](#12-knowledge-base-structure)
+13. [Appendices](#13-appendices)
 
 ---
 
@@ -50,6 +52,8 @@ Enablement 2.0 is an SDLC automation platform that enables:
 | **Extensibility** | Model designed for incremental growth |
 | **Interpretive Discovery** | Domain and skill identification through semantic interpretation, not rigid rules |
 | **Holistic Execution** | GENERATE skills produce complete outputs considering all features together |
+| **Coherence** | Modules MUST derive from ERIs; variants MUST inherit from ERI options (**NEW v1.7**) |
+| **Determinism** | Code generation follows mandatory patterns ensuring consistency across executions (**NEW v1.7**) |
 
 ### 1.3 Conceptual Model
 
@@ -61,7 +65,9 @@ Enablement 2.0 is an SDLC automation platform that enables:
 │  GOVERNANCE LAYER                                                        │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
 │  │  ADRs ──────> ERIs ──────> Modules ──────> Skills               │    │
-│  │  (Strategic)  (Tactical)   (Knowledge)    (Automated)           │    │
+│  │  (Strategic)  (Tactical)   (Templates)    (Automated)           │    │
+│  │               ↓ options    ↑ derived_from                       │    │
+│  │               └────────────┘ (Coherence)                        │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                                                          │
 │  CAPABILITY LAYER                                                        │
@@ -70,19 +76,25 @@ Enablement 2.0 is an SDLC automation platform that enables:
 │  │  (What)          (Group)      (Abstract)     (Concrete)         │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                                                          │
-│  DISCOVERY LAYER (Interpretive) ← REVISED in v1.6                        │
+│  DISCOVERY LAYER (Interpretive)                                          │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
 │  │  Prompt ──> Domain Interpretation ──> Skill Selection ──> Plan  │    │
 │  │  (Input)    (Semantic Analysis)       (Metadata Match)   (Exec) │    │
 │  │  See: runtime/discovery/discovery-guidance.md                   │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                                                          │
-│  EXECUTION LAYER (By Skill Type) ← REVISED in v1.6                       │
+│  EXECUTION LAYER (By Skill Type) ← Variant Resolution in v1.7           │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │  GENERATE: Holistic (modules as knowledge)                      │    │
-│  │  ADD: Atomic (specific module application)                      │    │
+│  │  GENERATE: Holistic (modules as knowledge) + Variant Resolution │    │
+│  │  ADD: Atomic (specific module application) + Variant Resolution │    │
 │  │  ANALYZE: Evaluation (output is report)                         │    │
 │  │  See: runtime/flows/{domain}/{type}.md                          │    │
+│  └─────────────────────────────────────────────────────────────────┘    │
+│                                                                          │
+│  DETERMINISM LAYER (Mandatory Patterns) ← NEW in v1.7                   │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │  Global Rules ──> Module Patterns ──> Consistent Output         │    │
+│  │  See: model/standards/DETERMINISM-RULES.md                      │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 │                                                                          │
 │  VALIDATION LAYER (Sequential, Deterministic)                            │
@@ -96,13 +108,15 @@ Enablement 2.0 is an SDLC automation platform that enables:
 
 ### 1.4 Interpretive vs Deterministic Components
 
-> **NEW in v1.6:** The model distinguishes between interpretive and deterministic phases.
+> **Updated in v1.7:** Added Variant Resolution and Determinism phases.
 
 | Phase | Nature | Description |
 |-------|--------|-------------|
 | **Discovery** | Interpretive | LLM interprets prompt semantically to identify domain and skill |
 | **Module Resolution** | Deterministic | Based on features/capabilities in request, rules define which modules apply |
+| **Variant Resolution** | Deterministic | If module has variants, resolve which variant to use (**NEW v1.7**) |
 | **Execution** | Skill-type dependent | GENERATE is holistic, ADD is atomic |
+| **Determinism** | Mandatory | Code generation follows global and module-specific patterns (**NEW v1.7**) |
 | **Validation** | Deterministic | Fixed rules, sequential execution, pass/fail criteria |
 | **Traceability** | Mandatory | All decisions must be recorded regardless of nature |
 
@@ -401,11 +415,153 @@ This ensures that even though generation is holistic, validation verifies each m
 
 ---
 
-## 10. Multi-Domain Operations
+## 10. Coherence and Determinism
+
+> **NEW in v1.7:** Establishing formal rules for asset coherence and deterministic code generation.
+
+### 13.1 Asset Derivation Chain
+
+Assets in Enablement 2.0 form a derivation chain where each level inherits from and extends the previous:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    ASSET DERIVATION CHAIN                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ADR (Strategic Decision)                                                │
+│    │ "We will use Circuit Breaker pattern for fault tolerance"          │
+│    ↓                                                                     │
+│  ERI (Reference Implementation)                                          │
+│    │ "Here's how to implement Circuit Breaker with Resilience4j"        │
+│    │                                                                     │
+│    │  └─ implementation_options (if multiple valid approaches)          │
+│    │       • option A: default                                          │
+│    │       • option B: alternative                                      │
+│    │       • option C: deprecated                                       │
+│    ↓                                                                     │
+│  MODULE (Executable Templates)                                           │
+│    │ "Templates for generating Circuit Breaker code"                    │
+│    │                                                                     │
+│    │  └─ derived_from: eri-xxx (MANDATORY)                              │
+│    │  └─ variants (if ERI has implementation_options)                   │
+│    │       • Variants MUST correspond to ERI options                    │
+│    │       • Module CANNOT invent new variants                          │
+│    ↓                                                                     │
+│  SKILL (Orchestration)                                                   │
+│    │ "Add Circuit Breaker to existing service"                          │
+│    │                                                                     │
+│    │  └─ Resolves variants at runtime                                   │
+│    │  └─ Records selection in manifest                                  │
+│    ↓                                                                     │
+│  OUTPUT (Generated Code)                                                 │
+│      Complete traceability to all ancestors                             │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 13.2 Coherence Rules
+
+**Rule 1: Module-ERI Relationship**
+
+Every Module MUST have a `derived_from` field pointing to its source ERI:
+
+```yaml
+# In MODULE.md frontmatter
+derived_from: eri-code-008-circuit-breaker-java-resilience4j  # REQUIRED
+```
+
+**Rule 2: Variant Inheritance**
+
+If a Module has variants, they MUST derive from ERI's `implementation_options`:
+
+| ERI Defines | Module Inherits |
+|-------------|-----------------|
+| `implementation_options.options[]` | `variants.alternatives[]` |
+| `implementation_options.default` | `variants.default.id` |
+| Option `recommended_when` | Variant `recommend_when` |
+| Option `status: deprecated` | Variant `deprecated: true` |
+
+**Rule 3: No Invention**
+
+A Module CANNOT offer variants that the ERI does not define as valid options.
+
+### 13.3 Implementation Options Types
+
+ERIs may define implementation options in two ways:
+
+| Type | Description | Module Structure |
+|------|-------------|------------------|
+| **EQUIVALENT** | Options are functionally interchangeable | Single module with `variants` |
+| **DISPARATE** | Options are architecturally different | Separate modules |
+
+**Example EQUIVALENT:** API Integration Client
+- Options: RestClient, Feign, RestTemplate
+- All produce same result (HTTP client)
+- → Single module `mod-018` with variants
+
+**Example DISPARATE:** Persistence
+- Options: JPA (local DB), System API (mainframe)
+- Architecturally different implementations
+- → Two modules: `mod-016` (JPA), `mod-017` (System API)
+
+### 13.4 Variant Resolution
+
+When a module has variants, resolution follows this process:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    VARIANT RESOLUTION PROCESS                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  1. Check if module has variants.enabled = true                          │
+│                                                                          │
+│  2. If user input specifies variant explicitly:                          │
+│     → Use specified variant                                              │
+│                                                                          │
+│  3. Else if selection_mode = auto-suggest AND conditions match:          │
+│     → Ask user: "Based on [condition], would you prefer [alternative]?"  │
+│                                                                          │
+│  4. Else:                                                                │
+│     → Use default variant                                                │
+│                                                                          │
+│  5. Record selection in manifest:                                        │
+│     variant_selections:                                                  │
+│       - module: mod-xxx                                                  │
+│         variant: selected-id                                             │
+│         reason: "user-specified" | "auto-default" | "user-confirmed"     │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 13.5 Determinism Rules
+
+To ensure consistent code generation across executions, the platform enforces mandatory patterns:
+
+**Global Patterns (apply to all CODE modules):**
+
+| Element | Mandatory Pattern | Rationale |
+|---------|-------------------|-----------|
+| Entity IDs | `record EntityId(UUID value)` | Type safety, immutability |
+| DTOs | Java `record` (no Lombok) | Immutability, compile-time safety |
+| Enums | Simple (no attributes) | Code mapping delegated to Mapper |
+| Mappers | `@Component` with `switch` | Single responsibility, testability |
+| Generated code annotations | `@Generated`, `@Module` | Traceability |
+
+**Module-Specific Patterns:**
+
+Each module defines its own determinism section with mandatory and configurable elements:
+- See `modules/{mod}/MODULE.md` → `## Determinism` section
+
+**Reference Document:**
+- `model/standards/DETERMINISM-RULES.md` - Complete determinism specification
+
+---
+
+## 11. Multi-Domain Operations
 
 > **NEW in v1.6:** Handling requests that span multiple SDLC domains.
 
-### 10.1 Multi-Domain Detection
+### 13.1 Multi-Domain Detection
 
 Some user requests implicitly require multiple domains:
 
@@ -415,7 +571,7 @@ Some user requests implicitly require multiple domains:
 | "Analiza y corrige los problemas" | QA → CODE | 1. QA/ANALYZE 2. CODE/ADD or REFACTOR |
 | "Diseña e implementa la solución" | DESIGN → CODE | 1. DESIGN/ARCHITECTURE 2. CODE/GENERATE |
 
-### 10.2 Multi-Domain Execution
+### 13.2 Multi-Domain Execution
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -453,7 +609,7 @@ Some user requests implicitly require multiple domains:
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 10.3 Domain Flow Atomicity
+### 13.3 Domain Flow Atomicity
 
 Flows within a domain are **atomic** - they do one thing well:
 
@@ -466,7 +622,7 @@ Flows within a domain are **atomic** - they do one thing well:
 
 The **agent** handles orchestration across domains, not the flows themselves. This keeps flows simple and composable.
 
-### 10.4 When to Ask vs When to Proceed
+### 13.4 When to Ask vs When to Proceed
 
 | Situation | Action |
 |-----------|--------|
@@ -477,7 +633,7 @@ The **agent** handles orchestration across domains, not the flows themselves. Th
 
 ---
 
-## 11. Knowledge Base Structure
+## 12. Knowledge Base Structure
 
 > Updated in v1.6 to reflect new structure
 
@@ -535,9 +691,9 @@ enablement-2.0/
 
 ---
 
-## 12. Appendices
+## 13. Appendices
 
-### 12.1 Glossary
+### 13.1 Glossary
 
 | Term | Definition |
 |------|------------|
@@ -547,16 +703,36 @@ enablement-2.0/
 | **Multi-Domain Operation** | Request that requires skills from multiple SDLC domains |
 | **Out of Scope** | Request that doesn't belong to any SDLC domain |
 
-### 12.2 Version History
+### 13.2 Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.7 | 2025-12-22 | Coherence and Determinism section. Variant Resolution in execution. Asset derivation chain formalized. |
 | 1.6 | 2025-12-17 | Discovery is now interpretive (not rule-based). GENERATE execution is holistic (modules as knowledge). Added multi-domain operations. Added CONSUMER-PROMPT.md and AUTHOR-PROMPT.md. |
 | 1.5 | 2025-12-16 | Repository restructuring: 5 root folders (knowledge, model, skills, modules, runtime). Flows moved to runtime/flows/. |
 | 1.4 | 2025-12-12 | Domains as first-class entities. Module naming with domain prefix. |
 | 1.3 | 2025-12-01 | Initial GitHub release |
 
-### 12.3 Key Changes in v1.6
+### 13.3 Key Changes in v1.7
+
+**Coherence:**
+- Formal derivation chain: ADR → ERI → Module → Skill
+- `derived_from` is now MANDATORY for all modules
+- Module variants MUST derive from ERI `implementation_options`
+- Two types of ERI options: EQUIVALENT (→ variants) and DISPARATE (→ separate modules)
+
+**Determinism:**
+- New `DETERMINISM-RULES.md` document with global patterns
+- Mandatory patterns: record IDs, record DTOs, simple enums, @Component mappers
+- Module-specific determinism sections
+- Generated code annotations for traceability
+
+**Execution:**
+- STEP 3.5 RESOLVE VARIANTS added to GENERATE and ADD flows
+- Variant selection recorded in manifest
+- Auto-suggest mode for alternatives based on conditions
+
+### 13.4 Previous Changes (v1.6)
 
 **Discovery:**
 - Removed deterministic rules (IF keyword THEN domain)
