@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "knowledge/ADRs/adr-012-api-integration-patterns/ADR.md",
+                "file": "skills/code/soi/skill-020-microservice-java-spring/OVERVIEW.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "ADR"
+              "title": "OVERVIEW"
             }
           }
         ]
@@ -182,6 +182,7 @@
   },
   "active": "11bb33dd5989c1c1",
   "lastOpenFiles": [
+    "knowledge/ADRs/adr-012-api-integration-patterns/ADR.md",
     "modules/mod-code-019-api-public-exposure-java-spring/validation/pagination-check.sh",
     "modules/mod-code-019-api-public-exposure-java-spring/validation/hateoas-check.sh",
     "modules/mod-code-019-api-public-exposure-java-spring/validation/config-check.sh",
@@ -193,7 +194,6 @@
     "modules/mod-code-019-api-public-exposure-java-spring/templates/config/PageableConfig.java.tpl",
     "modules/mod-code-019-api-public-exposure-java-spring/templates/assembler/EntityModelAssembler.java.tpl",
     "modules/mod-code-019-api-public-exposure-java-spring/templates/dto",
-    "modules/mod-code-019-api-public-exposure-java-spring/templates/config",
     "modules/mod-code-019-api-public-exposure-java-spring/MODULE.md",
     "knowledge/ADRs/adr-013-distributed-transactions/ADR.md",
     "knowledge/ERIs/eri-code-015-distributed-transactions-java-spring/ERI.md",

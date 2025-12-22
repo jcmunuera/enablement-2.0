@@ -5,8 +5,9 @@
 **Domain:** code  
 **Layer:** soi  
 **Type:** GENERATE  
-**Version:** 2.0.0  
+**Version:** 2.1.0  
 **Status:** Active
+**Last Updated:** 2025-12-22
 
 ---
 
@@ -86,7 +87,7 @@ extends: skill-020-microservice-java-spring
 |-------|-------------|---------------|
 | `experience` | BFF for UI channels | mod-019 (full HATEOAS) |
 | `composable` | Multi-domain orchestration | mod-019 (pagination only) |
-| `domain` | Business capabilities | mod-019 (full) + mod-020 |
+| `domain` | Business capabilities | mod-019 (full) + mod-020 (if compensation enabled) |
 | `system` | SoR integration | mod-019 (pagination only) |
 
 ### Additional Optional Parameters
@@ -95,6 +96,7 @@ extends: skill-020-microservice-java-spring
 |-----------|------|---------|-------------|
 | `pagination.defaultSize` | int | 20 | Default page size |
 | `pagination.maxSize` | int | 100 | Maximum page size |
+| `features.compensation.enabled` | boolean | false | Enable SAGA compensation (Domain APIs only) |
 
 ---
 
@@ -106,8 +108,12 @@ extends: skill-020-microservice-java-spring
 
 | Condition | Module | Purpose |
 |-----------|--------|---------|
-| always | mod-code-019-api-public-exposure-java-spring | Pagination, filtering |
-| `apiLayer = domain` | mod-code-020-compensation-java-spring | Compensation interface |
+| always | mod-code-019-api-public-exposure-java-spring | Pagination, filtering, HATEOAS |
+| `apiLayer = domain` AND `features.compensation.enabled = true` | mod-code-020-compensation-java-spring | SAGA compensation interface |
+
+> **NOTE:** mod-020 (compensation) is **opt-in**. Even for Domain APIs, compensation is only 
+> generated when explicitly requested via `features.compensation.enabled = true`. This is because
+> not all Domain APIs participate in distributed transactions (SAGAs).
 
 ### Layer-Based Feature Matrix
 
@@ -128,8 +134,9 @@ modules = skill_020.resolve_modules(input)
 # 2. Add mod-019 (always for REST APIs)
 modules.add("mod-code-019-api-public-exposure-java-spring")
 
-# 3. Add mod-020 (Domain layer only)
-if input.apiLayer == "domain":
+# 3. Add mod-020 (Domain layer AND compensation explicitly enabled)
+# NOTE: compensation is opt-in, not automatic for Domain APIs
+if input.apiLayer == "domain" and input.features.compensation.enabled == True:
     modules.add("mod-code-020-compensation-java-spring")
 
 # 4. Configure HATEOAS based on layer
@@ -155,8 +162,8 @@ return modules
 | Filter DTOs | `adapter/in/rest/dto/{Entity}Filter.java` | Always |
 | Pagination config | `infrastructure/web/PageableConfig.java` | Always |
 | HATEOAS assemblers | `adapter/in/rest/assembler/` | Experience, Domain |
-| Compensation interfaces | `domain/transaction/` | Domain only |
-| /compensate endpoint | Controller method | Domain only |
+| Compensation interfaces | `domain/transaction/` | Domain + `features.compensation.enabled` |
+| /compensate endpoint | Controller method | Domain + `features.compensation.enabled` |
 
 ### Extended Output Structure
 

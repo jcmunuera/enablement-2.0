@@ -1,7 +1,7 @@
 # Skill Index
 #
-# Version: 2.0
-# Date: 2025-12-19
+# Version: 2.1
+# Date: 2025-12-22
 # Purpose: Pre-computed index for O(1) skill discovery
 #
 # This index enables efficient skill discovery by providing multiple
@@ -12,6 +12,11 @@
 # - Skill extension support (extends field)
 # - Discovery keywords (positive/negative)
 # - API-specific skills (skill-021+)
+#
+# NEW in v2.1:
+# - Input validation rules section
+# - Formalized discovery process steps
+# - Error handling for ambiguous matches
 #
 # MAINTENANCE: When adding a new skill, register it in ALL applicable
 # sections of this index. See model/standards/authoring/SKILL.md for details.
@@ -517,3 +522,132 @@ skill_metadata:
             - mainframe
             - legacy
             - SoR
+
+# =============================================================================
+# INPUT VALIDATION RULES
+# =============================================================================
+# Pre-generation validation rules that the agent MUST check before invoking skills.
+# These rules ensure that inputs are complete and consistent before code generation.
+
+input_validation:
+  
+  # ---------------------------------------------------------------------------
+  # Pre-Discovery Validation
+  # ---------------------------------------------------------------------------
+  pre_discovery:
+    description: "Validations before skill discovery begins"
+    rules:
+      - id: SDLC-001
+        check: "Request must be SDLC-related (code, design, qa, governance)"
+        action: "Reject with explanation if not SDLC"
+      
+      - id: DOMAIN-001
+        check: "Domain must be identifiable from request"
+        action: "Ask user to clarify: ¿Es para código, diseño, QA, o gobernanza?"
+      
+      - id: LAYER-001
+        check: "For CODE domain, layer must be identifiable"
+        action: "Ask user: ¿Es para frontend, microservicios, o mainframe?"
+
+  # ---------------------------------------------------------------------------
+  # Skill-Specific Input Validation
+  # ---------------------------------------------------------------------------
+  skill_inputs:
+    
+    skill-020-microservice-java-spring:
+      required_fields:
+        - serviceName
+        - basePackage
+        - entities
+      validation_rules:
+        - field: serviceName
+          pattern: "^[a-z][a-z0-9-]*$"
+          error: "Service name must be kebab-case"
+        - field: entities
+          min_items: 1
+          error: "At least one entity required"
+    
+    skill-021-api-rest-java-spring:
+      inherits: skill-020-microservice-java-spring
+      additional_required_fields:
+        - apiLayer
+      validation_rules:
+        - field: apiLayer
+          enum: [experience, composable, domain, system]
+          error: "apiLayer must be one of: experience, composable, domain, system"
+        - field: features.compensation.enabled
+          condition: "Only valid when apiLayer = domain"
+          error: "Compensation is only available for Domain APIs"
+
+  # ---------------------------------------------------------------------------
+  # Discovery Process Formalization
+  # ---------------------------------------------------------------------------
+  discovery_process:
+    description: "Formal steps for skill discovery - agent MUST follow these"
+    
+    steps:
+      - step: 1
+        name: "Extract Keywords"
+        action: "Parse user request and extract substantive keywords"
+        output: "keyword_list"
+      
+      - step: 2
+        name: "Identify Domain"
+        action: "Match keywords against domains.*.signals"
+        output: "domain (code, design, qa, governance)"
+      
+      - step: 3
+        name: "Identify Layer"
+        condition: "Only for CODE domain"
+        action: "Match keywords against layers.*.signals"
+        output: "layer (soe, soi, sor)"
+      
+      - step: 4
+        name: "Get Candidate Skills"
+        action: "Filter skills from domains.{domain}.skills_by_layer.{layer}"
+        output: "candidate_skills[]"
+      
+      - step: 5
+        name: "Score Keywords"
+        action: |
+          For each candidate skill:
+            score = 0
+            For each keyword in user request:
+              if keyword in skill_metadata[skill].keywords.positive: score += 1
+              if keyword in skill_metadata[skill].keywords.negative: score -= 1
+        output: "scored_skills[]"
+      
+      - step: 6
+        name: "Select Best Match"
+        action: "Select skill with highest score"
+        output: "selected_skill"
+      
+      - step: 7
+        name: "Resolve Inheritance"
+        condition: "If selected skill has 'extends'"
+        action: "Load parent skill first, then overlay child"
+        output: "resolved_skill_chain[]"
+      
+      - step: 8
+        name: "Validate Input"
+        action: "Check input against skill_inputs[selected_skill]"
+        output: "validation_result"
+      
+      - step: 9
+        name: "Execute Skill"
+        condition: "Only if validation passes"
+        action: "Follow skill's execution flow"
+        output: "generated_artifacts"
+
+    error_handling:
+      ambiguous_match:
+        condition: "Multiple skills with same score"
+        action: "Ask user to clarify with specific questions"
+      
+      no_match:
+        condition: "No skill scores > 0"
+        action: "Inform user that no skill matches, suggest alternatives"
+      
+      validation_failure:
+        condition: "Input validation fails"
+        action: "Return specific validation errors, do NOT generate"
