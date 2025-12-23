@@ -27,18 +27,37 @@ This skill **inherits all capabilities** from skill-020 (hexagonal structure, re
 
 ## When to Use
 
-✅ **Use this skill when:**
-- Creating an API that follows the 4-layer model (Experience, Composable, Domain, System)
-- Need OpenAPI contract with pagination and filtering
-- Building a Domain API that participates in SAGA orchestration
-- Want HATEOAS links for discoverability
-- Need standardized error responses (RFC 7807)
+### Activation Rules
 
-❌ **Do NOT use when:**
-- Building internal DDD microservices (use skill-020)
-- Creating gRPC services (use skill-022 when available)
-- Building async/event-driven services (use skill-023 when available)
-- Simple internal CRUD without public contract
+This skill applies **ONLY** when the request explicitly references a **Fusion API**. 
+
+| Prompt Pattern | Confidence | Action |
+|----------------|------------|--------|
+| "Fusion" + API layer (e.g., "Fusion Domain API", "Fusion System API") | **HIGH** | Use this skill directly |
+| API layer without "Fusion" (e.g., "Domain API", "System API") | **MEDIUM** | ASK: "¿Te refieres a una API del modelo Fusion?" |
+| "microservicio", "servicio interno", "internal service" | **HIGH** | Use skill-020 instead |
+
+### Examples
+
+**✅ Use skill-021 (this skill):**
+- "Genera una **Fusion Domain API** para Customer"
+- "Create a **Fusion System API** for Parties"
+- "Implementar una **API Fusion** de tipo Experience"
+
+**⚠️ ASK for clarification:**
+- "Genera una Domain API para Customer" → Ask if it's a Fusion API
+- "Create a System API" → Ask if it follows the Fusion model
+
+**❌ Use skill-020 instead:**
+- "Genera un microservicio para Customer"
+- "Crea un servicio interno de notificaciones"
+- "Build an internal API for event processing"
+
+### Rationale
+
+The distinction matters because:
+- **Fusion APIs** (skill-021): Include HATEOAS, standardized pagination, OpenAPI contract, compensation patterns
+- **Internal microservices** (skill-020): Simpler structure without public API concerns
 
 ---
 
@@ -161,6 +180,6 @@ customer-management-api/
 
 ## Version
 
-**Current:** 2.0.0  
+**Current:** 2.1.0  
 **Status:** Active  
-**Last Updated:** 2025-12-19
+**Last Updated:** 2025-12-23

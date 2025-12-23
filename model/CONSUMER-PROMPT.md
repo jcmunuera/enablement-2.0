@@ -128,7 +128,8 @@ Examples:
 2. **Read the execution flow**: `runtime/flows/{domain}/{TYPE}.md`
 3. **Consult domain knowledge**: Modules, ERIs, ADRs as specified by skill
 4. **Generate output** following the flow's guidance
-5. **Validate output** using the validation tiers
+5. **Use the Flow Execution Output Structure**: Generate outputs in the standardized structure (input/, output/, trace/, validation/) as defined in the flow
+6. **Validate output** using the validation tiers
 
 ### Variant Selection Behavior (v1.3)
 

@@ -1,7 +1,7 @@
 # Skill Index
 #
-# Version: 2.1
-# Date: 2025-12-22
+# Version: 2.2
+# Date: 2025-12-23
 # Purpose: Pre-computed index for O(1) skill discovery
 #
 # This index enables efficient skill discovery by providing multiple
@@ -17,6 +17,11 @@
 # - Input validation rules section
 # - Formalized discovery process steps
 # - Error handling for ambiguous matches
+#
+# NEW in v2.2:
+# - Activation rules moved to OVERVIEW.md (single source of truth)
+# - Simplified skill_metadata (keywords only, no duplicated rules)
+# - Updated discovery algorithm to reference OVERVIEW.md for activation rules
 #
 # MAINTENANCE: When adding a new skill, register it in ALL applicable
 # sections of this index. See model/standards/authoring/SKILL.md for details.
@@ -356,51 +361,52 @@ flows:
 #    - Scan layers[*].signals.artifacts for matches
 #    - If unclear, ask user: "¿Es para frontend, microservicios, o mainframe?"
 #
-# 4. FUSION API CHECK (for SoI layer):
-#    **NEW in v2.2** - Before selecting between skill-020 and skill-021:
-#    a) Check if prompt contains "Fusion" + API layer name → skill-021
-#    b) Check if prompt contains API layer WITHOUT "Fusion" → ASK for clarification
-#    c) Check if prompt indicates internal service → skill-020 (no mod-019)
-#    d) Default: ASK for clarification
-#    See skill_metadata.skill-021-api-rest-java-spring.fusion_api_rules for details.
-#
-# 5. FILTER:
+# 4. FILTER:
 #    - Get candidate skills from domains.{domain}.skills_by_layer.{layer}
 #    - Or from layers.{layer}.skills
 #
-# 6. CAPABILITY (optional refinement):
+# 5. CAPABILITY (optional refinement):
 #    - If user mentions capability (e.g., "resilience"), filter further
 #
-# 7. TECHNOLOGY (optional refinement):
+# 6. TECHNOLOGY (optional refinement):
 #    - If user specifies technology, filter further
 #
-# 8. SEMANTIC MATCH:
+# 7. SEMANTIC MATCH:
 #    - Read OVERVIEW.md only for filtered candidates
 #    - Match user intent with skill purpose
+#    - **IMPORTANT**: OVERVIEW.md contains activation rules that define
+#      when to use each skill vs similar alternatives (e.g., skill-020 vs skill-021)
+#    - Follow the activation rules in OVERVIEW.md for confident selection
 #
-# Example 1 (Fusion API):
+# Example 1 (Fusion API - rules in OVERVIEW.md):
 #   User: "Genera una Fusion Domain API para Customer"
 #   1. SCOPE: SDLC ✓
 #   2. DOMAIN: CODE (output is code)
 #   3. LAYER: SOI (keywords: API)
-#   4. FUSION CHECK: Contains "Fusion" + "Domain" → skill-021, apiLayer=domain
-#   5-8. Proceed with skill-021
+#   4-6. FILTER: skill-020, skill-021 are candidates
+#   7. SEMANTIC MATCH: Read OVERVIEW.md for both
+#      → skill-021 OVERVIEW says: "Fusion" + "Domain API" = HIGH confidence
+#      → Select skill-021 with apiLayer=domain
 #
-# Example 2 (Ambiguous):
+# Example 2 (Ambiguous - rules in OVERVIEW.md):
 #   User: "Genera una Domain API para Customer"
 #   1. SCOPE: SDLC ✓
 #   2. DOMAIN: CODE
 #   3. LAYER: SOI
-#   4. FUSION CHECK: Contains "Domain API" without "Fusion" → ASK
-#      "¿Te refieres a una API del modelo Fusion?"
+#   4-6. FILTER: skill-020, skill-021 are candidates
+#   7. SEMANTIC MATCH: Read OVERVIEW.md for both
+#      → skill-021 OVERVIEW says: "Domain API" without "Fusion" = MEDIUM confidence
+#      → ASK: "¿Te refieres a una API del modelo Fusion?"
 #
-# Example 3 (Internal Service):
+# Example 3 (Internal Service - rules in OVERVIEW.md):
 #   User: "Genera un microservicio Java con Spring Boot"
 #   1. SCOPE: SDLC ✓
 #   2. DOMAIN: CODE
 #   3. LAYER: SOI (keywords: microservicio, spring boot)
-#   4. FUSION CHECK: Contains "microservicio" (internal) → skill-020
-#   5-8. Proceed with skill-020 (no mod-019)
+#   4-6. FILTER: skill-020, skill-021 are candidates
+#   7. SEMANTIC MATCH: Read OVERVIEW.md for both
+#      → skill-021 OVERVIEW says: "microservicio" = use skill-020 instead
+#      → Select skill-020
 
 # =============================================================================
 # MAINTENANCE NOTES
@@ -483,62 +489,14 @@ skill_metadata:
   # skill-021: Fusion REST API (Extends skill-020)
   # ---------------------------------------------------------------------------
   # IMPORTANT: This skill applies ONLY to Fusion APIs (see ADR-001).
+  # Activation rules are defined in OVERVIEW.md.
   # Use skill-020 for internal microservices without API exposure.
   skill-021-api-rest-java-spring:
     path: code/soi/skill-021-api-rest-java-spring
     extends: skill-020-microservice-java-spring
     
-    # -------------------------------------------------------------------------
-    # Fusion API Identification Rules (from ADR-001)
-    # -------------------------------------------------------------------------
-    # This skill should ONLY be activated when the request explicitly 
-    # references a Fusion API. See ADR-001 "Fusion API Identification" section.
-    fusion_api_rules:
-      
-      # HIGH confidence - Apply skill-021 directly
-      explicit_fusion_pattern:
-        description: "Prompt contains 'Fusion' + API layer name in any order/case/language"
-        model_name: "Fusion"
-        model_layers:
-          - experience
-          - bff
-          - composable
-          - domain
-          - system
-        examples:
-          - "Fusion Domain API"
-          - "Domain API Fusion"
-          - "API de Dominio Fusion"
-          - "API Fusion de Dominio"
-          - "fusion domain api"
-          - "FUSION SYSTEM API"
-          - "Fusion BFF"
-          - "API de Experiencia Fusion"
-        action: "Apply skill-021 with corresponding apiLayer"
-      
-      # MEDIUM confidence - Requires clarification
-      ambiguous_pattern:
-        description: "Prompt contains API layer name WITHOUT 'Fusion'"
-        examples:
-          - "Domain API"
-          - "System API"
-          - "Experience API"
-          - "BFF"
-          - "API de Dominio"
-        action: "ASK: ¿Te refieres a una API del modelo Fusion (Experience/Composable/Domain/System)?"
-      
-      # Use skill-020 instead (no API exposure)
-      internal_service_pattern:
-        description: "Prompt indicates internal service"
-        keywords:
-          - microservicio
-          - microservice
-          - servicio interno
-          - internal service
-          - API interna
-          - internal API
-          - bounded context service
-        action: "Use skill-020 without mod-019"
+    # Activation rules are in OVERVIEW.md (When to Use > Activation Rules)
+    # The agent reads OVERVIEW.md during discovery to determine if this skill applies
     
     keywords:
       positive:
@@ -550,30 +508,17 @@ skill_metadata:
         - Fusion Experience
         - Fusion Composable
         - API Fusion
-        # Generic API terms (require Fusion to be HIGH confidence)
-        - API
+        # Generic API terms
         - REST API
-        - REST
         - Domain API
-        - API de dominio
         - Experience API
         - BFF
         - Composable API
         - System API
-        - 4-layer
-        - 4 capas
         - pagination
-        - paginación
         - HATEOAS
-        - hypermedia
         - compensation
-        - compensación
-        - SAGA
         - OpenAPI
-        - contrato API
-        - API contract
-        - public API
-        - API pública
       negative:
         - internal microservice
         - microservicio interno
@@ -581,7 +526,6 @@ skill_metadata:
         - internal service
         - gRPC
         - async
-        - eventos
         - Kafka
         - event-driven
     parameters:
@@ -589,15 +533,6 @@ skill_metadata:
         type: enum
         values: [experience, composable, domain, system]
         required: true
-        inference_rules:
-          description: "How to infer apiLayer from prompt when Fusion API confirmed"
-          experience:
-            keywords: [BFF, frontend, mobile, web, UI, experiencia, experience]
-          composable:
-            keywords: [orchestration, workflow, orquestación, composable, multi-domain]
-          domain:
-            keywords: [domain, dominio, business capability, negocio]
-          system:
             keywords: [system, sistema, mainframe, legacy, SoR, integración]
         layer_features:
           experience:
