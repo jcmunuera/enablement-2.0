@@ -1,7 +1,7 @@
 # Skill Type: CODE/GENERATE
 
-**Version:** 2.1  
-**Date:** 2025-12-22  
+**Version:** 2.2  
+**Date:** 2025-12-23  
 **Domain:** CODE
 
 ---
@@ -337,6 +337,65 @@ This holistic approach:
 ├── pom.xml
 └── README.md
 ```
+
+---
+
+## Flow Execution Output Structure
+
+When a GENERATE flow executes, it produces a standardized output structure that enables reproducibility, traceability, and validation.
+
+```
+{execution-id}/
+├── input/                          # Inputs received by the flow
+│   ├── prompt.md                   # Structured prompt (from specialized agent)
+│   └── generation-request.json     # Generated request (created during execution)
+│
+├── output/                         # Generated artifact
+│   └── {serviceName}/              # The complete project structure
+│       ├── .enablement/
+│       │   └── manifest.json
+│       ├── src/
+│       ├── pom.xml
+│       └── ...
+│
+├── trace/                          # Decision traceability
+│   └── generation-trace.md         # Skills activated, modules consulted, decisions made
+│
+└── validation/                     # Validation scripts for reproducibility
+    ├── tier-1-universal.sh         # Re-run tier-1 validations
+    ├── tier-2-technology.sh        # Re-run tier-2 validations (tech-specific)
+    ├── tier-3-skill.sh             # Re-run tier-3 validations (skill-specific)
+    ├── compile.sh                  # Compile artifact (mvn compile, npm build, etc.)
+    ├── test.sh                     # Run tests (mvn test, npm test, etc.)
+    └── package.sh                  # Package artifact (mvn package, npm pack, etc.)
+```
+
+### Directory Purposes
+
+| Directory | Purpose |
+|-----------|---------|
+| `input/` | Store all inputs for reproducibility. `generation-request.json` is generated during execution from `prompt.md`. |
+| `output/` | Contains the generated artifact (project). Structure depends on the skill/technology. |
+| `trace/` | Records all decisions made during execution: skill selection, module resolution, variant choices. |
+| `validation/` | Scripts to re-execute validations and verify artifact integrity. |
+
+### Validation Scripts
+
+The `validation/` directory contains scripts that allow re-running all validations:
+
+| Script | Purpose |
+|--------|---------|
+| `tier-1-universal.sh` | Re-execute universal validations (traceability, naming, structure) |
+| `tier-2-technology.sh` | Re-execute technology-specific validations (Java/Spring, Node, etc.) |
+| `tier-3-skill.sh` | Re-execute skill/module-specific validations |
+| `compile.sh` | Compile the generated artifact |
+| `test.sh` | Execute unit tests |
+| `package.sh` | Package the artifact for deployment |
+
+These scripts enable:
+1. **Reproducibility**: Anyone can re-validate the generated code
+2. **CI/CD Integration**: Scripts can be executed in pipelines
+3. **Comparison**: Results can be compared across different generation runs
 
 ---
 

@@ -1,7 +1,7 @@
 # Authoring Guide: Execution Flows
 
-**Version:** 1.1  
-**Date:** 2025-12-22
+**Version:** 1.2  
+**Date:** 2025-12-23
 
 ---
 
@@ -121,7 +121,63 @@ During code generation, the agent MUST follow:
 
 ## Output Structure
 
-[Expected output format/structure]
+Flows MUST define two output structures:
+
+### 1. Artifact Output Structure
+
+The structure of the generated artifact itself (e.g., project structure for CODE/GENERATE):
+
+```markdown
+## Artifact Output Structure
+
+{serviceName}/
+├── src/
+│   ├── main/
+│   └── test/
+├── pom.xml
+└── README.md
+```
+
+### 2. Flow Execution Output Structure (v1.2)
+
+The standardized structure for the complete flow execution output, enabling reproducibility and traceability:
+
+```markdown
+## Flow Execution Output Structure
+
+{execution-id}/
+├── input/                          # Inputs received by the flow
+│   ├── prompt.md                   # Original request
+│   └── ...                         # Other inputs (generated during execution)
+│
+├── output/                         # Generated artifact
+│   └── {artifact}/                 # The artifact with its own structure
+│
+├── trace/                          # Decision traceability
+│   └── generation-trace.md         # Skills, modules, decisions
+│
+└── validation/                     # Validation scripts
+    ├── tier-1-universal.sh         # Re-run tier-1 validations
+    ├── tier-2-technology.sh        # Re-run tier-2 validations
+    ├── tier-3-skill.sh             # Re-run tier-3 validations
+    └── {artifact-specific}.sh      # Artifact validation (compile, test, etc.)
+```
+
+**Directory purposes:**
+
+| Directory | Purpose |
+|-----------|---------|
+| `input/` | Store all inputs for reproducibility |
+| `output/` | Contains the generated artifact |
+| `trace/` | Records all decisions made during execution |
+| `validation/` | Scripts to re-execute validations |
+
+**Validation scripts must include:**
+
+- `tier-1-universal.sh` - Re-execute universal validations
+- `tier-2-technology.sh` - Re-execute technology-specific validations  
+- `tier-3-skill.sh` - Re-execute skill/module-specific validations
+- Artifact-specific scripts (e.g., `compile.sh`, `test.sh`, `package.sh` for Java)
 
 ---
 
@@ -197,8 +253,10 @@ Before considering the flow complete:
 - [ ] Document follows required structure
 - [ ] Execution philosophy is clearly stated
 - [ ] Step-by-step flow is documented
-- [ ] **Variant Resolution step included** (if flow uses modules) ← NEW
-- [ ] **Determinism rules referenced** (for CODE domain) ← NEW
+- [ ] **Variant Resolution step included** (if flow uses modules)
+- [ ] **Determinism rules referenced** (for CODE domain)
+- [ ] **Artifact Output Structure defined** ← NEW in v1.2
+- [ ] **Flow Execution Output Structure defined** ← NEW in v1.2
 - [ ] Error handling is defined
 - [ ] **CONSUMER-PROMPT.md updated** ← Don't forget!
 - [ ] **DOMAIN.md updated** ← Don't forget!
