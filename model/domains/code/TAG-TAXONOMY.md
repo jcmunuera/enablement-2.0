@@ -1,6 +1,6 @@
 # CODE Domain: Tag Taxonomy
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Date:** 2025-12-24  
 **Domain:** CODE
 
@@ -17,6 +17,14 @@ This document defines the tag taxonomy for CODE domain skills. It specifies:
 5. **Coherence rules** for skill extension
 
 For the generic tag format and discovery process, see `model/standards/authoring/TAGS.md`.
+
+---
+
+## Language Support
+
+Keywords are defined in **English and Spanish** to support bilingual prompts. The discovery process matches against any variant.
+
+> **Note:** This bilingual keyword approach is a pragmatic solution. Future evolution may include semantic matching or external ontologies for more flexible language support.
 
 ---
 
@@ -74,8 +82,26 @@ API architecture model.
 
 | Value | Description |
 |-------|-------------|
-| `fusion` | Fusion 4-layer model (Experience, Composable, Domain, System) |
+| `fusion` | Fusion 4-layer model (see below) |
 | `standard` | Generic REST API without specific model |
+
+#### Fusion API Model Layers
+
+All Fusion layers are **SoI (System of Innovation)** from a technology perspective:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    FUSION API MODEL                         │
+│                     (All layers = SoI)                      │
+├─────────────────────────────────────────────────────────────┤
+│  Experience API / BFF  │ UI-facing APIs, aggregation       │
+│  Composable API        │ Orchestration, SAGA, workflows    │
+│  Domain API            │ Business domain logic             │
+│  System API            │ Backend integration (mainframe)   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+> **Note:** SoE (System of Engagement) is reserved for Front-End technologies: Angular, React, TypeScript, Microfrontends.
 
 ---
 
@@ -85,53 +111,77 @@ These rules define how to extract tag values from user prompts.
 
 ### artifact-type
 
-| Keywords in prompt | Extracted value |
-|--------------------|-----------------|
-| `API`, `REST API`, `Domain API`, `System API`, `Experience API`, `Composable API`, `Fusion API`, `Fusion` | `api` |
-| `microservicio`, `microservice`, `servicio interno`, `internal service`, `backend service` | `service` |
-| `aplicación`, `application`, `batch`, `daemon`, `CLI`, `job` | `application` |
-| `librería`, `library`, `componente`, `component`, `módulo` | `component` |
-| *(none detected)* | **ASK**: "¿Qué tipo de artefacto necesitas: API, microservicio, aplicación batch/daemon, o componente?" |
+| Keywords (EN/ES) | Extracted value |
+|------------------|-----------------|
+| `API`, `REST API`, `Domain API`, `API de Dominio`, `System API`, `API de Sistema`, `Experience API`, `API de Experiencia`, `Composable API`, `API Compuesta`, `API Orquestadora`, `Fusion API`, `Fusion`, `BFF`, `Backend for Frontend` | `api` |
+| `microservice`, `microservicio`, `service`, `servicio`, `internal service`, `servicio interno`, `backend service`, `servicio backend`, `servicio de negocio`, `business service` | `service` |
+| `application`, `aplicación`, `batch`, `daemon`, `CLI`, `job`, `proceso`, `process`, `tarea programada`, `scheduled task` | `application` |
+| `library`, `librería`, `component`, `componente`, `module`, `módulo`, `utility`, `utilidad`, `helper` | `component` |
+| *(none detected)* | **ASK**: "¿Qué tipo de artefacto necesitas: API, microservicio, aplicación batch/daemon, o componente/librería?" |
 
 ### stack
 
-| Keywords in prompt | Extracted value |
-|--------------------|-----------------|
+| Keywords (EN/ES) | Extracted value |
+|------------------|-----------------|
 | `Java`, `Spring`, `Spring Boot` | `java-spring` |
 | `Quarkus` | `java-quarkus` |
-| `Node`, `NodeJS`, `Express` | `nodejs-express` |
-| `NestJS` | `nodejs-nestjs` |
+| `Node`, `NodeJS`, `Node.js`, `Express` | `nodejs-express` |
+| `NestJS`, `Nest` | `nodejs-nestjs` |
 | `Go`, `Golang`, `Gin` | `go-gin` |
 | `Kotlin`, `Ktor` | `kotlin-ktor` |
 | *(none detected)* | **DEFAULT**: `java-spring` |
 
 ### runtime-model
 
-| Keywords in prompt | Extracted value |
-|--------------------|-----------------|
-| `REST`, `HTTP`, `request`, `endpoint`, `síncrono`, `synchronous` | `request-response` |
-| `daemon`, `background`, `demonio`, `servicio continuo` | `daemon` |
-| `batch`, `job`, `scheduled`, `programado`, `cron` | `batch` |
-| `evento`, `event`, `Kafka`, `RabbitMQ`, `async`, `asíncrono`, `mensaje`, `message` | `event-driven` |
+| Keywords (EN/ES) | Extracted value |
+|------------------|-----------------|
+| `REST`, `HTTP`, `request`, `endpoint`, `synchronous`, `síncrono`, `sincrónico`, `petición`, `llamada` | `request-response` |
+| `daemon`, `demonio`, `background`, `segundo plano`, `servicio continuo`, `continuous service`, `long-running` | `daemon` |
+| `batch`, `job`, `scheduled`, `programado`, `cron`, `tarea`, `task`, `proceso nocturno`, `nightly` | `batch` |
+| `event`, `evento`, `Kafka`, `RabbitMQ`, `async`, `asynchronous`, `asíncrono`, `message`, `mensaje`, `publish`, `subscribe`, `stream` | `event-driven` |
 | *(none detected)* | **DEFAULT**: `request-response` |
 
 ### protocol (only if artifact-type = api)
 
-| Keywords in prompt | Extracted value |
-|--------------------|-----------------|
-| `REST`, `RESTful`, `HTTP` | `rest` |
-| `gRPC`, `protobuf`, `proto` | `grpc` |
+| Keywords (EN/ES) | Extracted value |
+|------------------|-----------------|
+| `REST`, `RESTful`, `HTTP`, `JSON API` | `rest` |
+| `gRPC`, `protobuf`, `proto`, `Protocol Buffers` | `grpc` |
 | `GraphQL` | `graphql` |
-| `async`, `Kafka`, `eventos`, `mensajes`, `message` | `async` |
+| `async`, `Kafka`, `eventos`, `events`, `mensajes`, `messages`, `streaming` | `async` |
 | *(none detected)* | **DEFAULT**: `rest` |
 
 ### api-model (only if artifact-type = api)
 
-| Keywords in prompt | Extracted value |
-|--------------------|-----------------|
-| `Fusion`, `Domain API`, `System API`, `Experience API`, `Composable API`, `BFF` | `fusion` |
-| `API genérica`, `standard API`, `simple API` | `standard` |
-| *(none detected)* | **ASK**: "¿La API sigue el modelo Fusion (Domain/System/Experience/Composable)?" |
+#### HIGH Confidence (Direct Match → No ASK)
+
+These keywords **directly indicate Fusion model** - select skill without asking:
+
+| Keywords (EN/ES) | Extracted value | Confidence |
+|------------------|-----------------|------------|
+| `Fusion`, `Fusion API`, `API Fusion` | `fusion` | HIGH |
+| `Domain API`, `API de Dominio`, `API del Dominio` | `fusion` | HIGH |
+| `System API`, `API de Sistema`, `API del Sistema` | `fusion` | HIGH |
+| `Experience API`, `API de Experiencia` | `fusion` | HIGH |
+| `Composable API`, `API Compuesta`, `API Orquestadora`, `API de Orquestación`, `Orchestration API` | `fusion` | HIGH |
+| `BFF`, `Backend for Frontend`, `Backend para Frontend` | `fusion` | HIGH |
+| `SAGA`, `saga pattern`, `patrón saga` | `fusion` | HIGH (implies Composable) |
+
+#### MEDIUM Confidence (Requires ASK)
+
+These patterns are ambiguous - ask for clarification:
+
+| Pattern | Action |
+|---------|--------|
+| `API` + `dominio` (but not "Domain API") | **ASK**: "¿Te refieres a una Domain API del modelo Fusion, o es una API genérica para el dominio de negocio?" |
+| `REST API` without Fusion keywords | **ASK**: "¿La API sigue el modelo Fusion (Domain/System/Experience/Composable) o es una API REST genérica?" |
+| `API genérica`, `standard API`, `simple API`, `API simple` | `standard` | HIGH |
+
+#### LOW Confidence (No Match)
+
+| Pattern | Action |
+|---------|--------|
+| `API` alone without qualifiers | **ASK**: "¿Qué tipo de API necesitas? Opciones: Domain API, System API, Experience API, Composable API (modelo Fusion), o API REST genérica" |
 
 ---
 
@@ -154,7 +204,7 @@ User: "Genera una Fusion Domain API para Customer"
 
 Extracted tags:
   artifact-type: api (keyword: "API")
-  api-model: fusion (keyword: "Fusion", "Domain API")
+  api-model: fusion (keywords: "Fusion", "Domain API") → HIGH confidence
   protocol: rest (default)
   stack: java-spring (default)
   runtime-model: request-response (default)
@@ -178,6 +228,21 @@ Tags:
 Total Score: 2
 
 Winner: skill-021 (score 10 vs 2)
+```
+
+### Scoring Example with System API
+
+```
+User: "Implementa una System API para integración con mainframe"
+
+Extracted tags:
+  artifact-type: api (keyword: "System API")
+  api-model: fusion (keyword: "System API") → HIGH confidence
+  protocol: rest (default)
+  stack: java-spring (default)
+  runtime-model: request-response (default)
+
+Result: skill-021 (score 10) - No ASK required
 ```
 
 ---
@@ -345,3 +410,4 @@ tags:
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2025-12-24 | Initial version |
+| 1.1 | 2025-12-24 | Added bilingual keywords (EN/ES), Fusion model documentation (4 layers all SoI), HIGH/MEDIUM/LOW confidence rules for api-model, added Composable API keywords |
