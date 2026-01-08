@@ -106,6 +106,41 @@ enablement-2.0/
 
 ---
 
+## Agent Entry Point
+
+> **For AI Agents:** If you are an AI agent interacting with this Knowledge Base, follow this section.
+
+### Step 1: Identify Your Role
+
+| Role | Description | Typical Triggers |
+|------|-------------|------------------|
+| **CONSUMER** | Execute skills to produce SDLC outputs | "Generate a microservice", "Create an API", "Add circuit breaker" |
+| **AUTHOR** | Create or modify Knowledge Base assets | "Create a new ERI", "Add a module", "Define a new skill" |
+
+> **Note:** Your role is typically specified in the prompt you receive. If not specified, infer from context: requests for code/design/analysis → CONSUMER; requests to extend the KB → AUTHOR.
+
+### Step 2: Load Role-Specific Context
+
+| Role | Action |
+|------|--------|
+| **CONSUMER** | Read `model/CONSUMER-PROMPT.md` and follow its instructions |
+| **AUTHOR** | Read `model/AUTHOR-PROMPT.md` and follow its instructions |
+
+### Step 3: Execute
+
+The role-specific prompt will guide you through:
+
+| Role | Process |
+|------|---------|
+| **CONSUMER** | Discovery → Skill Selection → Module Resolution → Execution → Validation |
+| **AUTHOR** | Standards Review → Asset Creation → Coherence Validation → Registration |
+
+### Additional Context
+
+If provided with an `ENTERPRISE-CONTEXT.md` file, read it **before** the role-specific prompt. It contains organizational vocabulary and conventions that inform interpretation.
+
+---
+
 ## Quick Start
 
 **New here?** Start with [GETTING-STARTED.md](GETTING-STARTED.md) which provides onboarding paths for:
@@ -230,5 +265,5 @@ Internal project - All rights reserved.
 
 ---
 
-**Version:** 2.2.0  
-**Last Updated:** 2025-12-18
+**Version:** 2.3.0  
+**Last Updated:** 2026-01-08
