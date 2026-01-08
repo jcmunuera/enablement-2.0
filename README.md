@@ -132,8 +132,20 @@ The role-specific prompt will guide you through:
 
 | Role | Process |
 |------|---------|
-| **CONSUMER** | Discovery → Skill Selection → Module Resolution → Execution → Validation |
+| **CONSUMER** | Discovery → Skill Selection → **Read Flow** → Module Resolution → Execution → Validation |
 | **AUTHOR** | Standards Review → Asset Creation → Coherence Validation → Registration |
+
+#### CONSUMER Execution Detail
+
+> ⚠️ **CRITICAL**: After selecting a skill, you MUST read the execution flow before generating any code.
+
+1. **Discovery & Skill Selection**: Follow 3-phase process in CONSUMER-PROMPT.md
+2. **Read Execution Flow**: `runtime/flows/{domain}/{SKILL_TYPE}.md`
+   - For GENERATE skills → Read `runtime/flows/code/GENERATE.md`
+   - For ADD skills → Read `runtime/flows/code/ADD.md`
+3. **Create Flow Output Structure**: The Flow defines the output structure (input/, output/, trace/, validation/)
+4. **Generate Code**: Following skill specifications and module knowledge
+5. **Validate**: Execute validation scripts per tier system
 
 ### Additional Context
 
@@ -265,5 +277,5 @@ Internal project - All rights reserved.
 
 ---
 
-**Version:** 2.3.0  
+**Version:** 2.4.0  
 **Last Updated:** 2026-01-08
