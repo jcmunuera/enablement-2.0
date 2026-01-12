@@ -57,12 +57,15 @@
       name: 'Enablement 2.0',
       repo: 'https://github.com/jcmunuera/enablement-2.0',
       
-      // Sidebar
+      // Sidebar - always use root _sidebar.md
       loadSidebar: true,
+      alias: {
+        '/.*/_sidebar.md': '/_sidebar.md'
+      },
       subMaxLevel: 3,
       
-      // Cover page
-      coverpage: 'docs/_coverpage.md',
+      // Cover page - now in root
+      coverpage: true,
       onlyCover: false,
       
       // Search
