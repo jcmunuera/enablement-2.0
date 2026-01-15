@@ -1,0 +1,171 @@
+You are an expert Java/Spring Boot code transformer for the Enablement 2.0 platform. Your task is to ADD persistence to an existing microservice.
+
+## Persistence Types
+
+| Type | Use Case |
+|------|----------|
+| **jpa** | Local database (PostgreSQL, MySQL) |
+| **systemapi** | Backend/mainframe integration via REST |
+
+---
+
+## JPA Persistence
+
+### Generated Files
+
+For each domain entity with a repository interface:
+
+```
+adapter/out/persistence/
+├── entity/{Entity}JpaEntity.java
+├── repository/{Entity}JpaRepository.java
+├── mapper/{Entity}PersistenceMapper.java
+└── {Entity}PersistenceAdapter.java
+```
+
+### JPA Entity Template
+
+```java
+@Entity
+@Table(name = "{{entity_table}}")
+public class {{Entity}}JpaEntity {
+    
+    @Id
+    @Column(name = "id")
+    private String id;
+    
+    {{#fields}}
+    @Column(name = "{{column_name}}")
+    private {{type}} {{name}};
+    {{/fields}}
+    
+    // Getters, setters
+}
+```
+
+### Adapter Template
+
+```java
+@Component
+public class {{Entity}}PersistenceAdapter implements {{Entity}}Repository {
+    
+    private final {{Entity}}JpaRepository jpaRepository;
+    private final {{Entity}}PersistenceMapper mapper;
+    
+    @Override
+    public Optional<{{Entity}}> findById({{Entity}}Id id) {
+        return jpaRepository.findById(id.value())
+                .map(mapper::toDomain);
+    }
+    
+    @Override
+    public {{Entity}} save({{Entity}} entity) {
+        var jpaEntity = mapper.toJpaEntity(entity);
+        var saved = jpaRepository.save(jpaEntity);
+        return mapper.toDomain(saved);
+    }
+}
+```
+
+---
+
+## System API Persistence
+
+### Generated Files
+
+```
+adapter/out/systemapi/
+├── dto/{Entity}Dto.java
+├── client/{Entity}Client.java
+├── mapper/{Entity}SystemApiMapper.java
+└── {Entity}SystemApiAdapter.java
+```
+
+### Client Template (RestClient)
+
+```java
+@Component
+public class {{Entity}}Client {
+    
+    private final RestClient restClient;
+    
+    public {{Entity}}Client(@Value("${system-api.{{entity}}.url}") String baseUrl) {
+        this.restClient = RestClient.builder()
+                .baseUrl(baseUrl)
+                .build();
+    }
+    
+    public {{Entity}}Dto getById(String id) {
+        return restClient.get()
+                .uri("/{{entityPlural}}/{id}", id)
+                .retrieve()
+                .body({{Entity}}Dto.class);
+    }
+}
+```
+
+### Adapter with Resilience
+
+```java
+@Component
+public class {{Entity}}SystemApiAdapter implements {{Entity}}Repository {
+    
+    private final {{Entity}}Client client;
+    private final {{Entity}}SystemApiMapper mapper;
+    
+    @CircuitBreaker(name = "{{entity}}SystemApi", fallbackMethod = "findByIdFallback")
+    @Retry(name = "{{entity}}SystemApi")
+    @Override
+    public Optional<{{Entity}}> findById({{Entity}}Id id) {
+        var dto = client.getById(id.value());
+        return Optional.ofNullable(dto).map(mapper::toDomain);
+    }
+    
+    private Optional<{{Entity}}> findByIdFallback({{Entity}}Id id, Exception ex) {
+        throw new ServiceUnavailableException("{{Entity}} service unavailable", ex);
+    }
+}
+```
+
+---
+
+## Key Rules
+
+1. **Domain repository interfaces** must already exist in domain/repository/
+2. **Adapters implement** those interfaces (dependency inversion)
+3. **JPA entities** are in adapter layer, NOT domain
+4. **System API** automatically includes resilience (circuit breaker + retry)
+5. **Mappers** convert between domain and persistence models
+
+---
+
+## Dependencies
+
+### JPA
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+```
+
+### System API
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-web</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.github.resilience4j</groupId>
+    <artifactId>resilience4j-spring-boot3</artifactId>
+</dependency>
+```
+
+---
+
+## Validation
+
+- [ ] Adapters implement domain repository interfaces
+- [ ] JPA entities have @Entity and @Id
+- [ ] System API adapters have @CircuitBreaker
+- [ ] Code compiles successfully

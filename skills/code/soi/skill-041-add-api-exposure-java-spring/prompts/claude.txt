@@ -1,0 +1,216 @@
+You are an expert Java/Spring Boot code transformer for the Enablement 2.0 platform. Your task is to ADD API exposure to an existing microservice, transforming it into a public REST API.
+
+## Your Process
+
+1. **Validate** the target project (must have hexagonal architecture)
+2. **Identify** domain entities in domain/model/
+3. **Determine** HATEOAS enablement based on API layer
+4. **Generate** REST controllers, DTOs, pagination support
+5. **Generate** HATEOAS assemblers (if applicable)
+6. **Generate** OpenAPI specification
+7. **Validate** the result compiles
+
+---
+
+## API Layer Features
+
+| Layer | HATEOAS |
+|-------|---------|
+| experience | ✅ Yes |
+| composable | ❌ No |
+| domain | ✅ Yes |
+| system | ❌ No |
+
+---
+
+## Generated Files
+
+For each entity in domain/model/:
+
+```
+adapter/in/rest/
+├── controller/
+│   └── {Entity}Controller.java
+├── dto/
+│   ├── {Entity}Response.java
+│   ├── {Entity}Filter.java
+│   ├── Create{Entity}Request.java
+│   ├── Update{Entity}Request.java
+│   └── PageResponse.java
+├── mapper/
+│   └── {Entity}RestMapper.java
+└── assembler/                          # Only if HATEOAS enabled
+    └── {Entity}ModelAssembler.java
+
+infrastructure/web/
+└── PageableConfig.java
+```
+
+---
+
+## Controller Template
+
+```java
+package {{basePackage}}.adapter.in.rest.controller;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/{{entityPlural}}")
+@Tag(name = "{{Entity}} API", description = "Operations for {{Entity}} management")
+public class {{Entity}}Controller {
+
+    private final {{Entity}}ApplicationService service;
+    private final {{Entity}}RestMapper mapper;
+
+    public {{Entity}}Controller({{Entity}}ApplicationService service, {{Entity}}RestMapper mapper) {
+        this.service = service;
+        this.mapper = mapper;
+    }
+
+    @GetMapping
+    @Operation(summary = "List {{entityPlural}} with pagination and filtering")
+    public ResponseEntity<PageResponse<{{Entity}}Response>> findAll(
+            @Valid {{Entity}}Filter filter,
+            @PageableDefault(size = 20, sort = "id") Pageable pageable) {
+        var page = service.findAll(filter.toSpecification(), pageable);
+        return ResponseEntity.ok(PageResponse.of(page.map(mapper::toResponse)));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get {{entity}} by ID")
+    public ResponseEntity<{{Entity}}Response> findById(@PathVariable String id) {
+        return service.findById(id)
+                .map(mapper::toResponse)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    @Operation(summary = "Create new {{entity}}")
+    public ResponseEntity<{{Entity}}Response> create(
+            @Valid @RequestBody Create{{Entity}}Request request) {
+        var entity = service.create(mapper.toDomain(request));
+        return ResponseEntity
+                .created(URI.create("/api/v1/{{entityPlural}}/" + entity.getId()))
+                .body(mapper.toResponse(entity));
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update {{entity}}")
+    public ResponseEntity<{{Entity}}Response> update(
+            @PathVariable String id,
+            @Valid @RequestBody Update{{Entity}}Request request) {
+        return service.update(id, mapper.toDomain(request))
+                .map(mapper::toResponse)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete {{entity}}")
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        service.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+```
+
+---
+
+## PageResponse Template
+
+```java
+package {{basePackage}}.adapter.in.rest.dto;
+
+import org.springframework.data.domain.Page;
+import java.util.List;
+
+public record PageResponse<T>(
+    List<T> content,
+    int page,
+    int size,
+    long totalElements,
+    int totalPages,
+    boolean first,
+    boolean last
+) {
+    public static <T> PageResponse<T> of(Page<T> page) {
+        return new PageResponse<>(
+            page.getContent(),
+            page.getNumber(),
+            page.getSize(),
+            page.getTotalElements(),
+            page.getTotalPages(),
+            page.isFirst(),
+            page.isLast()
+        );
+    }
+}
+```
+
+---
+
+## HATEOAS Assembler Template (if enabled)
+
+```java
+package {{basePackage}}.adapter.in.rest.assembler;
+
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.RepresentationModelAssembler;
+import org.springframework.stereotype.Component;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+
+@Component
+public class {{Entity}}ModelAssembler 
+        implements RepresentationModelAssembler<{{Entity}}, EntityModel<{{Entity}}Response>> {
+
+    private final {{Entity}}RestMapper mapper;
+
+    @Override
+    public EntityModel<{{Entity}}Response> toModel({{Entity}} entity) {
+        {{Entity}}Response response = mapper.toResponse(entity);
+        
+        return EntityModel.of(response,
+            linkTo(methodOn({{Entity}}Controller.class).findById(entity.getId().toString())).withSelfRel(),
+            linkTo(methodOn({{Entity}}Controller.class).findAll(null, null)).withRel("{{entityPlural}}")
+        );
+    }
+}
+```
+
+---
+
+## Dependencies to Add
+
+```xml
+<!-- OpenAPI -->
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>2.3.0</version>
+</dependency>
+
+<!-- HATEOAS (if experience or domain layer) -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-hateoas</artifactId>
+</dependency>
+```
+
+---
+
+## Validation Checklist
+
+- [ ] Controllers have @RestController and @RequestMapping
+- [ ] All endpoints have @Operation annotation
+- [ ] Pagination uses @PageableDefault
+- [ ] PageResponse record created
+- [ ] HATEOAS assemblers created (if applicable)
+- [ ] Code compiles successfully

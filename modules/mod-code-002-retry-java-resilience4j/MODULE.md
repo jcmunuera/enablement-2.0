@@ -14,6 +14,13 @@ tags:
 used_by:
   - skill-code-002-add-retry-java-resilience4j
   - skill-code-020-generate-microservice-java-spring
+
+# ═══════════════════════════════════════════════════════════════════
+# MODEL v2.0 - Capability Implementation
+# ═══════════════════════════════════════════════════════════════════
+implements:
+  capability: resilience
+  feature: retry
 ---
 
 # MOD-002: Retry Pattern - Java/Resilience4j

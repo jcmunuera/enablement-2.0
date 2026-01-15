@@ -15,6 +15,13 @@ tags:
 used_by:
   - skill-code-004-add-rate-limiter-java-resilience4j
   - skill-code-020-generate-microservice-java-spring
+
+# ═══════════════════════════════════════════════════════════════════
+# MODEL v2.0 - Capability Implementation
+# ═══════════════════════════════════════════════════════════════════
+implements:
+  capability: resilience
+  feature: rate-limiter
 ---
 
 # MOD-004: Rate Limiter Pattern - Java/Resilience4j

@@ -1,9 +1,8 @@
 ---
 id: mod-code-017-persistence-systemapi
 title: "MOD-017: System API Persistence"
-version: 1.4
+version: 1.2
 date: 2025-12-01
-updated: 2026-01-13
 status: Active
 derived_from: eri-code-012-persistence-patterns-java-spring
 depends_on:
@@ -17,6 +16,13 @@ tags:
   - resilience
 used_by:
   - skill-code-020-generate-microservice-java-spring
+
+# ═══════════════════════════════════════════════════════════════════
+# MODEL v2.0 - Capability Implementation
+# ═══════════════════════════════════════════════════════════════════
+implements:
+  capability: persistence
+  feature: systemapi
 ---
 
 # MOD-017: System API Persistence
@@ -33,48 +39,6 @@ Reusable templates for implementing persistence via System API delegation. The D
 
 > ⚠️ **IMPORTANT:** This module provides the adapter layer only (DTO, Mapper, Adapter).  
 > REST client templates are in **mod-018**. Use both modules together.
-
----
-
-## Naming Conventions (v1.3)
-
-> **CRITICAL:** These naming conventions MUST be followed for deterministic code generation.
-
-### Class Naming
-
-| Component | Pattern | Example |
-|-----------|---------|---------|
-| Adapter | `{Entity}SystemApiAdapter` | `CustomerSystemApiAdapter` |
-| Client | `{Entity}SystemApiClient` | `CustomerSystemApiClient` |
-| Mapper | `{Entity}SystemApiMapper` | `CustomerSystemApiMapper` |
-| Request DTO | `{Entity}SystemApiRequest` | `CustomerSystemApiRequest` |
-| Response DTO | `{Entity}SystemApiResponse` | `CustomerSystemApiResponse` |
-| Config | `{Entity}SystemApiFeignConfig` | `CustomerSystemApiFeignConfig` |
-
-### Package Structure
-
-All System API persistence classes go under `adapter.out.systemapi`:
-
-```
-{basePackage}/
-└── adapter/
-    └── out/
-        └── systemapi/
-            ├── {Entity}SystemApiAdapter.java      # Repository implementation
-            ├── SystemApiUnavailableException.java # Shared exception
-            ├── client/
-            │   ├── {Entity}SystemApiClient.java   # HTTP client interface
-            │   └── {Entity}SystemApiFeignConfig.java
-            ├── dto/
-            │   ├── {Entity}SystemApiRequest.java  # Request to System API
-            │   └── {Entity}SystemApiResponse.java # Response from System API
-            └── mapper/
-                └── {Entity}SystemApiMapper.java   # Domain ↔ DTO mapping
-```
-
-> **Note:** This structure follows hexagonal architecture:
-> - `adapter/out/` = Outbound adapters (driven)
-> - `adapter/in/` = Inbound adapters (driving) - see mod-015
 
 ---
 
@@ -462,74 +426,6 @@ public class CustomerSystemApiMapper {
     }
 }
 ```
-
-### ⚠️ CRITICAL: Timestamp Parsing - MANDATORY CODE
-
-> **THIS IS A KNOWN LLM HALLUCINATION POINT**
-> 
-> LLMs frequently generate INVALID code for DB2 timestamp parsing.
-> The code below is the ONLY correct implementation. COPY IT EXACTLY.
-
-**✅ CORRECT - USE THIS EXACTLY:**
-
-```java
-// In Mapper class - COPY EXACTLY AS-IS
-private static final DateTimeFormatter DB2_TIMESTAMP_FORMAT = 
-    DateTimeFormatter.ofPattern("yyyy-MM-dd-HH.mm.ss.SSSSSS");
-
-/**
- * Converts DB2 timestamp string to Instant.
- * DB2 format: yyyy-MM-dd-HH.mm.ss.SSSSSS
- * Example: "2024-01-15-10.30.00.000000"
- *
- * @generated mod-code-017-persistence-systemapi v1.4
- */
-public Instant parseDb2Timestamp(String db2Timestamp) {
-    if (db2Timestamp == null || db2Timestamp.isBlank()) {
-        return null;
-    }
-    try {
-        // DB2 format: 2024-01-15-10.30.00.000000 (26 chars)
-        // ISO format: 2024-01-15T10:30:00.000000Z
-        if (db2Timestamp.length() >= 26) {
-            String isoFormat = db2Timestamp.substring(0, 10) + "T" +    // yyyy-MM-dd + T
-                db2Timestamp.substring(11, 13) + ":" +                   // HH + :
-                db2Timestamp.substring(14, 16) + ":" +                   // mm + :
-                db2Timestamp.substring(17, 19) + "." +                   // ss + .
-                db2Timestamp.substring(20) + "Z";                        // SSSSSS + Z
-            return Instant.parse(isoFormat);
-        }
-        return null;
-    } catch (DateTimeParseException e) {
-        return null;
-    }
-}
-```
-
-**❌ ANTI-PATTERN - NEVER USE:**
-
-```java
-// THIS IS WRONG - String.replace(String, String, int) DOES NOT EXIST IN JAVA
-String isoFormat = value.replace("-", "T", 3);  // ❌ COMPILATION ERROR!
-
-// THIS IS WRONG - replace() only takes 2 arguments
-value.replace(".", ":", 3);  // ❌ COMPILATION ERROR!
-
-// THIS IS WRONG - chained replace with index parameter
-value.replace(":", ".", value.lastIndexOf('.'));  // ❌ COMPILATION ERROR!
-```
-
-**Why this matters:**
-- `String.replace(CharSequence, CharSequence)` exists ✅
-- `String.replace(char, char)` exists ✅  
-- `String.replace(String, String, int)` DOES NOT EXIST ❌
-
-The Java String class has NO replace method that takes 3 arguments.
-Any code using 3-argument replace WILL FAIL COMPILATION.
-
-**The ONLY safe approach for DB2 timestamp parsing is substring().**
-
----
 
 ### Providing mapping.json
 

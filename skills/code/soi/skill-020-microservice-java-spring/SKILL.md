@@ -1,16 +1,27 @@
 ---
-skill_id: skill-code-020-generate-microservice-java-spring
+skill_id: skill-020-microservice-java-spring
 skill_name: Generate Spring Boot Microservice
-skill_type: creation
-skill_domain: code
-complexity: high
-priority: high
-version: 1.3.0
-date: 2025-12-22
+version: 2.0.0
+date: 2025-01-15
 author: Fusion C4E Team
 status: active
+
+# ═══════════════════════════════════════════════════════════════════
+# MODEL v2.0 - Skill Type and Capabilities
+# ═══════════════════════════════════════════════════════════════════
+type: generation
+domain: code
+layer: soi
+stack: java-spring
+
+# Required capabilities (resolved to modules via capability-index.yaml)
+required_capabilities:
+  - architecture.hexagonal-base
+
+# Additional capabilities (resilience, persistence) are inferred from prompt
+# and resolved via capability-index.yaml - NOT declared here
+
 tags:
-  - creation
   - generation
   - spring-boot
   - java
@@ -48,6 +59,18 @@ Implements **Hexagonal Light** architecture as defined in ADR-009:
 
 ---
 
+## Model Version
+
+**Knowledge Base Model:** v2.0  
+**Skill Type:** Generation  
+**Required Capabilities:** architecture.hexagonal-base
+
+> This skill follows the capability-based discovery model. It declares 
+> required capabilities, and additional capabilities are inferred from 
+> the user prompt. See `ENABLEMENT-MODEL-v2.0.md` for details.
+
+---
+
 ## Knowledge Dependencies
 
 ### Implements ADRs
@@ -64,14 +87,28 @@ Implements **Hexagonal Light** architecture as defined in ADR-009:
 - **ERI-011:** Rate Limiter Java Resilience4j
 - **ERI-012:** Persistence Patterns Java Spring (JPA + System API)
 
-### Uses Modules
-- **mod-code-015:** hexagonal-base-java-spring (always - base templates)
-- **mod-code-001:** circuit-breaker-java-resilience4j (if resilience.circuit_breaker.enabled)
-- **mod-code-002:** retry-java-resilience4j (if resilience.retry.enabled)
-- **mod-code-003:** timeout-java-resilience4j (if resilience.timeout.enabled)
-- **mod-code-004:** rate-limiter-java-resilience4j (if resilience.rate_limiter.enabled)
-- **mod-code-016:** persistence-jpa-spring (if persistence.type = "jpa")
-- **mod-code-017:** persistence-systemapi (if persistence.type = "system_api")
+### Capability-Based Module Resolution
+
+This skill uses **capability-based discovery** (Model v2.0). Modules are NOT declared directly.
+
+**Required Capabilities:**
+- `architecture.hexagonal-base` → Always included (structural)
+
+**Additional Capabilities (inferred from prompt or JSON config):**
+
+| Prompt Keywords / Config | Capability | Features |
+|--------------------------|------------|----------|
+| "resilience", "circuit breaker", "retry" | `resilience` | circuit-breaker, retry, timeout, rate-limiter |
+| `persistence.type = "jpa"` | `persistence.jpa` | JPA/Hibernate |
+| `persistence.type = "system_api"` | `persistence.systemapi` | System API client |
+
+Module resolution happens via `capability-index.yaml`:
+```
+Skill → required_capabilities → capability-index.yaml → modules
+Prompt/Config → extracted capabilities → capability-index.yaml → modules
+```
+
+See: `runtime/discovery/capability-index.yaml` for complete mapping.
 
 ---
 
@@ -650,27 +687,31 @@ The steps below are skill-specific refinements of that flow.
 5. Resolve default values
 ```
 
-### Step 2: Load Modules
+### Step 2: Resolve Capabilities to Modules
 
 ```
-1. Load mod-code-015-hexagonal-base-java-spring (always)
+1. Required capabilities (from skill definition):
+   - architecture.hexagonal-base → mod-code-015
 
-2. Load persistence module based on config:
-   - If features.persistence.type = "jpa":
-     - Load mod-code-016-persistence-jpa-spring
-   - If features.persistence.type = "system_api":
-     - Load mod-code-017-persistence-systemapi
-     - Select client variant: feign | resttemplate | restclient
-
-3. Load resilience modules based on config:
+2. Additional capabilities (from config analysis):
    - If features.resilience.circuit_breaker.enabled:
-     - Load mod-code-001-circuit-breaker-java-resilience4j
+     → resilience.circuit-breaker → mod-001
    - If features.resilience.retry.enabled:
-     - Load mod-code-002-retry-java-resilience4j
+     → resilience.retry → mod-002
    - If features.resilience.timeout.enabled:
-     - Load mod-code-003-timeout-java-resilience4j
+     → resilience.timeout → mod-003
    - If features.resilience.rate_limiter.enabled:
-     - Load mod-code-004-rate-limiter-java-resilience4j
+     → resilience.rate-limiter → mod-004
+   - If features.persistence.type = "jpa":
+     → persistence.jpa → mod-016
+   - If features.persistence.type = "system_api":
+     → persistence.systemapi → mod-017
+     → (auto-requires) api-integration.restclient → mod-018
+
+3. Resolution via capability-index.yaml:
+   - Read capability definition
+   - Extract feature → module mapping
+   - Validate compatibility
 ```
 
 ### Step 3: Generate Project Structure
@@ -932,21 +973,33 @@ Resilience annotations are applied to **SystemApiAdapter** methods when using Sy
 
 ## Related Skills
 
-### Complements
-- **skill-code-001:** add-circuit-breaker-java-resilience4j
-- **skill-code-002:** add-retry-java-resilience4j
-- **skill-code-003:** add-timeout-java-resilience4j
-- **skill-code-004:** add-rate-limiter-java-resilience4j
-- **skill-code-005:** add-jpa-persistence-java-spring (future)
-- **skill-code-006:** add-systemapi-persistence-java-spring (future)
+| Skill | Type | Relationship |
+|-------|------|--------------|
+| skill-021-api-rest-java-spring | Generation | Adds API exposure capability |
+| skill-040-add-resilience-java-spring | Transformation | Adds resilience to existing code |
+| skill-041-add-api-exposure-java-spring | Transformation | Promotes to public API |
+| skill-042-add-persistence-java-spring | Transformation | Adds persistence to existing code |
 
-### Builds Toward
-- **skill-code-021:** generate-domain-api-java-spring (extends with Domain API specifics)
-- **skill-code-022:** generate-composable-api-java-spring (extends with SAGA support)
+> **Note:** In Model v2.0, there is no skill inheritance. skill-021 is a 
+> separate generation skill that includes api-exposure in its required capabilities.
 
 ---
 
 ## Changelog
+
+### Version 2.0.0 (2025-01-15)
+- **BREAKING:** Migrated to Model v2.0 (capability-based discovery)
+- Removed direct module references in "Uses Modules"
+- Added `type: generation` to frontmatter
+- Added `required_capabilities: [architecture.hexagonal-base]`
+- Additional capabilities now inferred from config/prompt
+- Removed inheritance model (skills are self-contained)
+- Updated "Step 2" to "Resolve Capabilities to Modules"
+- Updated Related Skills section
+
+### Version 1.3.0 (2025-12-22)
+- Updated skill_id format
+- Minor documentation improvements
 
 ### Version 1.2.0 (2025-12-01)
 - Added full resilience support: circuit_breaker, retry, timeout, rate_limiter

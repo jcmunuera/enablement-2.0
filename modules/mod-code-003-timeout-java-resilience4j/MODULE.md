@@ -43,6 +43,13 @@ variants:
         - condition: "resilience.timelimiter.fallback.enabled = true"
           reason: "Specific fallback behavior needed on timeout"
       note: "Requires all timed methods to return CompletableFuture<T>"
+
+# ═══════════════════════════════════════════════════════════════════
+# MODEL v2.0 - Capability Implementation
+# ═══════════════════════════════════════════════════════════════════
+implements:
+  capability: resilience
+  feature: timeout
 ---
 
 # MOD-003: Timeout Pattern - Java/Resilience4j

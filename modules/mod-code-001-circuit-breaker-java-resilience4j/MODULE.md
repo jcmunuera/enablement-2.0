@@ -15,6 +15,13 @@ tags:
 used_by:
   - skill-code-001-add-circuit-breaker-java-resilience4j
   - skill-code-020-generate-microservice-java-spring
+
+# ═══════════════════════════════════════════════════════════════════
+# MODEL v2.0 - Capability Implementation
+# ═══════════════════════════════════════════════════════════════════
+implements:
+  capability: resilience
+  feature: circuit-breaker
 ---
 
 # MOD-001: Circuit Breaker - Java/Resilience4j

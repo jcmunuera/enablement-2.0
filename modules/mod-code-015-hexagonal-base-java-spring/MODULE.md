@@ -1,9 +1,9 @@
 ---
 id: mod-code-015-hexagonal-base-java-spring
 title: "MOD-015: Hexagonal Base - Java/Spring Boot"
-version: 1.4
+version: 1.2
 date: 2025-12-01
-updated: 2026-01-13
+updated: 2025-12-22
 status: Active
 derived_from: eri-code-001-hexagonal-light-java-spring
 domain: code
@@ -15,12 +15,19 @@ tags:
   - ddd
 used_by:
   - skill-code-020-generate-microservice-java-spring
+
+# ═══════════════════════════════════════════════════════════════════
+# MODEL v2.0 - Capability Implementation
+# ═══════════════════════════════════════════════════════════════════
+implements:
+  capability: architecture
+  feature: hexagonal-base
 ---
 
 # MOD-015: Hexagonal Base - Java/Spring Boot
 
 **Module ID:** mod-code-015-hexagonal-base-java-spring  
-**Version:** 1.3  
+**Version:** 1.2  
 **Source ERI:** eri-code-001-hexagonal-light-java-spring  
 **Framework:** Java 17+ / Spring Boot 3.2.x  
 **Used by:** skill-code-020-generate-microservice-java-spring
@@ -63,68 +70,6 @@ templates/
 └── test/
     └── DomainServiceTest.java.tpl    # Domain layer tests
 ```
-
----
-
-## Package Structure (v1.3)
-
-> **CRITICAL:** This structure MUST be followed for deterministic code generation.
-
-### Generated Package Layout
-
-```
-{basePackage}/
-├── domain/                          # DOMAIN LAYER (Pure Java)
-│   ├── model/
-│   │   ├── {Entity}.java            # Domain entity
-│   │   ├── {Entity}Id.java          # Value object for ID
-│   │   └── {Enum}.java              # Domain enums
-│   ├── repository/
-│   │   └── {Entity}Repository.java  # Port interface
-│   ├── service/
-│   │   └── {Entity}DomainService.java  # Domain logic (optional)
-│   └── exception/
-│       └── {Entity}NotFoundException.java
-│
-├── application/                     # APPLICATION LAYER
-│   ├── service/
-│   │   └── {Entity}ApplicationService.java  # Use cases
-│   └── dto/                         # ⭐ API DTOs HERE (protocol-agnostic)
-│       ├── Create{Entity}Request.java
-│       ├── Update{Entity}Request.java
-│       └── {Entity}Response.java
-│
-├── adapter/                         # ADAPTER LAYER
-│   ├── in/                          # Inbound (driving) adapters
-│   │   └── rest/
-│   │       ├── {Entity}Controller.java
-│   │       └── assembler/           # HATEOAS (if enabled)
-│   │           └── {Entity}ModelAssembler.java
-│   └── out/                         # Outbound (driven) adapters
-│       └── systemapi/               # See mod-017
-│           └── ...
-│
-└── infrastructure/                  # INFRASTRUCTURE
-    ├── config/
-    │   └── ApplicationConfig.java
-    ├── web/
-    │   ├── GlobalExceptionHandler.java
-    │   └── CorrelationIdFilter.java
-    └── ...
-```
-
-### DTO Location Rules
-
-| DTO Type | Location | Rationale |
-|----------|----------|-----------|
-| API Request/Response | `application/dto/` | Protocol-agnostic, used by ApplicationService |
-| System API DTOs | `adapter/out/systemapi/dto/` | Specific to outbound adapter (see mod-017) |
-| HATEOAS Models | `adapter/in/rest/assembler/` | REST-specific, only for HATEOAS-enabled APIs |
-
-> **Why `application/dto/` for API DTOs?**
-> - Hexagonal purity: DTOs are part of the use case, not the transport
-> - Reusability: Same DTOs can be used by REST, gRPC, or async adapters
-> - Testability: ApplicationService tests don't depend on web layer
 
 ---
 
@@ -568,43 +513,23 @@ public class {{entityName}}DomainService {
 
 #### Template: Repository Interface (Port)
 
-> **UPDATED v1.3:** Repository contract now defines standard operations.
-> All methods are part of the contract. If backend doesn't support an operation,
-> adapter throws `UnsupportedOperationException`.
-
-**Repository Contract:**
-
-| Method | Description |
-|--------|-------------|
-| `findById(id)` | Retrieve entity by ID |
-| `findAll()` | List all entities (may support pagination) |
-| `save(entity)` | Create or update entity |
-| `deleteById(id)` | Delete entity by ID |
-| `existsById(id)` | Check existence |
-
 ```java
 package {{basePackage}}.domain.repository;
 
 import {{basePackage}}.domain.model.{{entityName}};
 import {{basePackage}}.domain.model.{{entityName}}Id;
 
-import java.util.List;
 import java.util.Optional;
 
 /**
  * Repository interface (port) defined in domain layer.
  * Implementation provided by adapter layer.
- * 
- * If adapter cannot implement a method, it should throw
- * UnsupportedOperationException with clear message.
  */
 public interface {{entityName}}Repository {
     
-    Optional<{{entityName}}> findById({{entityName}}Id id);
-    
-    List<{{entityName}}> findAll();
-    
     {{entityName}} save({{entityName}} entity);
+    
+    Optional<{{entityName}}> findById({{entityName}}Id id);
     
     void deleteById({{entityName}}Id id);
     

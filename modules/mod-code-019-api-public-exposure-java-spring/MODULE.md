@@ -14,6 +14,13 @@ tags:
   - pagination
 used_by:
   - skill-code-020-generate-microservice-java-spring
+
+# ═══════════════════════════════════════════════════════════════════
+# MODEL v2.0 - Capability Implementation
+# ═══════════════════════════════════════════════════════════════════
+implements:
+  capability: api-exposure
+  feature: rest-hateoas
 ---
 
 # MOD-019: API Public Exposure - Java/Spring Boot

@@ -14,6 +14,13 @@ tags:
   - distributed-transactions
 used_by:
   - skill-code-020-generate-microservice-java-spring
+
+# ═══════════════════════════════════════════════════════════════════
+# MODEL v2.0 - Capability Implementation
+# ═══════════════════════════════════════════════════════════════════
+implements:
+  capability: distributed-transactions
+  feature: compensation
 ---
 
 # MOD-020: Compensation - Java/Spring Boot

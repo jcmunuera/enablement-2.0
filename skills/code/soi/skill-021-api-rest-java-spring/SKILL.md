@@ -1,51 +1,107 @@
+---
+skill_id: skill-021-api-rest-java-spring
+skill_name: Fusion REST API Generator
+version: 3.0.0
+date: 2025-01-15
+author: Fusion C4E Team
+status: active
+
+# ═══════════════════════════════════════════════════════════════════
+# MODEL v2.0 - Skill Type and Capabilities
+# ═══════════════════════════════════════════════════════════════════
+type: generation
+domain: code
+layer: soi
+stack: java-spring
+
+# Required capabilities (resolved to modules via capability-index.yaml)
+required_capabilities:
+  - architecture.hexagonal-base
+  - api-exposure.rest-hateoas
+
+# Additional capabilities (resilience, persistence, compensation) are
+# inferred from prompt and resolved via capability-index.yaml
+
+tags:
+  - generation
+  - spring-boot
+  - java
+  - hexagonal
+  - rest-api
+  - fusion
+  - hateoas
+---
+
 # Skill: Fusion REST API Generator (4-Layer Model)
 
 **Skill ID:** skill-021-api-rest-java-spring  
-**Extends:** skill-020-microservice-java-spring  
 **Domain:** code  
 **Layer:** soi  
-**Type:** GENERATE  
-**Version:** 2.3.0  
-**Status:** Active
-**Last Updated:** 2026-01-13
+**Type:** Generation  
+**Version:** 3.0.0  
+**Status:** Active  
+**Model:** v2.0  
+**Last Updated:** 2025-01-15
 
 ---
 
 ## Overview
 
-Extends `skill-020-microservice-java-spring` to generate REST APIs following the **Fusion API Model** (4-layer: Experience, Composable, Domain, System) defined in ADR-001.
+Generates a complete **Fusion REST API** microservice following the 4-layer API model (Experience, Composable, Domain, System) defined in ADR-001.
+
+This skill produces a production-ready Spring Boot service with:
+- Hexagonal Light architecture (ports and adapters)
+- REST endpoints with pagination and filtering
+- HATEOAS support (for Experience and Domain layers)
+- OpenAPI specification
+- Fusion API standards compliance
+- Optional: SAGA compensation (for Domain APIs)
 
 > **IMPORTANT:** This skill applies ONLY when the request explicitly references a **Fusion API**.
 > See ADR-001 "Fusion API Identification" section for inference rules.
 > If the request does not mention "Fusion" with an API layer name, either ask for clarification
 > or use skill-020 for internal microservices.
 
-**This skill inherits ALL capabilities from skill-020** and adds Fusion API-specific patterns:
-- Pagination (PageResponse, filtering, sorting)
-- HATEOAS (hypermedia links)
-- Compensation (SAGA participation for Domain APIs)
-
-### Inheritance Model
+### Capability Model (v2.0)
 
 ```
-skill-020-microservice-java-spring (inherited)
-├── mod-015: Hexagonal Light base
-├── mod-001-004: Resilience patterns
-├── mod-016/017: Persistence patterns
-├── mod-018: API Integration
-├── [future: observability, caching, etc.]
-│
-└── skill-021-api-rest-java-spring (this skill - delta only)
-    ├── mod-019: API Public Exposure (pagination, HATEOAS)
-    └── mod-020: Compensation (Domain layer only)
+┌─────────────────────────────────────────────────────────────────────┐
+│  skill-021-api-rest-java-spring                                      │
+│                                                                      │
+│  Required Capabilities:                                              │
+│  ├── architecture.hexagonal-base → mod-015 (structural)             │
+│  └── api-exposure.rest-hateoas → mod-019 (compositional)            │
+│                                                                      │
+│  Additional (from prompt):                                           │
+│  ├── resilience.* → mod-001, mod-002, mod-003, mod-004              │
+│  ├── persistence.jpa → mod-016                                       │
+│  ├── persistence.systemapi → mod-017, mod-018                        │
+│  └── distributed-transactions.compensation → mod-020                 │
+└─────────────────────────────────────────────────────────────────────┘
 ```
+
+> **Note:** In Model v2.0, this skill does NOT extend skill-020. Both are 
+> independent generation skills. skill-021 includes more required 
+> capabilities (api-exposure in addition to architecture).
+
+---
+
+## Model Version
+
+**Knowledge Base Model:** v2.0  
+**Skill Type:** Generation  
+**Required Capabilities:** architecture.hexagonal-base, api-exposure.rest-hateoas
+
+> This skill follows the capability-based discovery model. It declares 
+> required capabilities, and additional capabilities are inferred from 
+> the user prompt. See `ENABLEMENT-MODEL-v2.0.md` for details.
 
 ---
 
 ## Pre-conditions (Activation Rules)
 
 This skill should ONLY be activated when the request explicitly references a **Fusion API**. 
-Follow the inference rules defined in `runtime/discovery/skill-index.yaml` (section `fusion_api_rules`).
+Follow the inference rules defined in `runtime/discovery/skill-index.yaml`.
 
 ### When to Use This Skill
 
@@ -53,7 +109,7 @@ Follow the inference rules defined in `runtime/discovery/skill-index.yaml` (sect
 |-----------------|--------|-------|
 | "Fusion" + API layer (Domain/System/BFF/Experience/Composable) | ✅ Apply directly | skill-021 |
 | API layer WITHOUT "Fusion" (e.g., "Domain API") | ⚠️ ASK for clarification | - |
-| "microservicio", "servicio interno", "API interna" | ❌ Use base skill | skill-020 |
+| "microservicio", "servicio interno", "API interna" | ❌ Use skill-020 | skill-020 |
 
 ### Examples
 
@@ -73,83 +129,69 @@ Follow the inference rules defined in `runtime/discovery/skill-index.yaml` (sect
 
 ---
 
-## Extension Declaration
+## Required Capabilities
 
-```yaml
-extends: skill-020-microservice-java-spring
+This skill declares the following required capabilities (Model v2.0):
 
-# This skill INHERITS:
-#   - All modules from skill-020
-#   - All parameters from skill-020
-#   - All validation from skill-020
-#   - Execution flow from skill-020
+| Capability | Type | Module | Purpose |
+|------------|------|--------|---------|
+| `architecture.hexagonal-base` | Structural | mod-015 | Code foundation, layers |
+| `api-exposure.rest-hateoas` | Compositional | mod-019 | REST, pagination, HATEOAS |
 
-# This skill ADDS:
-#   - Additional modules (see below)
-#   - Additional parameters (apiLayer)
-#   - Additional validation (Tier 3 for mod-019, mod-020)
-```
+### Additional Capabilities (from prompt)
 
----
+These capabilities are inferred from the user prompt:
 
-## Knowledge Dependencies (Delta Only)
+| Prompt Keywords | Capability | Features |
+|-----------------|------------|----------|
+| "resilience", "circuit breaker" | `resilience` | All resilience patterns |
+| "JPA", "database", "local persistence" | `persistence.jpa` | JPA/Hibernate |
+| "System API", "backend", "mainframe" | `persistence.systemapi` | Backend integration |
+| "compensation", "SAGA" | `distributed-transactions.compensation` | SAGA participation |
 
-> Inherited dependencies from skill-020 are not repeated here.
-
-| Type | Asset | Purpose |
-|------|-------|---------|
-| ADR | adr-001-api-design | API model, REST standards, pagination, HATEOAS |
-| ADR | adr-013-distributed-transactions | Compensation patterns for Domain APIs |
-| ERI | eri-code-014-api-public-exposure-java-spring | Pagination, HATEOAS reference |
-| ERI | eri-code-015-distributed-transactions-java-spring | Compensation reference |
-| Module | mod-code-019-api-public-exposure-java-spring | Pagination, HATEOAS templates |
-| Module | mod-code-020-compensation-java-spring | Compensation templates |
+Resolution happens via `capability-index.yaml`.
 
 ---
 
-## Parameters (Delta Only)
+## Knowledge Dependencies
 
-> Inherited parameters from skill-020 (serviceName, basePackage, entities, features.*) are not repeated.
+### ADR Compliance
+- **ADR-001:** API Design Standards (Fusion model, REST, pagination, HATEOAS)
+- **ADR-009:** Service Architecture Patterns (Hexagonal Light)
+- **ADR-004:** Resilience Patterns (when resilience enabled)
+- **ADR-011:** Persistence Patterns (when persistence enabled)
+- **ADR-013:** Distributed Transactions (when compensation enabled)
 
-### Additional Required Parameters
-
-| Parameter | Type | Description | Example |
-|-----------|------|-------------|---------|
-| `apiLayer` | enum | API layer type | `domain` |
-
-### API Layer Values
-
-| Value | Description | Modules Added |
-|-------|-------------|---------------|
-| `experience` | BFF for UI channels | mod-019 (full HATEOAS) |
-| `composable` | Multi-domain orchestration | mod-019 (pagination only) |
-| `domain` | Business capabilities | mod-019 (full) + mod-020 (if compensation enabled) |
-| `system` | SoR integration | mod-019 (pagination only) |
-
-### Additional Optional Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `pagination.defaultSize` | int | 20 | Default page size |
-| `pagination.maxSize` | int | 100 | Maximum page size |
-| `features.compensation.enabled` | boolean | false | Enable SAGA compensation (Domain APIs only) |
+### Reference Implementations
+- **ERI-001:** Hexagonal Light Java Spring
+- **ERI-014:** API Public Exposure Java Spring
+- **ERI-008-011:** Resilience patterns (when enabled)
+- **ERI-012:** Persistence patterns (when enabled)
+- **ERI-015:** Distributed Transactions (when compensation enabled)
 
 ---
 
-## Module Resolution (Delta Only)
+## Capability Resolution
 
-> Base modules are resolved by skill-020. This section defines ADDITIONAL modules.
+### Required (always included)
 
-### Additional Modules
+| Capability | Feature | Module |
+|------------|---------|--------|
+| architecture | hexagonal-base | mod-code-015 |
+| api-exposure | rest-hateoas | mod-code-019 |
 
-| Condition | Module | Purpose |
-|-----------|--------|---------|
-| always | mod-code-019-api-public-exposure-java-spring | Pagination, filtering, HATEOAS |
-| `apiLayer = domain` AND `features.compensation.enabled = true` | mod-code-020-compensation-java-spring | SAGA compensation interface |
+### Conditional (from prompt/config)
 
-> **NOTE:** mod-020 (compensation) is **opt-in**. Even for Domain APIs, compensation is only 
-> generated when explicitly requested via `features.compensation.enabled = true`. This is because
-> not all Domain APIs participate in distributed transactions (SAGAs).
+| Condition | Capability.Feature | Module |
+|-----------|-------------------|--------|
+| resilience.circuit_breaker.enabled | resilience.circuit-breaker | mod-001 |
+| resilience.retry.enabled | resilience.retry | mod-002 |
+| resilience.timeout.enabled | resilience.timeout | mod-003 |
+| resilience.rate_limiter.enabled | resilience.rate-limiter | mod-004 |
+| persistence.type = "jpa" | persistence.jpa | mod-016 |
+| persistence.type = "system_api" | persistence.systemapi | mod-017 |
+| System API client needed | api-integration.restclient | mod-018 |
+| apiLayer = "domain" AND features.compensation.enabled | distributed-transactions.compensation | mod-020 |
 
 ### Layer-Based Feature Matrix
 
@@ -157,265 +199,123 @@ extends: skill-020-microservice-java-spring
 |---------|------------|------------|--------|--------|
 | Pagination | ✅ | ✅ | ✅ | ✅ |
 | HATEOAS | ✅ | ❌ | ✅ | ❌ |
-| Compensation | ❌ | ❌ | ✅ | ❌ |
+| Compensation | ❌ | ❌ | ✅ (opt-in) | ❌ |
 
-### Module Selection Logic
+### Resolution Algorithm
 
 ```python
-# Pseudocode for module resolution
+# 1. Start with required capabilities
+modules = []
+for cap in skill.required_capabilities:
+    modules.extend(resolve_capability(cap))
 
-# 1. Inherit all modules from skill-020
-modules = skill_020.resolve_modules(input)
+# 2. Extract additional capabilities from config
+if config.features.resilience.circuit_breaker.enabled:
+    modules.extend(resolve_capability("resilience.circuit-breaker"))
+# ... similar for other resilience features
 
-# 2. Add mod-019 (always for REST APIs)
-modules.add("mod-code-019-api-public-exposure-java-spring")
+if config.features.persistence.type == "jpa":
+    modules.extend(resolve_capability("persistence.jpa"))
+elif config.features.persistence.type == "system_api":
+    modules.extend(resolve_capability("persistence.systemapi"))
+    modules.extend(resolve_capability("api-integration.restclient"))
 
-# 3. Add mod-020 (Domain layer AND compensation explicitly enabled)
-# NOTE: compensation is opt-in, not automatic for Domain APIs
-if input.apiLayer == "domain" and input.features.compensation.enabled == True:
-    modules.add("mod-code-020-compensation-java-spring")
+if config.apiLayer == "domain" and config.features.compensation.enabled:
+    modules.extend(resolve_capability("distributed-transactions.compensation"))
 
-# 4. Configure HATEOAS based on layer
-if input.apiLayer in ["experience", "domain"]:
-    modules.configure("mod-019", hateoas=True)
+# 3. Configure HATEOAS based on layer
+if config.apiLayer in ["experience", "domain"]:
+    configure_module("mod-019", hateoas=True)
 else:
-    modules.configure("mod-019", hateoas=False)
+    configure_module("mod-019", hateoas=False)
 
-return modules
+return deduplicate(modules)
 ```
 
 ---
 
-## Output Specification (Delta Only)
+## Input Specification
 
-> Base output structure is defined by skill-020. This section defines ADDITIONAL artifacts.
+### Required Parameters
 
-### Additional Generated Artifacts
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `serviceName` | string | Service name in kebab-case | `customer-api` |
+| `basePackage` | string | Java base package | `com.company.customer` |
+| `apiLayer` | enum | API layer type | `domain` |
+| `entities` | array | Domain entities | See below |
 
-| Artifact | Path | Condition |
-|----------|------|-----------|
-| PageResponse DTO | `adapter/in/rest/dto/PageResponse.java` | Always |
-| Filter DTOs | `adapter/in/rest/dto/{Entity}Filter.java` | Always |
-| Pagination config | `infrastructure/web/PageableConfig.java` | Always |
-| HATEOAS assemblers | `adapter/in/rest/assembler/` | Experience, Domain |
-| Compensation interfaces | `domain/transaction/` | Domain + `features.compensation.enabled` |
-| /compensate endpoint | Controller method | Domain + `features.compensation.enabled` |
+### API Layer Values
 
-### Extended Output Structure
+| Value | Description | HATEOAS | Compensation |
+|-------|-------------|---------|--------------|
+| `experience` | BFF for UI channels | ✅ | ❌ |
+| `composable` | Multi-domain orchestration | ❌ | ❌ |
+| `domain` | Business capabilities | ✅ | ✅ (opt-in) |
+| `system` | SoR integration | ❌ | ❌ |
 
-```
-{serviceName}/
-├── [inherited from skill-020]
-│   ├── domain/model/
-│   ├── domain/repository/
-│   ├── application/service/
-│   ├── adapter/in/rest/{Entity}Controller.java
-│   └── infrastructure/
-│
-└── [added by skill-021]
-    ├── domain/transaction/           # Domain only
-    │   ├── Compensable.java
-    │   ├── CompensationRequest.java
-    │   ├── CompensationResult.java
-    │   ├── CompensationStatus.java
-    │   └── TransactionLog.java
-    ├── adapter/in/rest/
-    │   ├── dto/
-    │   │   ├── PageResponse.java
-    │   │   └── {Entity}Filter.java
-    │   └── assembler/                # Experience, Domain
-    │       └── {Entity}ModelAssembler.java
-    └── infrastructure/web/
-        └── PageableConfig.java
-```
+### Optional Parameters
 
----
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `groupId` | string | (from basePackage) | Maven group ID |
+| `javaVersion` | string | "17" | Java version |
+| `pagination.defaultSize` | int | 20 | Default page size |
+| `pagination.maxSize` | int | 100 | Maximum page size |
+| `features.resilience.*` | object | - | Resilience configuration |
+| `features.persistence.*` | object | - | Persistence configuration |
+| `features.compensation.enabled` | boolean | false | Enable SAGA compensation |
 
-## Validation (Delta Only)
-
-> Tier 1 and Tier 2 validation is inherited from skill-020.
-
-### Additional Tier 3 Validation
-
-| Validator | Module | Condition |
-|-----------|--------|-----------|
-| pagination-check.sh | mod-019 | Always |
-| config-check.sh | mod-019 | Always |
-| hateoas-check.sh | mod-019 | apiLayer IN [experience, domain] |
-| compensation-interface-check.sh | mod-020 | apiLayer = domain |
-| compensation-endpoint-check.sh | mod-020 | apiLayer = domain |
-| transaction-log-check.sh | mod-020 | apiLayer = domain |
-
-### Validation Orchestration
-
-```bash
-#!/bin/bash
-# validate.sh for skill-021
-
-SERVICE_DIR="$1"
-API_LAYER="$2"
-
-# 1. Run inherited validation from skill-020
-source skill-020/validation/validate.sh "$SERVICE_DIR"
-ERRORS=$?
-
-# 2. Run additional Tier 3 validation (mod-019)
-source mod-019/validation/pagination-check.sh "$SERVICE_DIR"
-ERRORS=$((ERRORS + $?))
-
-source mod-019/validation/config-check.sh "$SERVICE_DIR"
-ERRORS=$((ERRORS + $?))
-
-if [[ "$API_LAYER" == "experience" || "$API_LAYER" == "domain" ]]; then
-    source mod-019/validation/hateoas-check.sh "$SERVICE_DIR"
-    ERRORS=$((ERRORS + $?))
-fi
-
-# 3. Run additional Tier 3 validation (mod-020) - Domain only
-if [[ "$API_LAYER" == "domain" ]]; then
-    source mod-020/validation/compensation-interface-check.sh "$SERVICE_DIR"
-    ERRORS=$((ERRORS + $?))
-    
-    source mod-020/validation/compensation-endpoint-check.sh "$SERVICE_DIR"
-    ERRORS=$((ERRORS + $?))
-fi
-
-exit $ERRORS
-```
-
----
-
-## Execution Flow
-
-1. **Parse input** and validate `apiLayer` parameter
-2. **Delegate to skill-020** for base generation
-3. **Apply mod-019** templates (pagination, HATEOAS if applicable)
-4. **Apply mod-020** templates (Domain layer only)
-5. **Merge configurations** (application.yml additions)
-6. **Run validation** (inherited + additional)
-7. **Generate manifest** with full traceability
-
----
-
-## Input Schema (Extension)
-
-> Extends skill-020 input schema with additional properties.
+### Input Schema
 
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "allOf": [
-    { "$ref": "skill-020-input-schema.json" },
-    {
+  "title": "Fusion REST API Generation Config",
+  "type": "object",
+  "required": ["serviceName", "basePackage", "apiLayer", "entities"],
+  "properties": {
+    "serviceName": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "basePackage": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)*$"
+    },
+    "apiLayer": {
+      "type": "string",
+      "enum": ["experience", "composable", "domain", "system"]
+    },
+    "entities": {
+      "type": "array",
+      "minItems": 1
+    },
+    "pagination": {
       "type": "object",
-      "required": ["apiLayer"],
       "properties": {
-        "apiLayer": {
-          "type": "string",
-          "enum": ["experience", "composable", "domain", "system"],
-          "description": "API layer per ADR-001"
-        },
-        "pagination": {
+        "defaultSize": { "type": "integer", "default": 20 },
+        "maxSize": { "type": "integer", "default": 100 }
+      }
+    },
+    "features": {
+      "type": "object",
+      "properties": {
+        "resilience": { "$ref": "#/definitions/ResilienceFeatures" },
+        "persistence": { "$ref": "#/definitions/PersistenceFeatures" },
+        "compensation": {
           "type": "object",
           "properties": {
-            "defaultSize": { "type": "integer", "default": 20 },
-            "maxSize": { "type": "integer", "default": 100 }
+            "enabled": { "type": "boolean", "default": false }
           }
         }
       }
     }
-  ]
+  }
 }
 ```
 
----
-
-## Determinism Rules (v2.3.0)
-
-> **CRITICAL:** These rules MUST be followed for consistent, deterministic code generation.
-> Non-compliance results in compilation errors or inconsistent outputs.
-
-### RULE-001: HATEOAS by API Layer
-
-**HATEOAS is determined by apiLayer. No exceptions.**
-
-| apiLayer | HATEOAS | Rationale |
-|----------|---------|-----------|
-| `experience` | ✅ **ALWAYS** | BFF exposes product-grade API |
-| `domain` | ✅ **ALWAYS** | API as Product, external consumers |
-| `composable` | ❌ **NEVER** | Internal orchestration, no hypermedia needed |
-| `system` | ❌ **NEVER** | Backend integration, no hypermedia needed |
-
-**Implementation:**
-- If HATEOAS = YES → Include `spring-boot-starter-hateoas` in pom.xml
-- If HATEOAS = YES → Generate `{Entity}ModelAssembler.java` in `adapter/in/rest/assembler/`
-- If HATEOAS = NO → Do NOT include hateoas dependency, do NOT generate assemblers
-
-### RULE-002: Compensation is OPT-IN
-
-**Compensation classes are NEVER generated by default.**
-
-| Condition | Generate Compensation |
-|-----------|----------------------|
-| `features.compensation.enabled = true` AND `apiLayer = domain` | ✅ YES |
-| `features.compensation.enabled = true` AND `apiLayer != domain` | ❌ NO (ignore flag) |
-| `features.compensation.enabled = false` (or absent) | ❌ NO |
-
-**Default:** `features.compensation.enabled = false`
-
-**Compensation artifacts (only when enabled):**
-- `domain/transaction/Compensable.java`
-- `domain/transaction/CompensationRequest.java`
-- `domain/transaction/CompensationResult.java`
-- `POST /{entity}/compensate` endpoint
-
-### RULE-003: Package Base Default
-
-**If `basePackage` is not provided, use enterprise default.**
-
-| Input | basePackage Value |
-|-------|-------------------|
-| Provided in request | Use as-is |
-| Not provided | `com.bank.{serviceName-without-dashes}` |
-
-**Example:**
-- serviceName: `customer-api` → `com.bank.customer`
-- serviceName: `account-management` → `com.bank.accountmanagement`
-
-**Note:** This default can be overridden in `runtime/defaults/code-defaults.yaml`.
-
-### RULE-004: Repository Contract
-
-**All Repository interfaces MUST include these 5 methods:**
-
-```java
-public interface {Entity}Repository {
-    Optional<{Entity}> findById({Entity}Id id);
-    List<{Entity}> findAll();
-    {Entity} save({Entity} entity);
-    void deleteById({Entity}Id id);
-    boolean existsById({Entity}Id id);
-}
-```
-
-**Adapter implementations MUST implement ALL 5 methods.** If backend doesn't support an operation, throw `UnsupportedOperationException`.
-
-### RULE-005: Mandatory vs Conditional Artifacts
-
-| Artifact | Condition | Always/Conditional |
-|----------|-----------|-------------------|
-| Entity, EntityId, Repository | - | **ALWAYS** |
-| ApplicationService | - | **ALWAYS** |
-| Controller | - | **ALWAYS** |
-| GlobalExceptionHandler | - | **ALWAYS** |
-| pom.xml, application.yml | - | **ALWAYS** |
-| ModelAssembler | apiLayer ∈ {experience, domain} | Conditional |
-| Compensation classes | compensation.enabled = true | Conditional |
-| CorrelationIdFilter | - | **ALWAYS** |
-
----
-
-## Example Input
+### Example Input
 
 ```json
 {
@@ -428,33 +328,204 @@ public interface {Entity}Repository {
       "fields": [
         { "name": "firstName", "type": "String", "required": true },
         { "name": "lastName", "type": "String", "required": true },
-        { "name": "email", "type": "String", "required": true }
+        { "name": "email", "type": "String", "required": true, "format": "email" }
       ]
     }
   ],
   "features": {
-    "resilience": { "enabled": true },
-    "persistence": { "type": "system_api" }
+    "resilience": {
+      "circuit_breaker": { "enabled": true },
+      "retry": { "enabled": true }
+    },
+    "persistence": { "type": "system_api" },
+    "compensation": { "enabled": true }
   }
 }
 ```
 
 ---
 
+## Output Specification
+
+### Complete Generated Structure
+
+```
+{serviceName}/
+├── pom.xml
+├── README.md
+├── Dockerfile
+│
+├── src/main/java/{basePackagePath}/
+│   ├── {ServiceName}Application.java
+│   │
+│   ├── domain/                           # DOMAIN LAYER (Pure POJOs)
+│   │   ├── model/
+│   │   │   └── {Entity}.java
+│   │   ├── service/
+│   │   │   └── {Entity}DomainService.java
+│   │   ├── repository/
+│   │   │   └── {Entity}Repository.java
+│   │   ├── exception/
+│   │   │   └── {Entity}NotFoundException.java
+│   │   └── transaction/                  # If compensation enabled
+│   │       ├── Compensable.java
+│   │       ├── CompensationRequest.java
+│   │       ├── CompensationResult.java
+│   │       ├── CompensationStatus.java
+│   │       └── TransactionLog.java
+│   │
+│   ├── application/                      # APPLICATION LAYER
+│   │   └── service/
+│   │       └── {Entity}ApplicationService.java
+│   │
+│   ├── adapter/                          # ADAPTER LAYER
+│   │   ├── in/rest/
+│   │   │   ├── controller/
+│   │   │   │   └── {Entity}Controller.java
+│   │   │   ├── dto/
+│   │   │   │   ├── {Entity}DTO.java
+│   │   │   │   ├── Create{Entity}Request.java
+│   │   │   │   ├── Update{Entity}Request.java
+│   │   │   │   ├── PageResponse.java     # From api-exposure
+│   │   │   │   └── {Entity}Filter.java   # From api-exposure
+│   │   │   └── assembler/                # HATEOAS (if enabled)
+│   │   │       └── {Entity}ModelAssembler.java
+│   │   │
+│   │   └── out/persistence/              # If persistence enabled
+│   │       └── [JPA or SystemAPI adapters]
+│   │
+│   └── infrastructure/
+│       ├── config/
+│       │   └── ApplicationConfig.java
+│       ├── exception/
+│       │   └── GlobalExceptionHandler.java
+│       └── web/
+│           └── PageableConfig.java       # From api-exposure
+│
+├── src/main/resources/
+│   ├── application.yml
+│   └── openapi/
+│       └── api.yaml
+│
+└── src/test/java/
+    └── [test classes]
+```
+
+---
+
+## Execution Flow
+
+This skill follows the **GENERATE** execution flow.
+
+**See:** `runtime/flows/code/GENERATE.md`
+
+### Skill-Specific Steps
+
+1. **Parse Input**
+   - Validate JSON config
+   - Extract apiLayer parameter
+   - Identify additional capabilities from config
+
+2. **Resolve Capabilities**
+   - Load required: architecture.hexagonal-base, api-exposure.rest-hateoas
+   - Resolve conditional capabilities from config
+   - Validate compatibility via capability-index.yaml
+   - Build final module list
+
+3. **Generate Base Structure**
+   - Create directory structure
+   - Generate pom.xml with dependencies
+   - Generate Application.java
+   - Generate application.yml configs
+
+4. **Generate Domain Layer**
+   - Generate entities, services, repositories
+   - Generate compensation interfaces (if Domain + enabled)
+
+5. **Generate Application Layer**
+   - Generate application services
+
+6. **Generate Adapter Layer**
+   - Generate REST controllers with pagination
+   - Generate DTOs including PageResponse, Filter
+   - Generate HATEOAS assemblers (if Experience/Domain)
+   - Generate persistence adapters (if configured)
+
+7. **Generate Infrastructure**
+   - Generate config classes
+   - Generate PageableConfig
+   - Generate exception handlers
+
+8. **Generate Tests**
+   - Generate unit tests
+   - Generate integration tests
+
+9. **Validate Output**
+   - Run all applicable validators
+   - Generate traceability manifest
+
+---
+
+## Validation
+
+### Tier 1: Universal
+- Traceability check
+- Project structure check
+- Naming conventions check
+
+### Tier 2: Technology
+- Java Spring validation
+- Maven build
+- Docker validation (if enabled)
+
+### Tier 3: Module-specific
+
+| Validator | Module | Condition |
+|-----------|--------|-----------|
+| hexagonal-structure-check.sh | mod-015 | Always |
+| pagination-check.sh | mod-019 | Always |
+| config-check.sh | mod-019 | Always |
+| hateoas-check.sh | mod-019 | apiLayer IN [experience, domain] |
+| circuit-breaker-check.sh | mod-001 | If circuit breaker enabled |
+| retry-check.sh | mod-002 | If retry enabled |
+| persistence-check.sh | mod-016/017 | If persistence enabled |
+| compensation-interface-check.sh | mod-020 | If compensation enabled |
+| compensation-endpoint-check.sh | mod-020 | If compensation enabled |
+
+---
+
 ## Related Skills
 
-| Skill | Relationship |
-|-------|--------------|
-| skill-020-microservice-java-spring | **Parent** - provides base microservice generation |
-| skill-022-api-grpc-java-spring | **Sibling** - extends skill-020 for gRPC (planned) |
-| skill-023-api-async-java-spring | **Sibling** - extends skill-020 for Async (planned) |
+| Skill | Type | Relationship |
+|-------|------|--------------|
+| skill-020-microservice-java-spring | Generation | Internal service (no API exposure) |
+| skill-040-add-resilience-java-spring | Transformation | Add resilience to existing code |
+| skill-041-add-api-exposure-java-spring | Transformation | Promote microservice to API |
+| skill-042-add-persistence-java-spring | Transformation | Add persistence to existing code |
+
+> **Model v2.0 Note:** skill-021 and skill-020 are independent skills. 
+> They share the same architectural base (hexagonal) but have different 
+> required capabilities. There is no inheritance relationship.
 
 ---
 
 ## Changelog
 
-| Date | Version | Change | Author |
-|------|---------|--------|--------|
-| 2026-01-13 | 2.3.0 | Added Determinism Rules section (HATEOAS, Compensation, Package, Repository, Artifacts) | C4E Team |
-| 2025-12-19 | 2.0.0 | Redesigned as extension of skill-020 | C4E Team |
-| 2025-12-19 | 1.0.0 | Initial version (standalone) | C4E Team |
+### Version 3.0.0 (2025-01-15)
+- **BREAKING:** Migrated to Model v2.0 (capability-based discovery)
+- Removed `extends: skill-020` - skill is now self-contained
+- Added `type: generation` to frontmatter
+- Added explicit `required_capabilities`
+- Consolidated all content (no more "Delta Only" sections)
+- Updated execution flow for capability resolution
+- Updated Related Skills section
+
+### Version 2.2.0 (2025-12-22)
+- Documentation improvements
+- Updated pre-conditions section
+
+### Version 2.0.0 (2025-12-19)
+- Redesigned as extension of skill-020
+
+### Version 1.0.0 (2025-12-19)
+- Initial version (standalone)

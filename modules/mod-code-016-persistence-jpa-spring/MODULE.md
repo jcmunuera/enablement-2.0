@@ -14,6 +14,13 @@ tags:
   - spring-data
 used_by:
   - skill-code-020-generate-microservice-java-spring
+
+# ═══════════════════════════════════════════════════════════════════
+# MODEL v2.0 - Capability Implementation
+# ═══════════════════════════════════════════════════════════════════
+implements:
+  capability: persistence
+  feature: jpa
 ---
 
 # MOD-016: JPA Persistence - Spring Data JPA

@@ -51,6 +51,13 @@ variants:
         - config/resttemplate-config.java.tpl
       deprecated: true
       deprecation_reason: "RestClient is the modern replacement. Use only for legacy compatibility."
+
+# ═══════════════════════════════════════════════════════════════════
+# MODEL v2.0 - Capability Implementation
+# ═══════════════════════════════════════════════════════════════════
+implements:
+  capability: api-integration
+  feature: restclient
 ---
 
 # MOD-018: API Integration REST - Java/Spring
