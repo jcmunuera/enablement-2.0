@@ -244,7 +244,7 @@ The **FLOW.md** guide is critical for maintaining consistency:
 
 ## Related Documents
 
-- [../../ENABLEMENT-MODEL-v1.7.md](../../ENABLEMENT-MODEL-v1.7.md) - Master model document
+- [../../ENABLEMENT-MODEL-v2.0.md](../../ENABLEMENT-MODEL-v2.0.md) - Master model document
 - [../../CONSUMER-PROMPT.md](../../CONSUMER-PROMPT.md) - Consumer agent system prompt
 - [../../AUTHOR-PROMPT.md](../../AUTHOR-PROMPT.md) - Author system prompt
 - [../ASSET-STANDARDS-v1.4.md](../ASSET-STANDARDS-v1.4.md) - Naming conventions and directory structure

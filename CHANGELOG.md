@@ -7,6 +7,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.0] - 2025-01-15
+
+### 🎯 Major: Model v2.0 - Capability-Based Architecture
+
+This release introduces Model v2.0, a fundamental evolution from operation-based to capability-based skill organization.
+
+#### Model Changes
+- `ENABLEMENT-MODEL-v1.7.md` → `ENABLEMENT-MODEL-v2.0.md`
+- New `implements` section in Skills and Modules
+- Skills now declare which `capability.features` they implement
+- Modules declare which `capability.feature` they provide templates for
+- Support for `extends` in skills for composition
+
+#### Conceptual Changes
+- **Before (v1.x):** Skills perform operations (add, generate)
+- **After (v2.0):** Skills implement domain capabilities
+
+```
+# v1.x approach
+skill-001-add-circuit-breaker    # One skill per feature
+
+# v2.0 approach
+skill-040-add-resilience         # One skill implements capability
+  implements: resilience.{circuit-breaker,retry,timeout,rate-limiter}
+```
+
+#### Skill Changes
+
+**Updated to Model v2.0:**
+- `skill-code-020-generate-microservice-java-spring` - Added `implements` section
+- `skill-code-021-api-rest-java-spring` - Added `implements` section (no extends)
+
+**New Skills (Model v2.0 native):**
+- `skill-code-040-add-resilience-java-spring` - Implements `resilience` capability
+- `skill-code-041-add-api-exposure-java-spring` - Implements `api-exposure` capability  
+- `skill-code-042-add-persistence-java-spring` - Implements `persistence` capability
+
+**Deprecated:**
+- `skill-code-001-circuit-breaker-java-resilience4j` - Replaced by skill-040
+
+#### Module Changes
+
+All 10 modules updated with `implements` section:
+- `mod-code-001` through `mod-code-004`: `resilience.*`
+- `mod-code-015`: `architecture.hexagonal-base`
+- `mod-code-016`, `mod-code-017`: `persistence.*`
+- `mod-code-018`: `api-integration.restclient`
+- `mod-code-019`: `api-exposure.rest-hateoas`
+- `mod-code-020`: `distributed-transactions.compensation`
+
+#### Documentation Updates
+- `README.md` - Updated to reflect multi-domain SDLC scope
+- `model/README.md` - Model v2.0 documentation
+- `_sidebar.md` - Updated navigation
+- `_coverpage.md` - Updated badges and description
+- All references updated from v1.6/v1.7 to v2.0
+
+---
+
 ## [2.4.1] - 2025-12-22
 
 ### 📚 Documentation Update

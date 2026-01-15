@@ -63,7 +63,7 @@ Enablement 2.0 is an AI-powered SDLC automation platform that:
 1. **[README.md](README.md)** (5 min)
    - Repository structure overview
 
-2. **[model/ENABLEMENT-MODEL-v1.7.md](model/ENABLEMENT-MODEL-v1.7.md)** (30 min)
+2. **[model/ENABLEMENT-MODEL-v2.0.md](model/ENABLEMENT-MODEL-v2.0.md)** (30 min)
    - Complete conceptual model
    - Asset hierarchy: ADR → ERI → Module → Skill
    - **Discovery philosophy** (interpretive, not rule-based)
@@ -253,7 +253,7 @@ enablement-2.0/
 │
 ├── model/                          ← META-MODEL
 │   ├── README.md                   ← Model overview
-│   ├── ENABLEMENT-MODEL-v1.7.md    ← ⭐ Master document
+│   ├── ENABLEMENT-MODEL-v2.0.md    ← ⭐ Master document
 │   ├── CONSUMER-PROMPT.md          ← Consumer agent system prompt
 │   ├── AUTHOR-PROMPT.md            ← Author/C4E system prompt
 │   ├── ENABLEMENT-EXECUTIVE-BRIEF.md  ← For executives

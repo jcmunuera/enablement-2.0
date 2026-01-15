@@ -7,7 +7,7 @@
 
 * **Model** 
   * [Model Overview](model/README.md)
-  * [Enablement Model v1.7](model/ENABLEMENT-MODEL-v1.7.md)
+  * [Enablement Model v2.0](model/ENABLEMENT-MODEL-v2.0.md)
   * [Consumer Prompt](model/CONSUMER-PROMPT.md)
   * [Author Prompt](model/AUTHOR-PROMPT.md)
   * [Executive Brief](model/ENABLEMENT-EXECUTIVE-BRIEF.md)

@@ -235,7 +235,7 @@ swarm_alignment: "{SWARM} Swarm"
 
 ## Cross-Domain Operations
 
-Some requests span multiple domains. See [ENABLEMENT-MODEL-v1.7.md Section 10](../ENABLEMENT-MODEL-v1.7.md#10-multi-domain-operations) for details on:
+Some requests span multiple domains. See [ENABLEMENT-MODEL-v2.0.md Section 10](../ENABLEMENT-MODEL-v2.0.md#10-multi-domain-operations) for details on:
 
 - How to detect multi-domain requests
 - Decomposition into domain chain
@@ -246,6 +246,6 @@ Some requests span multiple domains. See [ENABLEMENT-MODEL-v1.7.md Section 10](.
 
 ## Related
 
-- [ENABLEMENT-MODEL-v1.7.md](../ENABLEMENT-MODEL-v1.7.md) - Complete model
+- [ENABLEMENT-MODEL-v2.0.md](../ENABLEMENT-MODEL-v2.0.md) - Complete model
 - [discovery-guidance.md](../../runtime/discovery/discovery-guidance.md) - Discovery process
 - [runtime/flows/](../../runtime/flows/) - Execution flows by domain

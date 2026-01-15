@@ -188,6 +188,6 @@ When uncertain:
 
 ## Related
 
-- [ENABLEMENT-MODEL-v1.7.md](../../model/ENABLEMENT-MODEL-v1.7.md) - Complete model
+- [ENABLEMENT-MODEL-v2.0.md](../../model/ENABLEMENT-MODEL-v2.0.md) - Complete model
 - [CONSUMER-PROMPT.md](../../model/CONSUMER-PROMPT.md) - Consumer agent system prompt
 - [runtime/flows/](../flows/) - Execution flows

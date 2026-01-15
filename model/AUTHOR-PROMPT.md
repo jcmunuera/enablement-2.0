@@ -122,7 +122,7 @@ enablement-2.0/
 │   │   ├── authoring/           # ⭐ AUTHORING GUIDES - READ THESE
 │   │   ├── validation/
 │   │   └── traceability/
-│   ├── ENABLEMENT-MODEL-v1.7.md # Master model document
+│   ├── ENABLEMENT-MODEL-v2.0.md # Master model document
 │   ├── CONSUMER-PROMPT.md       # Consumer agent system prompt
 │   └── AUTHOR-PROMPT.md        # This document
 │
@@ -294,7 +294,7 @@ Agent response:
 
 | Document | When to Read |
 |----------|--------------|
-| `model/ENABLEMENT-MODEL-v1.7.md` | Understanding overall architecture |
+| `model/ENABLEMENT-MODEL-v2.0.md` | Understanding overall architecture |
 | `model/standards/ASSET-STANDARDS-v1.4.md` | Naming conventions, directory structure |
 | `model/standards/authoring/README.md` | Index of all authoring guides |
 | `model/CONSUMER-PROMPT.md` | Understanding consumer context |

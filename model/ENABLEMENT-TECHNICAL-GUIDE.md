@@ -161,7 +161,7 @@ The software development lifecycle (SDLC) faces several critical challenges:
 knowledge/
 │
 ├── model/                              # META-LEVEL (Specifications)
-│   ├── ENABLEMENT-MODEL-v1.7.md       # Master document
+│   ├── ENABLEMENT-MODEL-v2.0.md       # Master document
 │   └── standards/
 │       ├── ASSET-STANDARDS-v1.4.md    # Asset structure
 │       ├── authoring/                  # Creation guides
@@ -857,7 +857,7 @@ TOTAL: 11/11 checks passed
 
 | Document | Purpose | Location |
 |----------|---------|----------|
-| ENABLEMENT-MODEL-v1.7.md | Master model | `model/` |
+| ENABLEMENT-MODEL-v2.0.md | Master model | `model/` |
 | ASSET-STANDARDS-v1.4.md | Asset structure | `model/standards/` |
 | authoring/SKILL.md | How to create skills | `model/standards/authoring/` |
 | validators/README.md | Validation system | `knowledge/validators/` |
