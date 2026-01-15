@@ -1,205 +1,65 @@
 # Skill Index
 #
-# Version: 2.3
-# Date: 2025-12-24
+# Version: 3.0
+# Date: 2025-01-15
+# Model: v2.0
+#
 # Purpose: Pre-computed index for O(1) skill discovery
 #
-# This index enables efficient skill discovery by providing multiple
-# taxonomies (layer, domain, capability, technology) that the agent
-# can query to reduce the search space before reading OVERVIEW.md files.
+# ═══════════════════════════════════════════════════════════════════════════════
+# CHANGES IN v3.0 (Model v2.0)
+# ═══════════════════════════════════════════════════════════════════════════════
 #
-# NEW in v2.0:
-# - Skill extension support (extends field)
-# - Discovery keywords (positive/negative)
-# - API-specific skills (skill-021+)
+# - Skills have `type`: generation or transformation
+# - Generation skills have `required_capabilities` (NOT modules)
+# - Transformation skills have `target_capability`
+# - NO `extends` - skills are self-contained
+# - New transformation skills: skill-040, skill-041, skill-042
+# - Deprecated skill-001 (replaced by skill-040)
 #
-# NEW in v2.1:
-# - Input validation rules section
-# - Formalized discovery process steps
-# - Error handling for ambiguous matches
-#
-# NEW in v2.2:
-# - Activation rules moved to OVERVIEW.md (single source of truth)
-# - Simplified skill_metadata (keywords only, no duplicated rules)
-# - Updated discovery algorithm to reference OVERVIEW.md for activation rules
-#
-# NEW in v2.3:
-# - DEPRECATED: Discovery keywords in skill_metadata
-# - Tags now defined in OVERVIEW.md frontmatter (see TAGS.md)
-# - Discovery process updated to 3 phases: Index → Tags → Full OVERVIEW
-# - skill_metadata simplified to only structural relationships
-#
-# MAINTENANCE: When adding a new skill, register it in ALL applicable
-# sections of this index. See model/standards/authoring/SKILL.md for details.
+# ═══════════════════════════════════════════════════════════════════════════════
 
 ---
 
 # =============================================================================
 # LAYERS
 # =============================================================================
-# Layers represent the architectural tier where the skill operates.
-# This is the PRIMARY filter for CODE domain skills.
-#
-# Layer identification signals are documented below each layer.
-# The agent uses these signals to identify the layer from user requests.
 
 layers:
   soe:
     name: "System of Engagement"
-    description: "UI, digital channels, user experience, presentation layer"
-    technologies:
-      - angular
-      - react
-      - vue
-      - microfrontend
-      - web-components
+    description: "UI, digital channels, user experience"
+    technologies: [angular, react, vue, microfrontend]
     signals:
-      keywords:
-        - frontend
-        - front-end
-        - angular
-        - react
-        - vue
-        - microfrontend
-        - micro-frontend
-        - componente
-        - component
-        - página
-        - page
-        - UI
-        - interfaz
-        - pantalla
-        - screen
-        - formulario
-        - form
-        - SPA
-        - web app
-      artifacts:
-        - component
-        - page
-        - module
-        - store
-        - reducer
-        - template
-        - style
-        - directive
+      keywords: [frontend, angular, react, vue, component, page, UI]
     skills: []
-    # Future skills:
-    # - skill-040-microfrontend-angular
-    # - skill-041-microfrontend-react
 
   soi:
     name: "System of Integration"
-    description: "Microservices, APIs, orchestration, business logic, middleware"
-    technologies:
-      - java-spring
-      - java-quarkus
-      - nodejs-express
-      - nodejs-nestjs
-      - kotlin
+    description: "Microservices, APIs, orchestration"
+    technologies: [java-spring, java-quarkus, nodejs-express]
     signals:
-      keywords:
-        - microservicio
-        - microservice
-        - API
-        - REST
-        - servicio
-        - service
-        - backend
-        - spring
-        - springboot
-        - spring boot
-        - quarkus
-        - nodejs
-        - node
-        - express
-        - nestjs
-        - orquestación
-        - orchestration
-        - integración
-        - integration
-        - dominio
-        - domain
-        - hexagonal
-        - kafka
-        - rabbitmq
-        - event
-        - evento
-      artifacts:
-        - service
-        - controller
-        - endpoint
-        - repository
-        - entity
-        - dto
-        - adapter
-        - port
-        - use-case
-        - aggregate
+      keywords: [microservicio, microservice, API, REST, service, spring, backend]
     skills:
-      - code/soi/skill-001-circuit-breaker-java-resilience4j
+      # Generation Skills
       - code/soi/skill-020-microservice-java-spring
       - code/soi/skill-021-api-rest-java-spring
-      # Future skills (not yet created):
-      # - code/soi/skill-002-retry-java-resilience4j
-      # - code/soi/skill-003-timeout-java-resilience4j
-      # - code/soi/skill-004-rate-limiter-java-resilience4j
-      # - code/soi/skill-022-api-grpc-java-spring
-      # - code/soi/skill-023-api-async-java-spring
+      # Transformation Skills
+      - code/soi/skill-040-add-resilience-java-spring
+      - code/soi/skill-041-add-api-exposure-java-spring
+      - code/soi/skill-042-add-persistence-java-spring
 
   sor:
     name: "System of Record"
-    description: "Core systems, mainframe, master data, COBOL/CICS/DB2 on Z/OS"
-    technologies:
-      - cobol
-      - cics
-      - db2
-      - jcl
-      - vsam
-      - ims
+    description: "Core systems, mainframe"
+    technologies: [cobol, cics, db2, jcl]
     signals:
-      keywords:
-        - mainframe
-        - COBOL
-        - CICS
-        - DB2
-        - JCL
-        - batch
-        - programa
-        - program
-        - copybook
-        - Z/OS
-        - zOS
-        - IBM
-        - transacción
-        - transaction
-        - VSAM
-        - IMS
-        - core
-        - legacy
-        - host
-      artifacts:
-        - program
-        - copybook
-        - job
-        - procedure
-        - transaction
-        - map
-        - BMS
-        - cursor
-        - DCLGEN
+      keywords: [mainframe, COBOL, CICS, DB2, batch, host]
     skills: []
-    # Future skills:
-    # - skill-050-cobol-cics-program
-    # - skill-051-cobol-batch-program
-    # - skill-052-jcl-job
 
 # =============================================================================
 # DOMAINS
 # =============================================================================
-# Domains represent the type of SDLC activity.
-# For CODE domain, layer is the primary sub-classification.
-# Other domains may have their own sub-classifications in the future.
 
 domains:
   code:
@@ -208,137 +68,44 @@ domains:
     skills_by_layer:
       soe: []
       soi:
-        - code/soi/skill-001-circuit-breaker-java-resilience4j
         - code/soi/skill-020-microservice-java-spring
         - code/soi/skill-021-api-rest-java-spring
+        - code/soi/skill-040-add-resilience-java-spring
+        - code/soi/skill-041-add-api-exposure-java-spring
+        - code/soi/skill-042-add-persistence-java-spring
       sor: []
 
   design:
     description: "Architecture design and documentation"
     skills: []
-    # Future skills:
-    # - skill-001-c4-diagram
-    # - skill-002-sequence-diagram
 
   qa:
     description: "Quality analysis and validation"
     skills: []
-    # Future skills:
-    # - skill-001-code-quality-analysis
-    # - skill-002-security-scan
 
   governance:
     description: "Compliance and policy verification"
-    skills: []
-    # Future skills:
-    # - skill-001-compliance-report
-    # - skill-002-adr-validation
-
-# =============================================================================
-# CAPABILITIES
-# =============================================================================
-# Cross-cutting capabilities that may span multiple skills.
-# Useful for requests like "add resilience" without specifying which pattern.
-
-capabilities:
-  resilience:
-    description: "Fault tolerance patterns (circuit breaker, retry, timeout, rate limiter)"
-    skills:
-      - code/soi/skill-001-circuit-breaker-java-resilience4j
-      # Future:
-      # - code/soi/skill-002-retry-java-resilience4j
-      # - code/soi/skill-003-timeout-java-resilience4j
-      # - code/soi/skill-004-rate-limiter-java-resilience4j
-
-  persistence:
-    description: "Data persistence patterns (JPA, System API integration)"
-    skills: []
-    # Note: persistence is handled by modules within generate skills
-    # No standalone ADD skills for persistence yet
-
-  observability:
-    description: "Logging, metrics, tracing, correlation"
-    skills: []
-    # Future: skill for adding observability to existing code
-
-  security:
-    description: "Authentication, authorization, secure coding"
-    skills: []
-    # Future: skill for adding security patterns
-
-  api-design:
-    description: "API design patterns, OpenAPI, contracts, pagination, HATEOAS"
-    skills:
-      - code/soi/skill-021-api-rest-java-spring
-    # Future: skill-022-api-grpc, skill-023-api-async
-
-# =============================================================================
-# TECHNOLOGIES
-# =============================================================================
-# Technology-specific grouping for filtering when technology is explicit.
-
-technologies:
-  java-spring:
-    description: "Java with Spring Boot framework"
-    layer: soi
-    skills:
-      - code/soi/skill-001-circuit-breaker-java-resilience4j
-      - code/soi/skill-020-microservice-java-spring
-      - code/soi/skill-021-api-rest-java-spring
-
-  java-quarkus:
-    description: "Java with Quarkus framework"
-    layer: soi
-    skills: []
-
-  nodejs-express:
-    description: "Node.js with Express framework"
-    layer: soi
-    skills: []
-
-  angular:
-    description: "Angular framework for SPA/microfrontends"
-    layer: soe
-    skills: []
-
-  react:
-    description: "React library for UI components"
-    layer: soe
-    skills: []
-
-  cobol:
-    description: "COBOL on Z/OS mainframe"
-    layer: sor
-    skills: []
-
-  cics:
-    description: "CICS transaction processing"
-    layer: sor
     skills: []
 
 # =============================================================================
 # EXECUTION FLOWS
 # =============================================================================
-# Maps skills to their execution flows.
-# This helps the agent know which flow to read after selecting a skill.
 
 flows:
   code:
     GENERATE:
-      description: "Holistic generation - create complete artifacts"
+      description: "Create complete artifacts from scratch"
       flow_document: "runtime/flows/code/GENERATE.md"
       skills:
         - code/soi/skill-020-microservice-java-spring
         - code/soi/skill-021-api-rest-java-spring
     ADD:
-      description: "Atomic addition - add specific capability to existing code"
+      description: "Add capability to existing code (transformation)"
       flow_document: "runtime/flows/code/ADD.md"
       skills:
-        - code/soi/skill-001-circuit-breaker-java-resilience4j
-        # Future:
-        # - code/soi/skill-002-retry-java-resilience4j
-        # - code/soi/skill-003-timeout-java-resilience4j
-        # - code/soi/skill-004-rate-limiter-java-resilience4j
+        - code/soi/skill-040-add-resilience-java-spring
+        - code/soi/skill-041-add-api-exposure-java-spring
+        - code/soi/skill-042-add-persistence-java-spring
     REFACTOR:
       description: "Transform existing code structure"
       flow_document: "runtime/flows/code/REFACTOR.md"
@@ -353,312 +120,224 @@ flows:
       skills: []
 
 # =============================================================================
-# DISCOVERY ALGORITHM
-# =============================================================================
-# Recommended discovery process using this index:
-#
-# 1. SCOPE: Validate request is SDLC-related
-#
-# 2. DOMAIN: Identify domain (CODE, DESIGN, QA, GOVERNANCE)
-#    - Based on output type and action intent
-#
-# 3. LAYER (for CODE domain):
-#    - Scan layers[*].signals.keywords for matches
-#    - Scan layers[*].signals.artifacts for matches
-#    - If unclear, ask user: "¿Es para frontend, microservicios, o mainframe?"
-#
-# 4. FILTER:
-#    - Get candidate skills from domains.{domain}.skills_by_layer.{layer}
-#    - Or from layers.{layer}.skills
-#
-# 5. CAPABILITY (optional refinement):
-#    - If user mentions capability (e.g., "resilience"), filter further
-#
-# 6. TECHNOLOGY (optional refinement):
-#    - If user specifies technology, filter further
-#
-# 7. SEMANTIC MATCH:
-#    - Read OVERVIEW.md only for filtered candidates
-#    - Match user intent with skill purpose
-#    - **IMPORTANT**: OVERVIEW.md contains activation rules that define
-#      when to use each skill vs similar alternatives (e.g., skill-020 vs skill-021)
-#    - Follow the activation rules in OVERVIEW.md for confident selection
-#
-# Example 1 (Fusion API - rules in OVERVIEW.md):
-#   User: "Genera una Fusion Domain API para Customer"
-#   1. SCOPE: SDLC ✓
-#   2. DOMAIN: CODE (output is code)
-#   3. LAYER: SOI (keywords: API)
-#   4-6. FILTER: skill-020, skill-021 are candidates
-#   7. SEMANTIC MATCH: Read OVERVIEW.md for both
-#      → skill-021 OVERVIEW says: "Fusion" + "Domain API" = HIGH confidence
-#      → Select skill-021 with apiLayer=domain
-#
-# Example 2 (Ambiguous - rules in OVERVIEW.md):
-#   User: "Genera una Domain API para Customer"
-#   1. SCOPE: SDLC ✓
-#   2. DOMAIN: CODE
-#   3. LAYER: SOI
-#   4-6. FILTER: skill-020, skill-021 are candidates
-#   7. SEMANTIC MATCH: Read OVERVIEW.md for both
-#      → skill-021 OVERVIEW says: "Domain API" without "Fusion" = MEDIUM confidence
-#      → ASK: "¿Te refieres a una API del modelo Fusion?"
-#
-# Example 3 (Internal Service - rules in OVERVIEW.md):
-#   User: "Genera un microservicio Java con Spring Boot"
-#   1. SCOPE: SDLC ✓
-#   2. DOMAIN: CODE
-#   3. LAYER: SOI (keywords: microservicio, spring boot)
-#   4-6. FILTER: skill-020, skill-021 are candidates
-#   7. SEMANTIC MATCH: Read OVERVIEW.md for both
-#      → skill-021 OVERVIEW says: "microservicio" = use skill-020 instead
-#      → Select skill-020
-
-# =============================================================================
-# MAINTENANCE NOTES
+# SKILL DEFINITIONS (v3.0 - Model v2.0)
 # =============================================================================
 # 
-# When adding a new skill:
-# 1. Add to layers.{layer}.skills
-# 2. Add to domains.{domain}.skills_by_layer.{layer}
-# 3. Add to capabilities.{capability}.skills (if applicable)
-# 4. Add to technologies.{tech}.skills
-# 5. Add to flows.{domain}.{FLOW}.skills
+# KEY CHANGES:
+# - `type`: generation | transformation
+# - `required_capabilities`: for generation skills (resolved via capability-index.yaml)
+# - `target_capability`: for transformation skills
+# - NO `extends` - each skill is self-contained
+# - NO `modules` - resolved via capabilities
 #
-# When adding a new layer:
-# 1. Create new entry in layers section
-# 2. Add layer to domains.code.layers list
-# 3. Add layer to domains.code.skills_by_layer
-#
-# When adding a new capability:
-# 1. Create new entry in capabilities section
-# 2. Add relevant existing skills
-#
-# When adding a new technology:
-# 1. Create new entry in technologies section
-# 2. Add to appropriate layer's technologies list
-# 3. Add relevant existing skills
 
-# =============================================================================
-# SKILL METADATA
-# =============================================================================
-# Extended metadata for each skill including:
-# - Extension relationships (extends)
-# - Path to skill directory
-#
-# DEPRECATED in v2.3: Discovery keywords (positive/negative) have been moved to
-# YAML frontmatter tags in each skill's OVERVIEW.md. See TAGS.md for details.
-#
-# This section now only contains structural relationships for inheritance resolution.
+skills:
 
-skill_metadata:
+  # ═══════════════════════════════════════════════════════════════════════════
+  # GENERATION SKILLS
+  # ═══════════════════════════════════════════════════════════════════════════
   
-  # ---------------------------------------------------------------------------
-  # skill-020: Base Microservice (Extensible)
-  # ---------------------------------------------------------------------------
   skill-020-microservice-java-spring:
     path: code/soi/skill-020-microservice-java-spring
-    extensible: true
-    extended_by:
-      - skill-021-api-rest-java-spring
-      # - skill-022-api-grpc-java-spring (planned)
-      # - skill-023-api-async-java-spring (planned)
-    # Tags for discovery are in OVERVIEW.md frontmatter
-  
-  # ---------------------------------------------------------------------------
-  # skill-021: Fusion REST API (Extends skill-020)
-  # ---------------------------------------------------------------------------
+    type: generation
+    domain: code
+    layer: soi
+    stack: java-spring
+    description: "Internal microservice with hexagonal architecture"
+    
+    # Capabilities this skill REQUIRES (resolved to modules via capability-index.yaml)
+    required_capabilities:
+      - architecture.hexagonal-base
+    
+    # Additional capabilities inferred from prompt (NOT declared here)
+    
+    keywords:
+      - microservicio
+      - microservice
+      - internal service
+      - servicio interno
+      - DDD
+      - hexagonal
+
   skill-021-api-rest-java-spring:
     path: code/soi/skill-021-api-rest-java-spring
-    extends: skill-020-microservice-java-spring
-    # Tags for discovery are in OVERVIEW.md frontmatter
+    type: generation
+    domain: code
+    layer: soi
+    stack: java-spring
+    description: "Fusion REST API with HATEOAS"
+    
+    required_capabilities:
+      - architecture.hexagonal-base
+      - api-exposure.rest-hateoas
+    
+    keywords:
+      - REST API
+      - Domain API
+      - Fusion API
+      - HATEOAS
+      - API REST
+      - OpenAPI
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # TRANSFORMATION SKILLS
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  skill-040-add-resilience-java-spring:
+    path: code/soi/skill-040-add-resilience-java-spring
+    type: transformation
+    domain: code
+    layer: soi
+    stack: java-spring
+    description: "Add resilience patterns to existing code"
+    
+    # The capability this skill ADDS to existing code
+    target_capability: resilience
+    
+    # What existing architecture this skill can work with
+    compatible_with:
+      - architecture.hexagonal-base
+    
+    keywords:
+      - add resilience
+      - añadir resiliencia
+      - circuit breaker
+      - retry
+      - timeout
+      - fault tolerance
+      - tolerancia a fallos
+
+  skill-041-add-api-exposure-java-spring:
+    path: code/soi/skill-041-add-api-exposure-java-spring
+    type: transformation
+    domain: code
+    layer: soi
+    stack: java-spring
+    description: "Add API exposure to existing microservice"
+    
+    target_capability: api-exposure
+    
+    compatible_with:
+      - architecture.hexagonal-base
+    
+    keywords:
+      - add API
+      - expose API
+      - promote to API
+      - promocionar a API
+      - añadir REST
+      - HATEOAS
+
+  skill-042-add-persistence-java-spring:
+    path: code/soi/skill-042-add-persistence-java-spring
+    type: transformation
+    domain: code
+    layer: soi
+    stack: java-spring
+    description: "Add persistence to existing microservice"
+    
+    target_capability: persistence
+    
+    compatible_with:
+      - architecture.hexagonal-base
+    
+    keywords:
+      - add persistence
+      - añadir persistencia
+      - add database
+      - add JPA
+      - add System API
+      - backend integration
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # DEPRECATED SKILLS
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  skill-001-circuit-breaker-java-resilience4j:
+    path: code/soi/skill-001-circuit-breaker-java-resilience4j
+    type: transformation
+    status: deprecated
+    deprecated_by: skill-040-add-resilience-java-spring
+    deprecation_reason: "Replaced by capability-level transformation skill"
+    # Keeping for backward compatibility during migration
 
 # =============================================================================
-# INPUT VALIDATION RULES
+# DISCOVERY ALGORITHM (v3.0)
 # =============================================================================
-# Pre-generation validation rules that the agent MUST check before invoking skills.
-# These rules ensure that inputs are complete and consistent before code generation.
+#
+# 1. INTENT DETECTION:
+#    - "generate", "create", "build" → look for GENERATION skills
+#    - "add", "include", "enable" → look for TRANSFORMATION skills
+#    - If unclear, default to GENERATION
+#
+# 2. DOMAIN/LAYER:
+#    - Match keywords against layers.*.signals
+#
+# 3. SKILL FILTERING:
+#    - For GENERATION: filter by required capabilities match
+#    - For TRANSFORMATION: filter by target capability match
+#
+# 4. CAPABILITY EXTRACTION:
+#    - From prompt, extract capability keywords
+#    - Validate against capability-index.yaml
+#
+# 5. MODULE RESOLUTION:
+#    - Skill.required_capabilities → capability-index.yaml → modules
+#    - For transformation: target_capability → features from prompt → modules
+#
+# See: runtime/discovery/discovery-guidance.md for detailed algorithm
+
+# =============================================================================
+# INPUT VALIDATION
+# =============================================================================
 
 input_validation:
   
-  # ---------------------------------------------------------------------------
-  # Pre-Discovery Validation
-  # ---------------------------------------------------------------------------
-  pre_discovery:
-    description: "Validations before skill discovery begins"
-    rules:
-      - id: SDLC-001
-        check: "Request must be SDLC-related (code, design, qa, governance)"
-        action: "Reject with explanation if not SDLC"
-      
-      - id: DOMAIN-001
-        check: "Domain must be identifiable from request"
-        action: "Ask user to clarify: ¿Es para código, diseño, QA, o gobernanza?"
-      
-      - id: LAYER-001
-        check: "For CODE domain, layer must be identifiable"
-        action: "Ask user: ¿Es para frontend, microservicios, o mainframe?"
+  # Generation skills
+  skill-020-microservice-java-spring:
+    required_fields:
+      - serviceName
+      - basePackage
+    validation_rules:
+      - field: serviceName
+        pattern: "^[a-z][a-z0-9-]*$"
+        error: "Service name must be kebab-case"
 
-  # ---------------------------------------------------------------------------
-  # Skill-Specific Input Validation
-  # ---------------------------------------------------------------------------
-  skill_inputs:
-    
-    skill-020-microservice-java-spring:
-      required_fields:
-        - serviceName
-        - basePackage
-        - entities
-      validation_rules:
-        - field: serviceName
-          pattern: "^[a-z][a-z0-9-]*$"
-          error: "Service name must be kebab-case"
-        - field: entities
-          min_items: 1
-          error: "At least one entity required"
-    
-    skill-021-api-rest-java-spring:
-      inherits: skill-020-microservice-java-spring
-      additional_required_fields:
-        - apiLayer
-      validation_rules:
-        - field: apiLayer
-          enum: [experience, composable, domain, system]
-          error: "apiLayer must be one of: experience, composable, domain, system"
-        - field: features.compensation.enabled
-          condition: "Only valid when apiLayer = domain"
-          error: "Compensation is only available for Domain APIs"
+  skill-021-api-rest-java-spring:
+    required_fields:
+      - serviceName
+      - basePackage
+      - apiName
+    validation_rules:
+      - field: serviceName
+        pattern: "^[a-z][a-z0-9-]*$"
+        error: "Service name must be kebab-case"
 
-  # ---------------------------------------------------------------------------
-  # Discovery Process Formalization (v2.3 - Tag-based)
-  # ---------------------------------------------------------------------------
-  # UPDATED in v2.3: Discovery now uses YAML frontmatter tags from OVERVIEW.md
-  # instead of keywords in skill_metadata. This enables:
-  # - Structured, typed tag matching
-  # - Tag inheritance for extended skills
-  # - Scalable discovery as skills grow
-  #
-  # See model/standards/authoring/TAGS.md for complete taxonomy.
-  
-  discovery_process:
-    description: "Formal steps for skill discovery - agent MUST follow these"
-    version: "2.3"
-    
-    phases:
-      # =========================================================================
-      # PHASE 1: Index-based Filtering (skill-index.yaml)
-      # =========================================================================
-      phase_1_index_filtering:
-        description: "Fast filtering using skill-index.yaml"
-        steps:
-          - step: 1
-            name: "Extract Keywords"
-            action: "Parse user request and extract substantive keywords"
-            output: "keyword_list[]"
-          
-          - step: 2
-            name: "Identify Domain"
-            action: "Match keywords against domains.*.signals"
-            output: "domain (code, design, qa, governance)"
-          
-          - step: 3
-            name: "Identify Layer"
-            condition: "Only for CODE domain"
-            action: "Match keywords against layers.*.signals"
-            output: "layer (soe, soi, sor)"
-          
-          - step: 4
-            name: "Get Candidate Skills"
-            action: "Filter skills from domains.{domain}.skills_by_layer.{layer}"
-            output: "candidate_skill_paths[]"
-      
-      # =========================================================================
-      # PHASE 2: Tag-based Scoring (OVERVIEW.md frontmatter)
-      # =========================================================================
-      phase_2_tag_scoring:
-        description: "Score candidates using YAML frontmatter tags"
-        steps:
-          - step: 5
-            name: "Parse Frontmatter Tags"
-            action: |
-              For each candidate skill path:
-                Read ONLY the YAML frontmatter from OVERVIEW.md
-                Parse tags section
-                If skill has 'extends', resolve inherited tags
-            output: "skills_with_resolved_tags[]"
-          
-          - step: 6
-            name: "Score Tags"
-            action: |
-              For each skill with resolved tags:
-                score = 0
-                For each tag dimension in resolved_tags:
-                  if tag.value appears in keyword_list:
-                    score += weight(dimension)
-                  if tag.value appears as exact phrase in user_request:
-                    score += weight(dimension) * 2  # Bonus
-            weights:
-              artifact-type: 3   # Primary discriminator
-              api-model: 3       # Critical for API skills
-              protocol: 2        # Important for API type
-              stack: 1           # Usually explicit in request
-              runtime-model: 1   # Often implicit
-            output: "scored_skills[]"
-          
-          - step: 7
-            name: "Rank Candidates"
-            action: "Sort skills by score descending"
-            output: "ranked_skills[]"
-      
-      # =========================================================================
-      # PHASE 3: Full OVERVIEW.md Evaluation
-      # =========================================================================
-      phase_3_full_evaluation:
-        description: "Read full OVERVIEW.md for final selection"
-        steps:
-          - step: 8
-            name: "Read Full OVERVIEW.md"
-            action: |
-              Read complete OVERVIEW.md of top candidate (or top 2-3 if scores are close)
-              Evaluate "When to Use" section and Activation Rules
-            output: "evaluated_skills[]"
-          
-          - step: 9
-            name: "Select Skill"
-            action: |
-              If single clear winner: select it
-              If ambiguous: ask user for clarification using specific questions from Activation Rules
-            output: "selected_skill"
-          
-          - step: 10
-            name: "Resolve Inheritance"
-            condition: "If selected skill has 'extends'"
-            action: "Load parent skill first, then overlay child"
-            output: "resolved_skill_chain[]"
-          
-          - step: 11
-            name: "Validate Input"
-            action: "Check input against skill_inputs[selected_skill]"
-            output: "validation_result"
-          
-          - step: 12
-            name: "Execute Skill"
-            condition: "Only if validation passes"
-            action: "Follow skill's execution flow"
-            output: "generated_artifacts"
+  # Transformation skills
+  skill-040-add-resilience-java-spring:
+    required_fields:
+      - targetProject
+    optional_fields:
+      - features  # Specific features (circuit-breaker, retry, timeout)
+    validation_rules:
+      - field: targetProject
+        check: "must exist and be hexagonal architecture"
+        error: "Target project must exist and use hexagonal architecture"
 
-    error_handling:
-      ambiguous_match:
-        condition: "Multiple skills with similar scores after Phase 2"
-        action: |
-          Read full OVERVIEW.md of top candidates
-          Use Activation Rules to generate clarifying questions
-          Ask user to clarify
-      
-      no_match:
-        condition: "No skill scores > 0 after Phase 2"
-        action: "Inform user that no skill matches, suggest alternatives based on available tags"
-      
-      validation_failure:
-        condition: "Input validation fails in Phase 3"
-        action: "Return specific validation errors, do NOT generate"
+  skill-041-add-api-exposure-java-spring:
+    required_fields:
+      - targetProject
+    optional_fields:
+      - apiType  # rest-hateoas, grpc, etc.
+    validation_rules:
+      - field: targetProject
+        check: "must exist and be hexagonal architecture"
+
+  skill-042-add-persistence-java-spring:
+    required_fields:
+      - targetProject
+      - persistenceType  # jpa or systemapi
+    validation_rules:
+      - field: persistenceType
+        enum: [jpa, systemapi]
+        error: "Must be 'jpa' or 'systemapi'"

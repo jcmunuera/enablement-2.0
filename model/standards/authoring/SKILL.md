@@ -1,126 +1,99 @@
 # Authoring Guide: SKILL
 
-**Version:** 2.7  
-**Last Updated:** 2025-12-24  
+**Version:** 3.0  
+**Last Updated:** 2025-01-15  
 **Asset Type:** Skill  
-**Priority:** CRITICAL
+**Priority:** CRITICAL  
+**Model Version:** 2.0
 
 ---
 
-## What's New in v2.7
+## What's New in v3.0 (Model v2.0)
 
 | Change | Description |
 |--------|-------------|
-| **YAML Frontmatter Tags** | OVERVIEW.md now requires YAML frontmatter with structured tags for discovery |
-| **Tag-based Discovery** | Discovery now uses tags (Phase 2) instead of keywords in skill-index.yaml |
-| **Tags Reference** | See `TAGS.md` for complete tag taxonomy and inheritance rules |
+| **Skill Types** | Skills are now either `generation` or `transformation` |
+| **Capability-based** | Skills declare capabilities, NOT modules directly |
+| **No Inheritance** | `extends:` is removed; skills are self-contained |
+| **Required Capabilities** | Generation skills declare `required_capabilities` |
+| **Target Capability** | Transformation skills declare `target_capability` |
 
-### Previous (v2.6)
+### Removed in v3.0
 
-| Change | Description |
-|--------|-------------|
-| **Variant Handling** | Skills must handle module variants during execution |
-| **Determinism Reference** | CODE skills must reference DETERMINISM-RULES.md |
-
-### Previous (v2.5)
-
-| Change | Description |
-|--------|-------------|
-| **Skill Extension Pattern** | Skills can now extend other skills using `extends:` declaration |
-| **Discovery Keywords** | ~~Skills can declare positive/negative keywords for discovery~~ (DEPRECATED: use tags) |
-| **Inheritance Model** | Child skills inherit modules, parameters, validation from parent |
-
-### Previous (v2.4)
-
-| Change | Description |
-|--------|-------------|
-| **Hierarchical structure** | Skills now at `skills/{domain}/{layer}/skill-{NNN}-{name}/` |
-| **Layer taxonomy** | CODE domain uses SoE/SoI/SoR layers |
-| **Simplified naming** | `skill-{NNN}-{name}` (domain/layer implicit in path) |
-| **Index registration** | Required registration in `skill-index.yaml` |
+| Removed | Replacement |
+|---------|-------------|
+| `extends:` | Skills declare all capabilities explicitly |
+| `modules:` section | Modules resolved via capability-index.yaml |
+| `modules_added:` | Not needed (no inheritance) |
+| Conditional modules | Capabilities inferred from prompt |
 
 ---
 
 ## Overview
 
-Skills are **automated executable capabilities** that leverage the knowledge base to perform tasks. They are the primary interface between AI orchestration and the accumulated knowledge in ADRs, ERIs, and Modules.
+Skills are **automated executable capabilities** that leverage the Knowledge Base to perform tasks. They are the primary interface between AI orchestration and the accumulated knowledge.
 
-**This is the most critical authoring guide** because Skills are what transform static knowledge into executable automation.
+### Skill Types
 
----
-
-## Skill Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         SKILL                                    │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │  SKILL.md - Complete specification                       │    │
-│  │  - What it does, inputs, outputs, constraints            │    │
-│  │  - References domain skill-type for execution flow       │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│                              │                                   │
-│                              ▼                                   │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │  Execution Flow (centralized at domain level)            │    │
-│  │  Location: domains/{domain}/flows/{TYPE}.md        │    │
-│  │  - Step-by-step process, module resolution, validation   │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│                              │                                   │
-│                              ▼                                   │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │  prompts/ - AI orchestration instructions                │    │
-│  │  - system.md: Role, context, constraints                 │    │
-│  │  - user.md: Request template                             │    │
-│  │  - examples/: Few-shot examples                          │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│                              │                                   │
-│                              ▼                                   │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │  validation/ - Quality assurance                         │    │
-│  │  - validate.sh: Orchestrates Tier 1, 2, 3 validators    │    │
-│  └─────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-```
+| Type | Purpose | Key Attribute | Example |
+|------|---------|---------------|---------|
+| **Generation** | Create artifacts from scratch | `required_capabilities` | skill-021-api-rest |
+| **Transformation** | Modify existing code | `target_capability` | skill-040-add-resilience |
 
 ---
 
-## When to Create a Skill
+## Skill Architecture (v2.0)
 
-Create a Skill when:
-
-- A repeatable automation task is needed
-- Modules exist that can be composed for the task
-- The task has clear inputs, outputs, and validation criteria
-- Multiple users/projects would benefit from automation
-
-Do NOT create a Skill for:
-
-- One-off tasks
-- Tasks without clear success criteria
-- Tasks that can't be validated automatically
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              SKILL                                           │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │  SKILL.md - Complete specification                                     │  │
+│  │  - Type: generation | transformation                                   │  │
+│  │  - Required/Target capabilities (NOT modules)                         │  │
+│  │  - References execution flow                                          │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                              │                                               │
+│                              ▼                                               │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │  Discovery Resolution                                                  │  │
+│  │  - capability-index.yaml resolves capabilities → features → modules   │  │
+│  │  - Compatibility validated automatically                               │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                              │                                               │
+│                              ▼                                               │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │  prompts/ - AI orchestration instructions                              │  │
+│  │  - system.md: Role, context, constraints                               │  │
+│  │  - user.md: Request template                                           │  │
+│  │  - examples/: Few-shot examples                                        │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                              │                                               │
+│                              ▼                                               │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │  validation/ - Quality assurance                                       │  │
+│  │  - validate.sh: Orchestrates validators                                │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## Directory Structure
 
-Skills are organized hierarchically by domain and layer:
-
 ```
 skills/
 ├── code/
-│   ├── soe/                    # System of Engagement (frontend)
-│   │   └── skill-{NNN}-{name}/
-│   ├── soi/                    # System of Integration (microservices)
-│   │   └── skill-{NNN}-{name}/
-│   └── sor/                    # System of Record (mainframe)
-│       └── skill-{NNN}-{name}/
-├── design/                     # Flat structure (no layers)
-│   └── skill-{NNN}-{name}/
+│   ├── soi/                           # System of Integration
+│   │   ├── skill-020-microservice-java-spring/    # Generation
+│   │   ├── skill-021-api-rest-java-spring/        # Generation
+│   │   ├── skill-040-add-resilience-java-spring/  # Transformation
+│   │   └── skill-041-add-api-exposure-java-spring/ # Transformation
+│   ├── soe/                           # System of Engagement
+│   └── sor/                           # System of Record
+├── design/
 ├── qa/
-│   └── skill-{NNN}-{name}/
 └── governance/
-    └── skill-{NNN}-{name}/
 ```
 
 ### Skill Internal Structure
@@ -128,124 +101,407 @@ skills/
 ```
 skill-{NNN}-{name}/
 ├── SKILL.md            # Complete specification (required)
-├── OVERVIEW.md         # Quick reference for discovery (required) ⭐
+├── OVERVIEW.md         # Quick reference for discovery (required)
 ├── README.md           # External-facing documentation (required)
 ├── prompts/            # AI prompts (required)
-│   ├── system.md       # System prompt
-│   ├── user.md         # User prompt template
-│   └── examples/       # Few-shot examples
-│       └── *.md
+│   ├── system.md
+│   ├── user.md
+│   └── examples/
 └── validation/         # Validation orchestration (required)
     ├── README.md
-    └── validate.sh     # Main orchestrator
+    └── validate.sh
 ```
-
-> **UPDATED in v2.4:** Skills are now organized under `skills/{domain}/{layer}/`.
-> For CODE domain, layer is one of: `soe`, `soi`, `sor`.
-> Other domains use flat structure (no layer subdirectory).
-
-### Layer Taxonomy (CODE Domain Only)
-
-| Layer | Name | Description | Technologies |
-|-------|------|-------------|--------------|
-| `soe` | System of Engagement | UI, frontend, digital channels | Angular, React, Vue |
-| `soi` | System of Integration | Microservices, APIs, orchestration | Java Spring, Node.js, Quarkus |
-| `sor` | System of Record | Core systems, mainframe | COBOL, CICS, DB2, JCL |
-
-## Naming Convention
-
-```
-skills/{domain}/{layer}/skill-{NNN}-{name}/
-```
-
-- `{domain}`: `code`, `design`, `qa`, `governance`
-- `{layer}`: `soe`, `soi`, `sor` (CODE domain only)
-- `{NNN}`: 3-digit number (unique within domain)
-- `{type}`: Action type (see below)
-- `{target}`: What is acted upon
-- `{framework}`: Technology (if applicable)
-- `{library}`: Specific library (if applicable)
-
-### Skill Types by Domain
-
-| Domain | Types | Examples |
-|--------|-------|----------|
-| **CODE** | generate, add, remove, refactor, migrate, update | skill-code-020-generate-microservice-java-spring |
-| **DESIGN** | generate, create, transform, document | skill-design-001-generate-hld |
-| **QA** | analyze, validate, audit, review, assess | skill-qa-001-analyze-code-quality |
-| **GOV** | document, verify, enforce, report | skill-gov-001-document-api |
 
 ---
 
-## Required Files
-
-### 1. SKILL.md - Complete Specification
-
-This is the **master document** that fully specifies the skill.
+## SKILL.md Template: Generation Skill
 
 ```yaml
 ---
-id: skill-{domain}-{NNN}-{type}-{target}-{framework}-{library}
-title: "Skill: {Title}"
-version: X.Y.Z
-date: YYYY-MM-DD
-updated: YYYY-MM-DD
-status: Draft|Active|Deprecated
-domain: code|design|qa|gov
-type: generate|add|remove|analyze|...
-target: microservice|circuit-breaker|hld|...
-framework: java|nodejs|python|...    # For CODE domain
-library: spring|resilience4j|...     # For CODE domain
+id: skill-021-api-rest-java-spring
+title: "Skill: Fusion REST API Generator"
+version: 2.0.0
+date: 2025-01-15
+status: Active
+domain: code
+layer: soi
 
-# OUTPUT SPECIFICATION (required)
+# ═══════════════════════════════════════════════════════════════════
+# SKILL TYPE (Required in v2.0)
+# ═══════════════════════════════════════════════════════════════════
+type: generation
+
+# ═══════════════════════════════════════════════════════════════════
+# REQUIRED CAPABILITIES (Replaces modules section)
+# ═══════════════════════════════════════════════════════════════════
+# These capabilities are ALWAYS included when this skill executes.
+# Additional capabilities are inferred from the user prompt.
+# Capabilities resolve to modules via capability-index.yaml.
+
+required_capabilities:
+  - architecture.hexagonal-base    # Structural - defines code foundation
+  - api-exposure.rest-hateoas      # Compositional - required for this skill type
+
+# ═══════════════════════════════════════════════════════════════════
+# STACK (Required)
+# ═══════════════════════════════════════════════════════════════════
+stack: java-spring
+
+# ═══════════════════════════════════════════════════════════════════
+# OUTPUT SPECIFICATION
+# ═══════════════════════════════════════════════════════════════════
 output:
-  type: code-project|document|report
-  technology: java-spring|nodejs-express|...  # For CODE domain only
-  format: markdown|html|pdf|...               # For DESIGN/QA/GOV domains
+  type: code-project
+  technology: java-spring
 
-# VALIDATION SPECIFICATION (required)
-# See "Validation Orchestration by Domain" section for rules
-validation:
-  tier1_universal:
-    - traceability              # ALWAYS included (all domains)
-  tier1_code:                   # CODE domain only
-    - project-structure
-    - naming-conventions
-  tier2:                        # CODE domain only
-    - code-projects/java-spring
-    - deployments/docker
-  tier3:                        # CODE domain only (modules used)
-    - mod-code-001-circuit-breaker-java-resilience4j
-  embedded: []                  # DESIGN/QA/GOV domains only
-
-# MODULE REFERENCES (CODE domain)
-modules_used:
-  - mod-{domain}-{NNN}-...
-
+# ═══════════════════════════════════════════════════════════════════
 # GOVERNANCE REFERENCES
+# ═══════════════════════════════════════════════════════════════════
 adr_compliance:
-  - adr-XXX-...
+  - adr-001-api-design-standards
+  - adr-009-service-architecture-patterns
 eri_reference:
-  - eri-{domain}-XXX-...
-traceability_profile: code-project|code-transformation|document|report
+  - eri-code-001-hexagonal-light-java-spring
+  - eri-code-014-api-public-exposure-java-spring
+traceability_profile: code-project
+
+# ═══════════════════════════════════════════════════════════════════
+# DISCOVERY TAGS
+# ═══════════════════════════════════════════════════════════════════
 tags:
-  - {tag1}
+  artifact-type: api
+  runtime-model: request-response
+  stack: java-spring
+  protocol: rest
+  api-model: fusion
+
+keywords:
+  - REST API
+  - Domain API
+  - Fusion API
+  - HATEOAS
+  - OpenAPI
+  - microservice
+  - Spring Boot
 ---
 ```
 
-### 2. OVERVIEW.md - Quick Reference (CRITICAL for Discovery)
-
-> **UPDATED in v2.7:** OVERVIEW.md MUST include YAML frontmatter with structured tags.
-> Tags enable efficient skill discovery without reading the full document.
-> See `TAGS.md` for complete tag taxonomy.
-
-**OVERVIEW.md Structure:**
+### Generation Skill Body
 
 ```markdown
+# Skill: Fusion REST API Generator
+
+**Skill ID:** skill-021-api-rest-java-spring  
+**Type:** Generation  
+**Version:** 2.0.0  
+**Status:** Active
+
+---
+
+## Overview
+
+Generates a complete Fusion REST API microservice with:
+- Hexagonal architecture (ports and adapters)
+- HATEOAS-compliant REST endpoints
+- OpenAPI specification
+- Domain-driven design patterns
+
+---
+
+## Required Capabilities
+
+| Capability | Type | Purpose |
+|------------|------|---------|
+| `architecture.hexagonal-base` | Structural | Code foundation and layer separation |
+| `api-exposure.rest-hateoas` | Compositional | REST endpoints with HATEOAS |
+
+> **Note:** Additional capabilities (resilience, persistence, etc.) are inferred 
+> from the user prompt and validated for compatibility automatically.
+
+---
+
+## Capability Resolution
+
+This skill does NOT declare modules directly. Module resolution happens via:
+
+1. `required_capabilities` → capability-index.yaml → modules
+2. Prompt analysis → additional capabilities → capability-index.yaml → modules
+3. Compatibility validation → final module list
+
+**Example Resolution:**
+
+```
+User prompt: "Generate Customer API with resilience and System API backend"
+
+Required (from skill):
+  architecture.hexagonal-base → mod-015
+  api-exposure.rest-hateoas → mod-019
+
+From prompt:
+  "resilience" → resilience.* → mod-001, mod-002, mod-003, mod-004
+  "System API backend" → persistence.systemapi → mod-017
+                       → (requires) api-integration.restclient → mod-018
+
+Final modules: [mod-015, mod-019, mod-001, mod-002, mod-003, mod-004, mod-017, mod-018]
+```
+
+---
+
+## Input Specification
+
+### Required Parameters
+
+| Parameter | Type | Description | Example |
+|-----------|------|-------------|---------|
+| `serviceName` | string | Service name (PascalCase) | `CustomerService` |
+| `packageName` | string | Java package | `com.company.customer` |
+| `apiName` | string | API name | `Customer API` |
+
+### Optional Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `persistence` | string | none | Persistence type (jpa, systemapi) |
+| `resilience` | boolean | false | Enable resilience patterns |
+
+---
+
+## Output Specification
+
+```
+{serviceName}/
+├── src/main/java/{package}/
+│   ├── domain/
+│   ├── application/
+│   └── infrastructure/
+│       └── rest/
+├── src/main/resources/
+│   └── openapi/
+├── pom.xml
+└── .enablement/
+    └── manifest.json
+```
+
+---
+
+## Execution Flow
+
+This skill follows the **GENERATE** execution flow.
+
+**See:** `runtime/flows/code/GENERATE.md`
+
+---
+
+## Semantic Relationships
+
+| Related Skill | Relationship |
+|---------------|--------------|
+| skill-020-microservice | Same architecture, no API exposure |
+| skill-040-add-resilience | Adds resilience to existing code |
+| skill-041-add-api-exposure | Promotes microservice to API |
+
+> **Note:** These are semantic relationships for documentation.
+> There is no technical inheritance between skills.
+
+---
+
+## Changelog
+
+| Date | Version | Change |
+|------|---------|--------|
+| 2025-01-15 | 2.0.0 | Migrated to capability-based model (v2.0) |
+| 2024-12-01 | 1.5.0 | Previous version with module references |
+```
+
+---
+
+## SKILL.md Template: Transformation Skill
+
+```yaml
+---
+id: skill-040-add-resilience-java-spring
+title: "Skill: Add Resilience Patterns"
+version: 1.0.0
+date: 2025-01-15
+status: Active
+domain: code
+layer: soi
+
+# ═══════════════════════════════════════════════════════════════════
+# SKILL TYPE
+# ═══════════════════════════════════════════════════════════════════
+type: transformation
+
+# ═══════════════════════════════════════════════════════════════════
+# TARGET CAPABILITY (Replaces modules for transformation skills)
+# ═══════════════════════════════════════════════════════════════════
+# This is the capability that this skill ADDS to existing code.
+# Features within the capability are determined from the user prompt.
+
+target_capability: resilience
+
+# ═══════════════════════════════════════════════════════════════════
+# COMPATIBLE WITH (Required for transformation skills)
+# ═══════════════════════════════════════════════════════════════════
+# What existing architecture this skill can work with.
+# Validated against the target code before transformation.
+
+compatible_with:
+  - architecture.hexagonal-base
+
+# ═══════════════════════════════════════════════════════════════════
+# STACK
+# ═══════════════════════════════════════════════════════════════════
+stack: java-spring
+
+# ═══════════════════════════════════════════════════════════════════
+# OUTPUT SPECIFICATION
+# ═══════════════════════════════════════════════════════════════════
+output:
+  type: code-transformation
+  technology: java-spring
+
+# ═══════════════════════════════════════════════════════════════════
+# GOVERNANCE
+# ═══════════════════════════════════════════════════════════════════
+adr_compliance:
+  - adr-004-resilience-patterns
+eri_reference:
+  - eri-code-008-circuit-breaker-java-resilience4j
+  - eri-code-009-retry-java-resilience4j
+  - eri-code-010-timeout-java-resilience4j
+traceability_profile: code-transformation
+
+# ═══════════════════════════════════════════════════════════════════
+# DISCOVERY
+# ═══════════════════════════════════════════════════════════════════
+keywords:
+  - add resilience
+  - circuit breaker
+  - retry
+  - timeout
+  - fault tolerance
+  - añadir resiliencia
+---
+```
+
+### Transformation Skill Body
+
+```markdown
+# Skill: Add Resilience Patterns
+
+**Skill ID:** skill-040-add-resilience-java-spring  
+**Type:** Transformation  
+**Version:** 1.0.0  
+**Status:** Active
+
+---
+
+## Overview
+
+Adds resilience patterns (circuit breaker, retry, timeout, rate limiter) 
+to existing hexagonal Java Spring code.
+
+---
+
+## Target Capability
+
+| Capability | Features |
+|------------|----------|
+| `resilience` | circuit-breaker, retry, timeout, rate-limiter |
+
+> **Feature Resolution:** The specific features to apply are determined from 
+> the user prompt. If unspecified, all features are applied.
+
+---
+
+## Compatible With
+
+This transformation skill works only with code that has:
+
+| Required Architecture | Reason |
+|----------------------|--------|
+| `architecture.hexagonal-base` | Resilience is applied at adapter/port boundaries |
+
+---
+
+## Feature Resolution Examples
+
+| User Prompt | Features Applied |
+|-------------|------------------|
+| "Add circuit breaker" | resilience.circuit-breaker |
+| "Add resilience" | All: circuit-breaker, retry, timeout, rate-limiter |
+| "Add retry and timeout" | resilience.retry, resilience.timeout |
+| "Add fault tolerance" | All (synonym for resilience) |
+
+---
+
+## Input Specification
+
+### Required
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `targetProject` | path | Path to existing project |
+
+### Optional
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `features` | array | all | Specific features to add |
+| `targetServices` | array | all | Services to apply resilience to |
+
+---
+
+## Execution Flow
+
+This skill follows the **ADD** execution flow.
+
+**See:** `runtime/flows/code/ADD.md`
+
+---
+
+## Pre-Transformation Validation
+
+Before applying transformation:
+
+1. Verify target project exists
+2. Verify architecture is `hexagonal-base`
+3. Check for existing resilience patterns (avoid duplicates)
+
+---
+
+## Post-Transformation Output
+
+```
+{targetProject}/
+├── src/main/java/{package}/
+│   └── infrastructure/
+│       └── config/
+│           └── ResilienceConfig.java    # ADDED
+├── pom.xml                              # MODIFIED (dependencies)
+└── .enablement/
+    └── transformation-log.json          # GENERATED
+```
+
+---
+
+## Changelog
+
+| Date | Version | Change |
+|------|---------|--------|
+| 2025-01-15 | 1.0.0 | Initial version (replaces skill-001-circuit-breaker) |
+```
+
+---
+
+## OVERVIEW.md Template (v2.0)
+
+```yaml
 ---
 id: skill-021-api-rest-java-spring
-version: 2.2.0
-extends: skill-020-microservice-java-spring  # Optional: parent skill
+version: 2.0.0
+type: generation
 tags:
   artifact-type: api
   runtime-model: request-response
@@ -259,1125 +515,136 @@ tags:
 ## Overview
 
 **Skill ID:** skill-021-api-rest-java-spring  
-**Type:** GENERATE  
-**Framework:** Java 17+ / Spring Boot 3.2.x  
-**Architecture:** Hexagonal Light + API Standards
+**Type:** GENERATION  
+**Stack:** Java 17+ / Spring Boot 3.2.x  
+**Architecture:** Hexagonal + REST API
 
 ---
 
 ## Purpose
 
-[One clear paragraph: what this skill does. Be specific about the OUTPUT.]
+Generates a complete Fusion REST API microservice with hexagonal architecture,
+HATEOAS-compliant endpoints, and OpenAPI specification.
 
 ---
 
 ## When to Use
 
 ✅ **Use this skill when:**
-- [Specific condition 1]
-- [Specific condition 2]
-- [Specific condition 3]
+- Creating a new Domain/Fusion API from scratch
+- Need REST endpoints with HATEOAS
+- Building customer-facing APIs
 
 ❌ **Do NOT use when:**
-- [Condition where another skill is better]
-- [Condition where skill doesn't apply]
-- [Edge case to avoid]
+- Modifying existing code (use transformation skills)
+- Creating internal service without API (use skill-020)
+- Need gRPC or GraphQL (different skills)
 
 ---
 
-## Capabilities
+## Required Capabilities
 
-| Capability | Description |
-|------------|-------------|
-| **Feature 1** | What it does |
-| **Feature 2** | What it does |
-
----
-
-## Input Summary
-
-```json
-{
-  "key": "example",
-  ...
-}
-```
+| Capability | Type |
+|------------|------|
+| architecture.hexagonal-base | Structural |
+| api-exposure.rest-hateoas | Compositional |
 
 ---
 
-## Output Summary
+## Additional Capabilities (from prompt)
 
-```
-{output-structure}/
-├── file1
-└── file2
-```
-
----
-
-## Dependencies
-
-### Knowledge Dependencies
-- **ADR-XXX:** [relevance]
-- **ERI-XXX:** [relevance]
-
-### Module Dependencies
-- **mod-XXX:** [purpose]
-
----
-
-## Tags
-
-`tag1` `tag2` `tag3`
+These are inferred from the user request:
+- resilience.* (circuit-breaker, retry, timeout)
+- persistence.* (jpa, systemapi)
+- api-integration.* (restclient)
 
 ---
 
 ## Version
 
-**Current:** X.Y.Z  
-**Status:** Active  
-**Last Updated:** YYYY-MM-DD
-```
-
-**Discovery-Critical Sections:**
-
-| Section | Discovery Importance |
-|---------|---------------------|
-| **Purpose** | PRIMARY - Agent matches user intent against this |
-| **When to Use** | HIGH - Explicit conditions for selection |
-| **When NOT to Use** | HIGH - Prevents wrong selection |
-| **Tags** | MEDIUM - Keyword matching support |
-| **Output Summary** | MEDIUM - Verifies output type matches user need |
-
-**Writing Tips for Discovery:**
-
-1. **Purpose:** Write what the skill PRODUCES, not how it works
-   - Good: "Generates a complete Spring Boot microservice project"
-   - Bad: "Uses templates to create code files"
-
-2. **When to Use:** Be specific about scenarios
-   - Good: "Creating a new microservice from scratch"
-   - Bad: "When you need code"
-
-3. **When NOT to Use:** Redirect to correct skill
-   - Good: "Modifying existing code (use ADD skills)"
-   - Bad: "When it doesn't apply"
-
-4. **Tags:** Include synonyms and related terms
-   - Good: `generation` `creation` `spring-boot` `java` `microservice`
-   - Bad: `skill` `code`
-
-### 3. README.md - External Documentation
-
-User-facing documentation explaining what the skill does and how to use it.
-
-### 4. prompts/ - AI Orchestration
-
-This is where the **prompt engineering** happens.
-
-### 5. Execution Flow Reference (REQUIRED)
-
-**UPDATED in v2.2:** Execution flows are now centralized at domain level, not per-skill.
-
-#### Location
-
-Execution flows are located in:
-```
-model/domains/{domain}/flows/{TYPE}.md
-```
-
-| Skill Type | Flow Location |
-|------------|---------------|
-| GENERATE | `runtime/flows/code/GENERATE.md` |
-| ADD | `runtime/flows/code/ADD.md` |
-| REMOVE | `runtime/flows/code/REMOVE.md` |
-| REFACTOR | `runtime/flows/code/REFACTOR.md` |
-| MIGRATE | `runtime/flows/code/MIGRATE.md` |
-
-#### Purpose
-
-Centralized execution flows ensure:
-- **Determinism:** Same input → Same output, every time
-- **Consistency:** All skills of same type follow identical flow
-- **Maintainability:** Update flow once, applies to all skills
-- **Reduced redundancy:** ~12-15 flows vs potentially hundreds of skills
-
-#### Referencing from SKILL.md
-
-Each SKILL.md must include an "Execution Flow" section that references the appropriate skill-type:
-
-```markdown
-## Execution Flow
-
-This skill follows the **{TYPE}** execution flow defined at domain level.
-
-**See:** [`model/domains/{domain}/flows/{TYPE}.md`](../../domains/{domain}/flows/{TYPE}.md)
-```
-
-#### Skill Type Determines Flow
-
-| Skill Type | Description | Flow Characteristics |
-|------------|-------------|---------------------|
-| **GENERATE** | Creates new project | Multiple modules, Template Catalog processing, config merging |
-| **ADD** | Modifies existing code | Single module typically, targeted changes, existing code analysis |
-| **REMOVE** | Removes code/config | Inverse of ADD, cleanup validations |
-| **REFACTOR** | Transforms code structure | Analysis, transformation plan, preservation validations |
-| **MIGRATE** | Version/framework migration | Assessment, transformation, compatibility checks |
-
-#### Additional Resources
-
-- Generic framework: `runtime/discovery/execution-framework.md`
-- Discovery rules: `runtime/discovery/discovery-rules.md`
-
----
-
-## Prompt Engineering
-
-### prompts/system.md
-
-The system prompt establishes:
-- Role and expertise
-- Context from knowledge base
-- Constraints and rules
-- Output format requirements
-
-```markdown
-# System Prompt: skill-{domain}-{NNN}-{type}-{target}
-
-## Role
-
-You are an expert {role description} with deep knowledge of:
-- {domain expertise 1}
-- {domain expertise 2}
-- {domain expertise 3}
-
-## Context
-
-You have access to the following knowledge:
-
-### ADR Compliance
-{Summarize relevant ADR decisions - NOT full content, just key constraints}
-
-- **ADR-XXX:** {key decision and constraint}
-- **ADR-YYY:** {key decision and constraint}
-
-### Reference Implementation
-{Summarize the ERI - key patterns, not full code}
-
-- Architecture: {pattern}
-- Key components: {list}
-- Constraints: {list}
-
-### Modules Available
-{List modules and their purpose}
-
-- **mod-{domain}-{NNN}-...:** {what it provides}
-- **mod-{domain}-{NNN}:** {what it provides}
-
-## Constraints
-
-You MUST:
-1. {Constraint derived from ADR}
-2. {Constraint derived from ERI}
-3. {Constraint for output format}
-
-You MUST NOT:
-1. {Anti-pattern from ADR}
-2. {Common mistake to avoid}
-
-## Output Format
-
-{Specify exact output format expected}
-
-## Validation
-
-Generated output will be validated by:
-- Tier 1: {validators}
-- Tier 2: {validators}
-- Tier 3: {validators}
-```
-
-### prompts/user.md
-
-Template for user requests with placeholders:
-
-```markdown
-# User Prompt Template
-
-## Request
-
-{{user_request}}
-
-## Parameters
-
-- **Service Name:** {{serviceName}}
-- **Package:** {{packageName}}
-- **Features:** {{features}}
-
-## Additional Context
-
-{{additional_context}}
-```
-
-### prompts/examples/
-
-Few-shot examples showing expected input/output pairs:
-
-```markdown
-# Example: {scenario}
-
-## Input
-
-{example input}
-
-## Expected Output
-
-{example output}
-
-## Explanation
-
-{why this output is correct}
-```
-
----
-
-## Prompt Derivation from Knowledge Base
-
-**This is the critical innovation of Enablement 2.0.**
-
-### The Derivation Process
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    KNOWLEDGE BASE                                │
-│  ┌───────────┐    ┌───────────┐    ┌───────────┐               │
-│  │    ADR    │    │    ERI    │    │  Module   │               │
-│  │ Strategic │    │ Reference │    │ Templates │               │
-│  │ Decisions │    │   Code    │    │ + Valid.  │               │
-│  └─────┬─────┘    └─────┬─────┘    └─────┬─────┘               │
-│        │                │                │                      │
-│        ▼                ▼                ▼                      │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                 PROMPT DERIVATION                        │   │
-│  │                                                          │   │
-│  │  ADR → Constraints (MUST/MUST NOT)                       │   │
-│  │  ERI → Patterns + Structure + Examples                   │   │
-│  │  Module → Specific implementations to use                │   │
-│  │                                                          │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                              │                                  │
-│                              ▼                                  │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                    SKILL PROMPTS                         │   │
-│  │  system.md + user.md + examples/                         │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### What to Extract from Each Source
-
-| Source | Extract | Use In Prompt |
-|--------|---------|---------------|
-| **ADR** | Decision statements, rationale | Constraints section |
-| **ADR** | Consequences (positive/negative) | Warnings, trade-offs |
-| **ERI** | Architecture pattern | Context section |
-| **ERI** | Key code patterns | Examples section |
-| **ERI** | Compliance checklist | Validation references |
-| **Module** | Template variables | Input parameters |
-| **Module** | Validation scripts | Validation section |
-
-### Example Derivation
-
-**From ADR-009 (Service Architecture):**
-```
-Decision: "Services MUST use Hexagonal Architecture"
-  ↓
-Constraint: "You MUST structure code with domain, application, infrastructure layers"
-```
-
-**From ERI-001 (Hexagonal Java Spring):**
-```
-Code Pattern: Domain layer has no Spring dependencies
-  ↓
-Constraint: "Domain classes MUST NOT import org.springframework.*"
-```
-
-**From mod-code-015 (Hexagonal Base):**
-```
-Templates: Application.java.hbs, domain/Entity.hbs
-  ↓
-Context: "Use the hexagonal-base module templates"
-```
-
----
-
-## Validation Orchestration by Domain
-
-**CRITICAL**: The validation strategy differs fundamentally based on skill domain.
-
-### Decision Matrix
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    VALIDATION ORCHESTRATION BY DOMAIN                        │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  CORE PRINCIPLE: Every Skill has at least one Module.                       │
-│  Validation logic lives in the Module, Skill only orchestrates.             │
-│                                                                              │
-│  SKILL DOMAIN: CODE                                                         │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │  validate.sh ORCHESTRATES external validators:                        │  │
-│  │                                                                        │  │
-│  │  ✅ Tier-1 Universal    → validators/tier-1-universal/traceability/   │  │
-│  │  ✅ Tier-1 Code         → validators/tier-1-universal/code-projects/  │  │
-│  │  ✅ Tier-2 Technology   → validators/tier-2-technology/{category}/    │  │
-│  │  ✅ Tier-3 Module       → modules/{mod}/validation/                   │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                                                                              │
-│  SKILL DOMAIN: DESIGN, QA, GOV                                              │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │  validate.sh ORCHESTRATES validators:                                 │  │
-│  │                                                                        │  │
-│  │  ✅ Tier-1 Universal    → validators/tier-1-universal/traceability/   │  │
-│  │  ✅ Tier-3 Module       → modules/{mod}/validation/                   │  │
-│  │                                                                        │  │
-│  │  ⚪ Tier-1 Domain       → Future: validators/tier-1-universal/{dom}/  │  │
-│  │  ⚪ Tier-2 Technology   → Future: if tech-specific patterns emerge    │  │
-│  │                                                                        │  │
-│  │  Note: Even for DESIGN/QA/GOV, each Skill has an associated Module    │  │
-│  │  (may be 1:1 relationship). Validation lives in the Module.           │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Summary Table
-
-| Domain | Tier-1 Universal | Tier-1 Domain | Tier-2 Technology | Tier-3 Module |
-|--------|------------------|---------------|-------------------|---------------|
-| **CODE** | ✅ traceability | ✅ code-projects | ✅ java-spring, etc | ✅ from modules |
-| **DESIGN** | ✅ traceability | ⚪ (future) | ⚪ (future) | ✅ from modules |
-| **QA** | ✅ traceability | ⚪ (future) | ⚪ (future) | ✅ from modules |
-| **GOV** | ✅ traceability | ⚪ (future) | ⚪ (future) | ✅ from modules |
-
-**Key Change:** Every Skill has at least one Module. Validation logic is ALWAYS in the Module.
-
----
-
-## validate.sh Templates
-
-### For CODE Domain Skills
-
-```bash
-#!/bin/bash
-# validate.sh - CODE domain skill
-# Orchestrates external validators (Tier 1, 2, 3)
-
-set -e
-
-PROJECT_DIR="${1:-.}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-KNOWLEDGE_BASE="$SCRIPT_DIR/../../.."
-VALIDATORS="$KNOWLEDGE_BASE/validators"
-
-TOTAL_ERRORS=0
-
-echo "═══════════════════════════════════════════════════════════"
-echo "TIER 1: UNIVERSAL (Traceability)"
-echo "═══════════════════════════════════════════════════════════"
-
-bash "$VALIDATORS/tier-1-universal/traceability/traceability-check.sh" "$PROJECT_DIR"
-TOTAL_ERRORS=$((TOTAL_ERRORS + $?))
-
-echo ""
-echo "═══════════════════════════════════════════════════════════"
-echo "TIER 1: CODE PROJECTS (Structure)"
-echo "═══════════════════════════════════════════════════════════"
-
-for validator in project-structure naming-conventions; do
-    bash "$VALIDATORS/tier-1-universal/code-projects/$validator/$validator-check.sh" "$PROJECT_DIR"
-    TOTAL_ERRORS=$((TOTAL_ERRORS + $?))
-done
-
-echo ""
-echo "═══════════════════════════════════════════════════════════"
-echo "TIER 2: ARTIFACT VALIDATION"
-echo "═══════════════════════════════════════════════════════════"
-
-# Java-Spring (conditional)
-if [[ -f "$PROJECT_DIR/pom.xml" ]]; then
-    for script in "$VALIDATORS/tier-2-technology/code-projects/java-spring/"*-check.sh; do
-        bash "$script" "$PROJECT_DIR"
-        TOTAL_ERRORS=$((TOTAL_ERRORS + $?))
-    done
-fi
-
-# Docker (conditional)
-if [[ -f "$PROJECT_DIR/Dockerfile" ]]; then
-    bash "$VALIDATORS/tier-2-technology/deployments/docker/dockerfile-check.sh" "$PROJECT_DIR"
-    TOTAL_ERRORS=$((TOTAL_ERRORS + $?))
-fi
-
-echo ""
-echo "═══════════════════════════════════════════════════════════"
-echo "TIER 3: MODULE VALIDATION"
-echo "═══════════════════════════════════════════════════════════"
-
-# Module-specific validation (conditional on features)
-INPUT_JSON="$PROJECT_DIR/.enablement/inputs/skill-input.json"
-
-if [[ -f "$INPUT_JSON" ]]; then
-    # Circuit breaker validation
-    if jq -e '.features | contains(["circuit-breaker"])' "$INPUT_JSON" > /dev/null 2>&1; then
-        bash "$KNOWLEDGE_BASE/skills/modules/mod-code-001-circuit-breaker-java-resilience4j/validation/circuit-breaker-check.sh" "$PROJECT_DIR"
-        TOTAL_ERRORS=$((TOTAL_ERRORS + $?))
-    fi
-fi
-
-echo ""
-echo "═══════════════════════════════════════════════════════════"
-echo "VALIDATION COMPLETE"
-echo "═══════════════════════════════════════════════════════════"
-
-if [[ $TOTAL_ERRORS -eq 0 ]]; then
-    echo "✅ All validations passed"
-    exit 0
-else
-    echo "❌ $TOTAL_ERRORS validation(s) failed"
-    exit 1
-fi
-```
-
-### For DESIGN, QA, GOV Domain Skills
-
-```bash
-#!/bin/bash
-# validate.sh - Non-CODE domain skill (DESIGN, QA, GOV)
-# Orchestrates Tier-1 Universal + Tier-3 Module validators
-
-set -e
-
-OUTPUT_DIR="${1:-.}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-KNOWLEDGE_BASE="$SCRIPT_DIR/../../.."
-VALIDATORS="$KNOWLEDGE_BASE/validators"
-MODULES="$KNOWLEDGE_BASE/skills/modules"
-
-TOTAL_ERRORS=0
-
-echo "═══════════════════════════════════════════════════════════"
-echo "TIER 1: UNIVERSAL (Traceability)"
-echo "═══════════════════════════════════════════════════════════"
-
-# Universal validator applies to ALL domains
-bash "$VALIDATORS/tier-1-universal/traceability/traceability-check.sh" "$OUTPUT_DIR"
-TOTAL_ERRORS=$((TOTAL_ERRORS + $?))
-
-echo ""
-echo "═══════════════════════════════════════════════════════════"
-echo "TIER 3: MODULE VALIDATION"
-echo "═══════════════════════════════════════════════════════════"
-
-# Module validators - validation logic lives in the module
-# Even for DESIGN/QA/GOV, each Skill has at least one associated Module
-
-bash "$MODULES/mod-qa-001-coverage-report/validation/report-structure-check.sh" "$OUTPUT_DIR"
-TOTAL_ERRORS=$((TOTAL_ERRORS + $?))
-
-bash "$MODULES/mod-qa-001-coverage-report/validation/findings-format-check.sh" "$OUTPUT_DIR"
-TOTAL_ERRORS=$((TOTAL_ERRORS + $?))
-
-echo ""
-echo "═══════════════════════════════════════════════════════════"
-echo "VALIDATION COMPLETE"
-echo "═══════════════════════════════════════════════════════════"
-
-if [[ $TOTAL_ERRORS -eq 0 ]]; then
-    echo "✅ All validations passed"
-    exit 0
-else
-    echo "❌ $TOTAL_ERRORS validation(s) failed"
-    exit 1
-fi
-```
-
-### Module Structure for Non-CODE Domains
-
-For DESIGN/QA/GOV skills, create a corresponding module:
-
-```
-skills/modules/
-└── mod-qa-001-coverage-report/     # Module for QA coverage skill
-    ├── MODULE.md                   # Module specification
-    ├── templates/                  # Report templates
-    │   └── report-template.md
-    └── validation/                 # Tier-3 validators
-        ├── README.md
-        ├── report-structure-check.sh    # Validates report sections
-        └── findings-format-check.sh     # Validates findings format
-```
-
-Example module validator:
-
-```bash
-#!/bin/bash
-# report-structure-check.sh - Embedded validator for QA reports
-
-OUTPUT_DIR="${1:-.}"
-ERRORS=0
-
-pass() { echo -e "✅ PASS: $1"; }
-fail() { echo -e "❌ FAIL: $1"; ERRORS=$((ERRORS + 1)); }
-
-# Check report file exists
-if [[ -f "$OUTPUT_DIR/report.md" ]]; then
-    pass "report.md exists"
-else
-    fail "report.md not found"
-fi
-
-# Check required sections
-for section in "Summary" "Findings" "Recommendations"; do
-    if grep -q "## $section" "$OUTPUT_DIR/report.md"; then
-        pass "Section '$section' present"
-    else
-        fail "Section '$section' missing"
-    fi
-done
-
-exit $ERRORS
-```
-
----
-
-## Traceability Integration
-
-Skills MUST produce traceability output following the appropriate profile:
-
-| Skill Type | Traceability Profile |
-|------------|---------------------|
-| generate-* | `code-project` |
-| add-*, remove-*, refactor-* | `code-transformation` |
-| design-*, document-* | `document` |
-| analyze-*, review-*, audit-* | `report` |
-
-See `model/standards/traceability/profiles/` for profile specifications.
-
----
-
-## Complete SKILL.md Template
-
-```markdown
-# Skill: {Title}
-
-**Skill ID:** skill-{domain}-{NNN}-{type}-{target}-{framework}-{library}  
-**Domain:** {domain}  
-**Type:** {type}  
-**Version:** X.Y.Z  
+**Current:** 2.0.0  
+**Model:** v2.0  
 **Status:** Active
-
----
-
-## Overview
-
-[What this skill does, when to use it, what it produces]
-
-## Knowledge Dependencies
-
-| Type | Asset | Purpose |
-|------|-------|---------|
-| ADR | adr-XXX-... | {constraint source} |
-| ERI | eri-{domain}-XXX-... | {reference implementation} |
-| Module | mod-{domain}-{NNN}-... | {template source} |
-
----
-
-## Input Specification
-
-### Required Parameters
-
-| Parameter | Type | Description | Example |
-|-----------|------|-------------|---------|
-| `serviceName` | string | Service name (PascalCase) | `CustomerService` |
-
-### Optional Parameters
-
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `features` | array | [] | Features to enable |
-
-### Input Schema
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": ["serviceName", "packageName"],
-  "properties": {
-    "serviceName": { "type": "string", "pattern": "^[A-Z][a-zA-Z0-9]*$" },
-    "packageName": { "type": "string", "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)*$" },
-    "features": { "type": "array", "items": { "type": "string" } }
-  }
-}
 ```
 
 ---
 
-## Output Specification
+## Key Differences: Generation vs Transformation
 
-### Generated Artifacts
-
-| Artifact | Path | Description |
-|----------|------|-------------|
-| Project structure | `{serviceName}/` | Complete project |
-| Main class | `src/main/java/.../Application.java` | Entry point |
-
-### Traceability Output
-
-Profile: `{code-project|code-transformation|document|report}`
-
-Location: `{output}/.enablement/manifest.json`
+| Aspect | Generation Skill | Transformation Skill |
+|--------|------------------|---------------------|
+| Purpose | Create from scratch | Modify existing code |
+| Key attribute | `required_capabilities` | `target_capability` |
+| Additional capabilities | Inferred from prompt | Features inferred from prompt |
+| Compatibility | Implicit (capabilities define it) | Explicit (`compatible_with`) |
+| Output | New project | Modified project |
+| Traceability profile | `code-project` | `code-transformation` |
 
 ---
 
-## Module Resolution (REQUIRED for generation skills)
-
-This section defines **which modules to use** based on conditions in the input.
-Each module contains its own **Template Catalog** - Skills do NOT duplicate template mappings.
-
-### Module Selection Rules
-
-| Condition | Module | Purpose |
-|-----------|--------|---------|
-| always | mod-{domain}-{NNN}-base-... | Base templates |
-| feature.x.enabled | mod-{domain}-{NNN}-feature-... | Feature-specific templates |
-| persistence.type = "jpa" | mod-code-016-persistence-jpa-spring | JPA persistence |
-| persistence.type = "system_api" | mod-code-017-persistence-systemapi | System API persistence |
-
-### Variant Handling (v2.6)
-
-> **NEW:** When modules have implementation variants, the skill must handle variant selection.
-
-After resolving which modules to use, check for variant selection:
-
-```
-For each resolved module:
-  1. Check if module has variants.enabled = true
-  2. If input specifies variant explicitly → Use specified variant
-  3. Else if module.selection_mode = "auto-suggest" AND recommend_when matches:
-     → Ask user if alternative should be used
-  4. Else → Use default variant
-  5. Record variant selection in manifest
-```
-
-Example input with variant selection:
-```json
-{
-  "features": {
-    "integration": {
-      "client": "feign"  // Explicit: use Feign instead of default RestClient
-    },
-    "timeout": {
-      "implementation": "annotation"  // Explicit: use @TimeLimiter instead of default client timeout
-    }
-  }
-}
-```
-
-See `authoring/MODULE.md` section "Variant Implementation" for module-side configuration.
-
-### Generation Workflow
-
-```
-1. Parse input (generation-request.json)
-2. Resolve required modules using rules above
-3. For each module:
-   a. Read MODULE.md → Template Catalog section
-   b. For each template in catalog:
-      - Read .tpl file from module's templates/ directory
-      - Substitute {{variables}} with values from input
-      - Generate output file at specified path
-      - Add traceability header
-4. Merge configuration files (application.yml, pom.xml)
-5. Generate manifest.json with complete traceability
-```
-
-### Traceability Header (Required)
-
-Every generated file MUST include a traceability header:
-
-```java
-// =============================================================================
-// GENERATED CODE - DO NOT EDIT
-// Template: Entity.java.tpl
-// Module: mod-code-015-hexagonal-base-java-spring
-// Generated by: skill-code-020-generate-microservice-java-spring
-// =============================================================================
-```
-
-> **IMPORTANT:** Template-to-output mapping lives in each MODULE's Template Catalog,
-> NOT in the SKILL. This ensures single source of truth and easier maintenance.
-
----
-
-## Execution Steps
-
-1. **Parse Input:** Validate input against schema
-2. **Load Modules:** Initialize required modules
-3. **Generate:** Execute templates with parameters
-4. **Validate:** Run Tier 1, 2, 3 validators
-5. **Trace:** Generate traceability manifest
-
----
-
-## Validation
-
-### Validators Used
-
-| Tier | Validator | Condition |
-|------|-----------|-----------|
-| 1 | project-structure | Always |
-| 1 | naming-conventions | Always |
-| 2 | java-spring | If Java project |
-| 2 | docker | If Dockerfile present |
-| 3 | {module-validator} | If feature enabled |
-
----
-
-## Success Metrics
-
-| Metric | Target |
-|--------|--------|
-| Compilation | 100% success |
-| Tests | All pass |
-| Validation | 0 errors |
-
----
-
-## Error Handling
-
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| Invalid input | Schema validation failed | Return error with details |
-| Template error | Missing variable | Return error with variable name |
-| Validation failed | Constraint violated | Return validation report |
-
----
-
-## Related Skills
-
-| Skill | Relationship |
-|-------|--------------|
-| skill-{domain}-XXX-... | {how they relate} |
-
----
-
-## Changelog
-
-| Date | Version | Change | Author |
-|------|---------|--------|--------|
-| {date} | 1.0.0 | Initial version | {author} |
-```
-
----
-
-## Validation Checklist
-
-Before marking a Skill as "Active":
+## Validation Checklist (v2.0)
 
 ### Structure
-- [ ] Skill is in correct location: `skills/{domain}/{layer}/skill-{NNN}-{name}/`
-- [ ] SKILL.md is complete with all sections
-- [ ] SKILL.md references appropriate execution flow
-- [ ] OVERVIEW.md provides quick reference for discovery ⭐
-- [ ] README.md has user-facing documentation
+- [ ] Skill in correct location: `skills/{domain}/{layer}/skill-{NNN}-{name}/`
+- [ ] SKILL.md has `type: generation` or `type: transformation`
+- [ ] OVERVIEW.md has frontmatter with type and tags
 
-### Prompts
-- [ ] prompts/system.md has role, context, constraints
-- [ ] prompts/user.md has request template
-- [ ] prompts/examples/ has at least one example
+### For Generation Skills
+- [ ] Has `required_capabilities` (NOT modules)
+- [ ] Required capabilities include at least one structural
+- [ ] Does NOT have `modules:` section
 
-### Validation
-- [ ] validation/validate.sh orchestrates all tiers
-- [ ] All referenced modules exist
-- [ ] All referenced validators exist
+### For Transformation Skills
+- [ ] Has `target_capability`
+- [ ] Has `compatible_with` list
+- [ ] Target capability is compositional (not structural)
 
-### Content
-- [ ] Traceability profile is specified
-- [ ] Input schema is defined
-- [ ] Output structure is documented
-- [ ] **Module Resolution section is complete** (for generation skills)
-- [ ] **Every output file traces to a template** (for generation skills)
-
-### Index Registration (REQUIRED) ⭐
-- [ ] Added to `runtime/discovery/skill-index.yaml`:
-  - [ ] `layers.{layer}.skills`
-  - [ ] `domains.{domain}.skills_by_layer.{layer}`
-  - [ ] `capabilities.{capability}.skills` (if applicable)
-  - [ ] `technologies.{tech}.skills` (if applicable)
-  - [ ] `flows.{domain}.{FLOW}.skills`
+### Common
+- [ ] Stack is declared
+- [ ] Keywords support discovery
+- [ ] Execution flow is referenced
+- [ ] Registered in skill-index.yaml
 
 ---
 
-## Skill Extension Pattern
+## Migration from v2.x Skills
 
-### Overview
-
-Skills can extend other skills using the `extends` declaration. This enables:
-
-- **Inheritance**: Child skill inherits all capabilities from parent
-- **Delta definition**: Child only declares what it adds/changes
-- **Automatic propagation**: New parent capabilities flow to children
-- **DRY principle**: No duplication of common definitions
-
-### When to Use Extension
-
-✅ **Use extension when:**
-- Building a specialized version of an existing skill
-- Adding capabilities to a base skill for specific use cases
-- Creating variations (REST, gRPC, Async) of a common base
-- Want child skills to automatically inherit parent improvements
-
-❌ **Do NOT use extension when:**
-- Skills have fundamentally different architectures
-- No meaningful shared base exists
-- Child would override >50% of parent (create new skill instead)
-
-### Extension Declaration
-
-In the child skill's SKILL.md frontmatter:
+### Remove
 
 ```yaml
----
-id: skill-021-api-rest-java-spring
-extends: skill-020-microservice-java-spring  # Parent skill ID
-type: GENERATE
-version: 2.0.0
-status: Active
----
+# REMOVE these from old SKILL.md
+extends: skill-020-...           # No inheritance
+modules:
+  mandatory: [...]               # No direct module references
+  conditional: [...]             # No conditional modules
+modules_added: [...]             # No delta additions
 ```
 
-### What Gets Inherited vs Added
-
-| Aspect | Inherited from Parent | Declared in Child (Delta) |
-|--------|----------------------|---------------------------|
-| **Modules** | All parent modules | `modules_added:` new modules |
-| **Parameters** | All parent parameters | `parameters_added:` new params |
-| **Validation Tier 1** | ✅ Fully inherited | Cannot modify |
-| **Validation Tier 2** | ✅ Fully inherited | Cannot modify |
-| **Validation Tier 3** | Parent module validators | `validation_added:` child module validators |
-| **Prompts** | Can inherit or override | Child prompts if present, else parent |
-| **Knowledge Deps** | Inherited implicitly | `knowledge_added:` additional ADRs/ERIs |
-
-### SKILL.md Structure for Child Skills
-
-Child skills use `_added` suffix for delta sections:
-
-```markdown
-# Skill: REST API Generator
-
-**Skill ID:** skill-021-api-rest-java-spring  
-**Extends:** skill-020-microservice-java-spring  
-**Version:** 2.0.0
-
----
-
-## Overview
-
-Extends `skill-020-microservice-java-spring` to generate REST APIs...
-
-[Describe ONLY what this skill ADDS, not inherited capabilities]
-
----
-
-## Knowledge Dependencies (Delta Only)
-
-> Inherited dependencies from parent are not repeated here.
-
-| Type | Asset | Purpose |
-|------|-------|---------|
-| ADR | adr-001-api-design | API standards (NEW) |
-| Module | mod-019-api-public-exposure | Pagination (NEW) |
-
----
-
-## Parameters (Delta Only)
-
-> Inherited parameters from parent are not repeated.
-
-### Additional Required Parameters
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `apiLayer` | enum | API layer type (NEW) |
-```
-
-### Agent Resolution Algorithm
-
-When the agent encounters a skill with `extends`:
-
-```python
-def resolve_skill(skill_id: str) -> ResolvedSkill:
-    """Recursively resolve skill with inheritance."""
-    
-    skill = load_skill_definition(skill_id)
-    
-    # Base case: no extension
-    if not skill.extends:
-        return skill
-    
-    # Recursive case: resolve parent first
-    parent = resolve_skill(skill.extends)
-    
-    # Merge parent + child
-    return merge_skills(parent, skill)
-
-
-def merge_skills(parent: Skill, child: Skill) -> ResolvedSkill:
-    """Merge parent skill with child delta."""
-    
-    return ResolvedSkill(
-        id=child.id,
-        extends=child.extends,
-        
-        # Modules: parent + child additions
-        modules=parent.modules + child.modules_added,
-        
-        # Parameters: parent + child additions
-        parameters={**parent.parameters, **child.parameters_added},
-        
-        # Validation: inherit Tier 1/2, merge Tier 3
-        validation=ValidationConfig(
-            tier1=parent.validation.tier1,
-            tier2=parent.validation.tier2,
-            tier3=parent.validation.tier3 + child.validation_added.tier3
-        ),
-        
-        # Prompts: child overrides if present
-        prompts=child.prompts if child.prompts else parent.prompts,
-        
-        # Track lineage for traceability
-        lineage=[parent.id] + parent.lineage
-    )
-```
-
-### Validation for Extended Skills
-
-Child skill's `validate.sh` should invoke parent validation:
-
-```bash
-#!/bin/bash
-# validate.sh for child skill
-
-SERVICE_DIR="$1"
-
-# 1. Run INHERITED validation from parent
-source "$PARENT_SKILL_DIR/validation/validate.sh" "$SERVICE_DIR"
-PARENT_ERRORS=$?
-
-# 2. Run ADDITIONAL validation (child-specific)
-source mod-019/validation/pagination-check.sh "$SERVICE_DIR"
-CHILD_ERRORS=$?
-
-# 3. Combine results
-exit $((PARENT_ERRORS + CHILD_ERRORS))
-```
-
-### Traceability for Extended Skills
-
-Generated manifest.json must include lineage:
-
-```json
-{
-  "generated_by": {
-    "skill": "skill-021-api-rest-java-spring",
-    "version": "2.0.0",
-    "extends": "skill-020-microservice-java-spring",
-    "lineage": ["skill-020-microservice-java-spring"]
-  },
-  "modules_used": [
-    "mod-015-hexagonal-base",
-    "mod-019-api-public-exposure"
-  ]
-}
-```
-
-### Discovery with Extended Skills
-
-When `extends` is present, differentiate parent from child during discovery:
-
-1. **Parent skill**: Generic/base use case
-2. **Child skills**: Specialized use cases
-
-OVERVIEW.md must clearly state when to use parent vs child.
-
-**Use tags in OVERVIEW.md frontmatter (NOT keywords in skill-index.yaml):**
+### Add
 
 ```yaml
-# Parent skill (skill-020)
----
-id: skill-020-microservice-java-spring
-version: 2.1.0
-tags:
-  artifact-type: service
-  runtime-model: request-response
-  stack: java-spring
----
-
-# Child skill (skill-021)
----
-id: skill-021-api-rest-java-spring
-version: 2.2.0
-extends: skill-020-microservice-java-spring
-tags:
-  artifact-type: api          # Override: service → api
-  protocol: rest              # Add: new dimension
-  api-model: fusion           # Add: new dimension
-  # runtime-model: inherited
-  # stack: inherited
----
-```
-
-> **See `TAGS.md`** for complete tag taxonomy and inheritance rules.
-
-### Best Practices
-
-1. **Keep parent generic**: Parent should contain only truly shared capabilities
-2. **Delta only in child**: Never repeat parent definitions in child
-3. **Clear differentiation**: OVERVIEW.md must clearly distinguish parent vs child use cases
-4. **Test inheritance**: Verify parent changes propagate correctly to children
-5. **Document lineage**: Always include `extends` and `lineage` in traceability
-6. **Max 2 levels**: Avoid deep hierarchies (parent → child only)
-
----
-
-## Relationships
-
-```
-ADR ─────────────────────────────────────────────────────
-  │ compliance
-  ▼
-Skill ──────────────────────────────────────────────────
-  │                    │                    │
-  │ uses              │ orchestrates       │ produces
-  ▼                    ▼                    ▼
-Module              Validator           Traceability
-(templates)         (Tier 1,2,3)        (manifest.json)
+# ADD these to new SKILL.md
+type: generation                 # or transformation
+required_capabilities:           # for generation
+  - architecture.hexagonal-base
+  - api-exposure.rest-hateoas
+# OR
+target_capability: resilience    # for transformation
+compatible_with:
+  - architecture.hexagonal-base
 ```
 
 ---
 
 ## Related
 
-- `model/standards/authoring/TAGS.md` - Tag taxonomy and discovery rules ⭐ NEW
-- `model/standards/ASSET-STANDARDS-v1.4.md` - Skill structure specification
-- `runtime/discovery/skill-index.yaml` - Skill index for discovery
-- `model/standards/traceability/` - Traceability profiles
+- `capability-index.yaml` - Capability to module mapping
+- `ENABLEMENT-MODEL-v2.0.md` - Core model documentation
+- `authoring/CAPABILITY.md` - How to create capabilities
 - `authoring/MODULE.md` - How to create modules
-- `authoring/VALIDATOR.md` - How to create validators
-- `skills/` - Existing skills
+- `runtime/flows/code/GENERATE.md` - Generation flow
+- `runtime/flows/code/ADD.md` - Transformation flow
 
 ---
 
-**Last Updated:** 2025-12-24
+**Last Updated:** 2025-01-15

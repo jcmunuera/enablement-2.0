@@ -1,281 +1,125 @@
-# Enablement 2.0
+# Knowledge Base Updates - Model v2.0
 
-> AI-powered SDLC platform for automated code generation with governance
+## Summary
 
-## Overview
+This package contains all the files needed to upgrade the Enablement 2.0 Knowledge Base from Model v1.7 to Model v2.0.
 
-Enablement 2.0 is a platform that combines a structured Knowledge Base with AI capabilities to automate code generation following organizational standards.
+## What Changed
 
-### Problem Statement
+### Conceptual Changes
 
-- Low adoption of development frameworks (~30-40%)
-- Inconsistent implementations across teams
-- Productivity cost from pattern reinvention
-- Difficulty maintaining governance in generated code
+| Before (v1.7) | After (v2.0) |
+|---------------|--------------|
+| Skills reference modules directly | Skills reference capabilities |
+| Skills can extend other skills | No inheritance - skills are self-contained |
+| Atomic transformation skills (1 feature) | Capability-level transformation skills |
+| Modules referenced by conditional rules | Modules discovered via capability-index.yaml |
 
-### Solution
+### New Concepts
 
-A machine-readable Knowledge Base that feeds specialized AI agents to:
-- Generate code compliant with standards (ADRs)
-- Apply reference patterns (ERIs)
-- Automatically validate generated code
-- Scale knowledge to 400+ developers
+| Concept | Description |
+|---------|-------------|
+| **Capability Types** | `structural` (core) vs `compositional` (additive) |
+| **Skill Types** | `generation` vs `transformation` |
+| **target_capability** | What a transformation skill adds |
+| **compatible_with** | Architecture requirements for capabilities |
+| **transformable** | Whether a capability can be target of transformation |
 
----
-
-## Repository Structure
-
-```
-enablement-2.0/
-│
-├── knowledge/              # KNOWLEDGE BASE (context for humans & agents)
-│   ├── ADRs/              # Architecture Decision Records (strategic)
-│   └── ERIs/              # Enterprise Reference Implementations (tactical)
-│
-├── model/                  # META-MODEL (defines the Enablement system)
-│   ├── ENABLEMENT-MODEL-v1.7.md   # Master document
-│   ├── CONSUMER-PROMPT.md         # Consumer agent system prompt
-│   ├── AUTHOR-PROMPT.md           # Author/C4E system prompt
-│   ├── standards/                 # Asset standards and authoring guides
-│   └── domains/                   # Domain definitions (CODE, DESIGN, QA, GOV)
-│
-├── skills/                 # SKILLS (executable units for agents)
-│   ├── code/              # CODE domain skills
-│   │   ├── soe/          # System of Engagement (frontend)
-│   │   ├── soi/          # System of Integration (microservices)
-│   │   └── sor/          # System of Record (mainframe)
-│   ├── design/            # DESIGN domain skills
-│   ├── qa/                # QA domain skills
-│   └── governance/        # GOVERNANCE domain skills
-│
-├── modules/                # MODULES (reusable templates, CODE domain)
-│   └── mod-code-{NNN}-...
-│
-├── runtime/                # RUNTIME (orchestration and execution)
-│   ├── discovery/         # Interpretive discovery + skill-index.yaml
-│   ├── flows/             # Execution flows by domain/type
-│   └── validators/        # Tier-1 and Tier-2 validators
-│
-└── docs/                   # Project documentation
-```
-
-> **Note:** Proofs of concept (PoCs) are maintained in a separate workspace directory outside this repository to keep generated outputs separate from the versioned model.
-
----
-
-## Conceptual Model
+## Package Contents
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         ENABLEMENT 2.0                               │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  KNOWLEDGE LAYER (what to know)                                      │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  ADRs ──────────> ERIs                                       │    │
-│  │  (Strategic)      (Tactical Reference)                       │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                              │                                       │
-│                              ▼                                       │
-│  EXECUTION LAYER (what to do)                                        │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  Skills ──────────> Modules ──────────> Output              │    │
-│  │  (Executable)       (Knowledge)         (Generated Code)    │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                              │                                       │
-│                              ▼                                       │
-│  RUNTIME LAYER (how to execute)                                      │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  Discovery ──> Flow ──> Validation                           │    │
-│  │  (Interpretive) (Holistic/Atomic)  (Sequential)              │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-│                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+kb-updates-v2/
+├── MODEL-v2-MIGRATION-PLAN.md              # Complete migration plan
+├── model/
+│   ├── ENABLEMENT-MODEL-v2.0.md            # Core model documentation
+│   └── standards/authoring/
+│       ├── SKILL.md                        # Skill authoring guide (v3.0)
+│       ├── CAPABILITY.md                   # Capability authoring guide (v2.0)
+│       └── MODULE.md                       # Module authoring guide (v2.0)
+└── runtime/discovery/
+    ├── capability-index.yaml               # NEW: Central capability→feature→module index
+    └── skill-index.yaml                    # Updated skill index (v3.0)
 ```
 
-### Current Inventory (v2.2.0)
+## How to Apply
 
-| Asset Type | Count | Location |
-|------------|-------|----------|
-| **Domains** | 4 | model/domains/ (CODE active, others planned) |
-| **ADRs** | 5 | knowledge/ADRs/ |
-| **ERIs** | 7 | knowledge/ERIs/ |
-| **Modules** | 8 | modules/ |
-| **Skills** | 2 | skills/ |
-| **Flows** | 5 | runtime/flows/code/ |
-
----
-
-## Agent Entry Point
-
-> **For AI Agents:** If you are an AI agent interacting with this Knowledge Base, follow this section.
-
-### Step 1: Identify Your Role
-
-| Role | Description | Typical Triggers |
-|------|-------------|------------------|
-| **CONSUMER** | Execute skills to produce SDLC outputs | "Generate a microservice", "Create an API", "Add circuit breaker" |
-| **AUTHOR** | Create or modify Knowledge Base assets | "Create a new ERI", "Add a module", "Define a new skill" |
-
-> **Note:** Your role is typically specified in the prompt you receive. If not specified, infer from context: requests for code/design/analysis → CONSUMER; requests to extend the KB → AUTHOR.
-
-### Step 2: Load Role-Specific Context
-
-| Role | Action |
-|------|--------|
-| **CONSUMER** | Read `model/CONSUMER-PROMPT.md` and follow its instructions |
-| **AUTHOR** | Read `model/AUTHOR-PROMPT.md` and follow its instructions |
-
-### Step 3: Execute
-
-The role-specific prompt will guide you through:
-
-| Role | Process |
-|------|---------|
-| **CONSUMER** | Discovery → Skill Selection → **Read Flow** → Module Resolution → Execution → Validation |
-| **AUTHOR** | Standards Review → Asset Creation → Coherence Validation → Registration |
-
-#### CONSUMER Execution Detail
-
-> ⚠️ **CRITICAL**: After selecting a skill, you MUST read the execution flow before generating any code.
-
-1. **Discovery & Skill Selection**: Follow 3-phase process in CONSUMER-PROMPT.md
-2. **Read Execution Flow**: `runtime/flows/{domain}/{SKILL_TYPE}.md`
-   - For GENERATE skills → Read `runtime/flows/code/GENERATE.md`
-   - For ADD skills → Read `runtime/flows/code/ADD.md`
-3. **Create Flow Output Structure**: The Flow defines the output structure (input/, output/, trace/, validation/)
-4. **Generate Code**: Following skill specifications and module knowledge
-5. **Validate**: Execute validation scripts per tier system
-
-### Additional Context
-
-If provided with an `ENTERPRISE-CONTEXT.md` file, read it **before** the role-specific prompt. It contains organizational vocabulary and conventions that inform interpretation.
-
----
-
-## Quick Start
-
-**New here?** Start with [GETTING-STARTED.md](GETTING-STARTED.md) which provides onboarding paths for:
-- Executives (15 min)
-- Architects (1-2 hours)
-- Engineers creating assets (2-4 hours)
-- Engineers using skills (30 min)
-
-### Explore the Repository
-
+### Step 1: Backup Current KB
 ```bash
-# View knowledge (ADRs, ERIs)
-ls knowledge/
-
-# View model and domains
-ls model/domains/
-
-# View available skills
-ls skills/
-
-# View available modules
-ls modules/
-
-# View runtime (flows, validators)
-ls runtime/
+cp -r enablement-2.0 enablement-2.0-backup-v1.7
 ```
 
-### Understand the Model
+### Step 2: Copy New Files
+```bash
+# Copy model documentation
+cp model/ENABLEMENT-MODEL-v2.0.md enablement-2.0/model/
 
-1. Start with: `model/ENABLEMENT-MODEL-v1.7.md`
-2. Then: `model/standards/ASSET-STANDARDS-v1.4.md`
-3. To create assets: `model/standards/authoring/`
+# Copy authoring guides
+cp model/standards/authoring/*.md enablement-2.0/model/standards/authoring/
 
----
-
-## Execution Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  1. INPUT: User prompt                                               │
-│                                                                      │
-│  2. DISCOVERY: Interpret domain and skill (semantic)                │
-│     └── runtime/discovery/discovery-guidance.md                     │
-│                                                                      │
-│  3. LOAD: Skill specification + OVERVIEW.md                         │
-│     └── skills/{skill}/SKILL.md, OVERVIEW.md                        │
-│                                                                      │
-│  4. FLOW: Get execution approach for skill type                     │
-│     └── runtime/flows/{domain}/{TYPE}.md                            │
-│                                                                      │
-│  5. EXECUTE: Consult modules, generate output (holistic for GEN)    │
-│     └── modules/{mod}/MODULE.md, templates/                         │
-│                                                                      │
-│  6. VALIDATE: Run validators (sequential)                           │
-│     └── runtime/validators/ + modules/{mod}/validation/             │
-│                                                                      │
-│  7. OUTPUT: Generated code + traceability manifest                  │
-└─────────────────────────────────────────────────────────────────────┘
+# Copy runtime discovery files
+cp runtime/discovery/*.yaml enablement-2.0/runtime/discovery/
 ```
 
----
+### Step 3: Update Existing Skills
 
-## Versioning
+Skills need to be updated to the new format. See `MODEL-v2-MIGRATION-PLAN.md` for:
+- Removing `extends`
+- Removing `modules` sections
+- Adding `type: generation` or `type: transformation`
+- Adding `required_capabilities` or `target_capability`
 
-We use [Semantic Versioning](https://semver.org/):
+### Step 4: Update Existing Modules
 
+Modules need the new `implements` section:
+```yaml
+implements:
+  capability: {capability-name}
+  feature: {feature-name}
 ```
-MAJOR.MINOR.PATCH
 
-MAJOR - Structural changes, complete new capability
-MINOR - New ERIs, MODULEs, SKILLs
-PATCH - Fixes, documentation improvements
-```
+### Step 5: Validate
 
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+Run validation to ensure:
+- All skills have correct type
+- All modules have implements section
+- capability-index.yaml maps all features correctly
+- skill-index.yaml references all skills
 
----
+## Remaining Work (Phase 4-6)
 
-## Methodology
+The following items still need to be completed:
 
-See [docs/METHODOLOGY.md](docs/METHODOLOGY.md) for details on:
-- Branching strategy
-- Commit conventions
-- AI workflow
-- Session documentation
+### Phase 4: Existing Assets
+- [ ] Update skill-020 SKILL.md (add type, required_capabilities)
+- [ ] Update skill-021 SKILL.md (add type, required_capabilities, remove extends)
+- [ ] Create skill-040-add-resilience (new transformation skill)
+- [ ] Create skill-041-add-api-exposure (new transformation skill)
+- [ ] Create skill-042-add-persistence (new transformation skill)
+- [ ] Deprecate skill-001-circuit-breaker
+- [ ] Update all MODULE.md files with implements section
+- [ ] Update capabilities/*.md documentation
 
----
+### Phase 5: Flows
+- [ ] Update GENERATE.md with new discovery flow
+- [ ] Update ADD.md for transformation skills
 
-## Roadmap
+### Phase 6: Validation
+- [ ] End-to-end generation test
+- [ ] End-to-end transformation test
+- [ ] Compatibility validation test
+- [ ] Documentation consistency review
 
-### Current Phase: Foundation (v2.x)
-- [x] Structured Knowledge Base
-- [x] Resilience patterns (Circuit Breaker, Retry, Timeout, Rate Limiter)
-- [x] Persistence patterns (JPA, System API)
-- [x] Clear separation: knowledge / model / skills / runtime
-- [x] Interpretive discovery model (v1.6)
-- [x] Holistic execution for GENERATE skills
-- [x] Code Generation PoC validated
+## Key Files Reference
 
-### Next Phases
-- [ ] Observability patterns
-- [ ] Event-driven patterns
-- [ ] Testing patterns
-- [ ] MCP Server integration
+| File | Purpose |
+|------|---------|
+| `capability-index.yaml` | **Single source of truth** for capability→feature→module |
+| `skill-index.yaml` | Skill definitions with types and capabilities |
+| `ENABLEMENT-MODEL-v2.0.md` | Complete model documentation |
+| `authoring/SKILL.md` | How to create skills (generation & transformation) |
+| `authoring/CAPABILITY.md` | How to create/update capabilities |
+| `authoring/MODULE.md` | How to create modules with implements |
 
----
+## Questions?
 
-## Contributing
-
-This is an internal project of the Center for Enablement (C4E).
-
-To contribute:
-1. Review `docs/METHODOLOGY.md`
-2. Follow standards in `model/standards/authoring/`
-3. Validate changes before committing
-
----
-
-## License
-
-Internal project - All rights reserved.
-
----
-
-**Version:** 2.4.0  
-**Last Updated:** 2026-01-08
+See `MODEL-v2-MIGRATION-PLAN.md` for detailed analysis and rationale.
