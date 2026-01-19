@@ -947,3 +947,60 @@ public class CustomerApplicationService {
 ```
 
 **Rule:** NEVER use `@Transactional` when persistence is via System API (HTTP calls).
+
+---
+
+### HALLUCINATION-003: Using Spring Data Pageable without JPA
+
+**The LLM frequently generates:**
+```java
+// ❌ WRONG - Pageable requires spring-data-commons or spring-boot-starter-data-jpa
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+
+@GetMapping
+public ResponseEntity<List<CustomerResponse>> getAll(
+    @PageableDefault(size = 20) Pageable pageable) {
+```
+
+**Why it's wrong:**
+- `Pageable`, `PageableDefault`, `EnableSpringDataWebSupport` are in `spring-data-commons`
+- This dependency is NOT included when using System API persistence
+- Only available with `spring-boot-starter-data-jpa` or explicit `spring-data-commons`
+
+**Correct - Manual pagination parameters:**
+```java
+// ✅ CORRECT - Use explicit parameters, not Spring Data Pageable
+import org.springframework.web.bind.annotation.RequestParam;
+
+@GetMapping
+public ResponseEntity<List<CustomerResponse>> getAll(
+    @RequestParam(defaultValue = "0") int page,
+    @RequestParam(defaultValue = "20") int size) {
+    // Pagination logic using page and size
+}
+```
+
+**Rule:** NEVER use `Pageable`, `PageableDefault`, or `EnableSpringDataWebSupport` when persistence is via System API. Use explicit `@RequestParam` for pagination.
+
+---
+
+### HALLUCINATION-006: Missing java.time Imports
+
+**The LLM frequently forgets:**
+```java
+// ❌ WRONG - Missing import
+public record Customer(LocalDate birthDate) { }  // LocalDate not imported
+```
+
+**Correct:**
+```java
+// ✅ CORRECT - Always import java.time classes
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Instant;
+
+public record Customer(LocalDate birthDate) { }
+```
+
+**Rule:** ALWAYS import `java.time.*` classes explicitly. Never assume they are auto-imported.
