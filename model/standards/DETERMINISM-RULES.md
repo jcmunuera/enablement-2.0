@@ -579,7 +579,7 @@ public class CustomerApplicationService {
     
     // 2. Read
     public CustomerResponse getCustomer(UUID id) { ... }
-    public Page<CustomerResponse> listCustomers(Pageable pageable) { ... }
+    public List<CustomerResponse> listCustomers(int page, int size) { ... }
     
     // 3. Update
     public CustomerResponse updateCustomer(UUID id, UpdateCustomerRequest request) { ... }
