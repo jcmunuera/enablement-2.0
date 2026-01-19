@@ -736,4 +736,134 @@ public class CustomerApplicationService {
 
 ---
 
-**Last Updated:** 2026-01-14
+**Last Updated:** 2026-01-19
+
+---
+
+## Mandatory Dependency Versions (CRITICAL)
+
+> **LLMs frequently generate incorrect or non-existent dependency versions.**
+> **ALWAYS use the EXACT versions specified below.**
+
+### Spring Boot Stack (pom.xml)
+
+```xml
+<parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>3.2.0</version>
+    <relativePath/>
+</parent>
+
+<properties>
+    <java.version>17</java.version>
+    <resilience4j.version>2.2.0</resilience4j.version>
+    <mapstruct.version>1.5.5.Final</mapstruct.version>
+    <springdoc.version>2.3.0</springdoc.version>
+    <testcontainers.version>1.19.3</testcontainers.version>
+</properties>
+```
+
+### Resilience4j (CRITICAL)
+
+**MANDATORY version: 2.2.0**
+
+```xml
+<!-- ✅ CORRECT - Use property for version -->
+<dependency>
+    <groupId>io.github.resilience4j</groupId>
+    <artifactId>resilience4j-spring-boot3</artifactId>
+    <version>${resilience4j.version}</version>
+</dependency>
+
+<!-- ❌ WRONG - Version 3.x DOES NOT EXIST -->
+<dependency>
+    <groupId>io.github.resilience4j</groupId>
+    <artifactId>resilience4j-spring-boot3</artifactId>
+    <version>3.0.1</version>  <!-- DOES NOT EXIST IN MAVEN CENTRAL -->
+</dependency>
+```
+
+### OpenAPI/SpringDoc
+
+```xml
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    <version>${springdoc.version}</version>
+</dependency>
+```
+
+### Complete pom.xml Dependencies Template
+
+```xml
+<dependencies>
+    <!-- Spring Boot Starters (version from parent) -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-hateoas</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-aop</artifactId>
+    </dependency>
+    
+    <!-- Resilience4j - MUST use ${resilience4j.version} -->
+    <dependency>
+        <groupId>io.github.resilience4j</groupId>
+        <artifactId>resilience4j-spring-boot3</artifactId>
+        <version>${resilience4j.version}</version>
+    </dependency>
+    
+    <!-- OpenAPI Documentation -->
+    <dependency>
+        <groupId>org.springdoc</groupId>
+        <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        <version>${springdoc.version}</version>
+    </dependency>
+    
+    <!-- Testing -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+```
+
+### HALLUCINATION-003: Non-existent Resilience4j Versions
+
+**The LLM frequently generates:**
+```xml
+<!-- ❌ DOES NOT EXIST IN MAVEN CENTRAL -->
+<version>3.0.0</version>
+<version>3.0.1</version>
+<version>2.3.0</version>
+```
+
+**Actual available versions (as of 2026-01):**
+- 2.1.0 ✅ (recommended for Spring Boot 3.x)
+- 2.0.2 ✅
+- 1.7.x (for Spring Boot 2.x)
+
+**Rule:** ALWAYS define `<resilience4j.version>2.2.0</resilience4j.version>` in properties and reference as `${resilience4j.version}`.
+
+### POM Common Errors
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `<n>` instead of `<name>` | Typo/truncation | Use `<name>` tag |
+| Missing version for resilience4j | Not in Spring Boot BOM | Add explicit version |
+| Wrong parent version | Hallucination | Use 3.2.0 |

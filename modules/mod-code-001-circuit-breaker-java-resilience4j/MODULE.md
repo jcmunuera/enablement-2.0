@@ -32,7 +32,7 @@ implements:
 **Updated:** 2025-11-24  
 **Source ERI:** eri-code-008-circuit-breaker-java-resilience4j  
 **Framework:** Java 17+ / Spring Boot 3.x  
-**Library:** Resilience4j 2.1.0  
+**Library:** Resilience4j 2.2.0  
 **Used by:** skill-code-001-add-circuit-breaker-java-resilience4j, skill-code-020-generate-microservice-java-spring
 
 ---
@@ -278,14 +278,14 @@ public class {{serviceName}} {
 <dependency>
     <groupId>io.github.resilience4j</groupId>
     <artifactId>resilience4j-spring-boot3</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
 
 ### Gradle (build.gradle)
 
 ```groovy
-implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.1.0'
+implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.2.0'
 ```
 
 ---

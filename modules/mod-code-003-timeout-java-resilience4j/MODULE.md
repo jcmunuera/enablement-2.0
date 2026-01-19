@@ -217,7 +217,7 @@ management:
 <dependency>
     <groupId>io.github.resilience4j</groupId>
     <artifactId>resilience4j-spring-boot3</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 
 <!-- Spring Boot AOP (required for annotations) -->
