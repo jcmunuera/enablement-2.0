@@ -1,36 +1,79 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# CAPABILITY INDEX v2.0
+# CAPABILITY INDEX v2.1
 # ═══════════════════════════════════════════════════════════════════════════════
-# Central source of truth for capability → feature → module mappings
 # 
-# This file defines:
-#   - All capabilities available in the Knowledge Base
-#   - Capability types (structural vs compositional)
-#   - Features within each capability
-#   - Module that implements each feature
-#   - Compatibility rules between capabilities
+# Single source of truth for capability → feature → implementation → module
+# 
+# Changes from v2.0:
+#   - Skills eliminated (logic moved to features)
+#   - Features enriched with config, input_spec, implementations
+#   - Stack detection and defaults added
+#   - Multi-implementation support per feature
 #
-# CAPABILITY TYPES:
-#   - structural: Core/foundational, defines code structure. NOT transformable.
-#   - compositional: Additive, can be layered. IS transformable.
+# Hierarchy:
+#   Capability → Feature → Implementation → Module
 #
 # ═══════════════════════════════════════════════════════════════════════════════
 
-version: "2.0"
+version: "2.1"
 domain: code
-last_updated: "2025-01-15"
+last_updated: "2026-01-20"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STRUCTURAL CAPABILITIES
+# ORGANIZATIONAL DEFAULTS
 # ═══════════════════════════════════════════════════════════════════════════════
-# These define the fundamental structure of the generated code.
-# They are always REQUIRED in generation skills.
-# They CANNOT be the target of transformation skills.
+
+defaults:
+  # Default technology stack when not specified or detected
+  stack: java-spring
+  
+  # Default patterns when alternatives exist
+  patterns:
+    timeout: annotation  # vs client-config
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SUPPORTED STACKS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+stacks:
+  java-spring:
+    description: "Java 17+ with Spring Boot 3.x"
+    detection:
+      - file: pom.xml
+        contains: "spring-boot-starter"
+    keywords:
+      - java
+      - spring
+      - spring boot
+      - springboot
+    
+  java-quarkus:
+    description: "Java 17+ with Quarkus"
+    detection:
+      - file: pom.xml
+        contains: "quarkus"
+    keywords:
+      - java
+      - quarkus
+    
+  nodejs:
+    description: "Node.js with Express/Fastify"
+    detection:
+      - file: package.json
+    keywords:
+      - node
+      - nodejs
+      - javascript
+      - typescript
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CAPABILITIES
+# ═══════════════════════════════════════════════════════════════════════════════
 
 capabilities:
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # ARCHITECTURE
+  # ARCHITECTURE (structural)
   # ─────────────────────────────────────────────────────────────────────────────
   architecture:
     description: "Foundational architectural patterns that define code structure"
@@ -39,10 +82,8 @@ capabilities:
     documentation: "model/domains/code/capabilities/architecture.md"
     
     features:
-      hexagonal-base:
-        description: "Hexagonal Light architecture with ports and adapters"
-        module: mod-code-015-hexagonal-base-java-spring
-        stack: [java-spring]
+      hexagonal-light:
+        description: "Hexagonal Light architecture with domain, application, infrastructure layers"
         keywords:
           - hexagonal
           - hexagonal architecture
@@ -51,75 +92,323 @@ capabilities:
           - DDD
           - domain driven design
           - arquitectura hexagonal
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-015-hexagonal-base-java-spring
+            stack: java-spring
+          # Future:
+          # - id: java-quarkus
+          #   module: mod-code-015-hexagonal-base-java-quarkus
+          #   stack: java-quarkus
+          # - id: nodejs
+          #   module: mod-code-015-hexagonal-base-nodejs
+          #   stack: nodejs
+        
+        default: java-spring
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# COMPOSITIONAL CAPABILITIES
-# ═══════════════════════════════════════════════════════════════════════════════
-# These can be added on top of the structural foundation.
-# They can be REQUIRED or OPTIONAL in generation skills.
-# They CAN be the target of transformation skills.
+      # Future feature:
+      # hexagonal-full:
+      #   description: "Full Hexagonal architecture with additional layers"
+      #   implementations:
+      #     - id: java-spring
+      #       module: mod-code-xxx
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # API EXPOSURE
+  # API-ARCHITECTURE (compositional)
+  # Replaces: skill-021 api-rest + api-exposure capability
   # ─────────────────────────────────────────────────────────────────────────────
-  api-exposure:
-    description: "Patterns for exposing APIs to external consumers"
+  api-architecture:
+    description: "API types according to Fusion 4-layer model"
     type: compositional
     transformable: true
     documentation: "model/domains/code/capabilities/api_architecture.md"
-    compatible_with:
-      - architecture.hexagonal-base
-    stack: [java-spring]
     keywords:
       - API
       - REST
-      - Domain API
-      - Fusion API
-      - public API
-      - exposición
+      - Fusion
       - endpoint
     
     features:
-      rest-hateoas:
-        description: "REST API with HATEOAS, OpenAPI, and Fusion patterns"
-        module: mod-code-019-api-public-exposure-java-spring
+      domain-api:
+        description: "Domain API - exposes business capabilities"
         keywords:
-          - REST
-          - HATEOAS
-          - OpenAPI
-          - Swagger
           - Domain API
-          - Fusion API
-          - HAL
-          - hypermedia
+          - API de dominio
+          - Fusion Domain
+          - business API
+          - capacidades de negocio
+        
+        requires:
+          - architecture.hexagonal-light
+        
+        config:
+          hateoas: true
+          compensation_available: true
+        
+        input_spec:
+          serviceName:
+            type: string
+            required: true
+            pattern: "^[a-z][a-z0-9-]*$"
+            description: "Service name in kebab-case"
+            example: "customer-api"
+          basePackage:
+            type: string
+            required: true
+            pattern: "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)*$"
+            description: "Java base package"
+            example: "com.company.customer"
+          entities:
+            type: array
+            required: true
+            description: "Domain entities to generate"
+            items:
+              type: object
+              properties:
+                name: { type: string }
+                fields: { type: array }
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-019-api-public-exposure-java-spring
+            stack: java-spring
+        
+        default: java-spring
 
-      # Future features (not yet implemented)
-      # grpc:
-      #   description: "gRPC API with Protocol Buffers"
-      #   module: mod-code-022-api-exposure-grpc
-      #   keywords: [gRPC, protobuf, RPC]
-      # 
-      # graphql:
-      #   description: "GraphQL API"
-      #   module: mod-code-023-api-exposure-graphql
-      #   keywords: [GraphQL, query, mutation]
-      #
-      # async-kafka:
-      #   description: "Async API with Kafka events"
-      #   module: mod-code-024-api-exposure-async-kafka
-      #   keywords: [Kafka, async, events, event-driven]
+      system-api:
+        description: "System API - wrapper over legacy systems"
+        keywords:
+          - System API
+          - API de sistema
+          - wrapper
+          - mainframe
+          - legacy
+          - CICS
+        
+        requires:
+          - architecture.hexagonal-light
+        
+        config:
+          hateoas: false
+          compensation_available: false
+        
+        input_spec:
+          serviceName:
+            type: string
+            required: true
+          basePackage:
+            type: string
+            required: true
+          backendSpec:
+            type: object
+            required: true
+            description: "OpenAPI spec of backend system"
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-019-api-public-exposure-java-spring
+            stack: java-spring
+        
+        default: java-spring
+
+      experience-api:
+        description: "Experience API - BFF for UI channels"
+        keywords:
+          - Experience API
+          - BFF
+          - Backend for Frontend
+          - mobile
+          - web
+          - canal
+        
+        requires:
+          - architecture.hexagonal-light
+        
+        config:
+          hateoas: true
+          compensation_available: false
+        
+        input_spec:
+          serviceName:
+            type: string
+            required: true
+          basePackage:
+            type: string
+            required: true
+          channel:
+            type: string
+            enum: [mobile, web, all]
+            default: all
+          downstreamApis:
+            type: array
+            description: "Downstream APIs to orchestrate"
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-019-api-public-exposure-java-spring
+            stack: java-spring
+        
+        default: java-spring
+
+      composable-api:
+        description: "Composable API - multi-domain orchestration"
+        keywords:
+          - Composable API
+          - orchestration
+          - orquestación
+          - multi-domain
+        
+        requires:
+          - architecture.hexagonal-light
+        
+        config:
+          hateoas: false
+          compensation_available: false
+        
+        input_spec:
+          serviceName:
+            type: string
+            required: true
+          basePackage:
+            type: string
+            required: true
+          orchestration:
+            type: object
+            description: "Orchestration definition"
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-019-api-public-exposure-java-spring
+            stack: java-spring
+        
+        default: java-spring
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # RESILIENCE
+  # INTEGRATION (compositional)
+  # Normalized from KB: integration capability with sub-features
+  # ─────────────────────────────────────────────────────────────────────────────
+  integration:
+    description: "Patterns for integrating with external systems"
+    type: compositional
+    transformable: true
+    documentation: "model/domains/code/capabilities/integration.md"
+    keywords:
+      - integration
+      - integración
+      - external API
+      - API externa
+    
+    features:
+      api-rest:
+        description: "Synchronous REST integration with RestClient"
+        keywords:
+          - REST client
+          - HTTP client
+          - RestClient
+          - integración REST
+          - API client
+          - consumir API
+        
+        implementations:
+          - id: java-spring-restclient
+            module: mod-code-018-api-integration-rest-java-spring
+            stack: java-spring
+            description: "Spring RestClient (synchronous)"
+          # Future:
+          # - id: java-spring-webclient
+          #   module: mod-code-018b-api-integration-webclient-java-spring
+          #   stack: java-spring
+          #   description: "Spring WebClient (reactive)"
+        
+        default: java-spring-restclient
+
+      # Future features:
+      # api-grpc:
+      #   description: "gRPC integration"
+      #   keywords: [gRPC, protobuf, RPC]
+      #   implementations:
+      #     - id: java-spring
+      #       module: mod-code-xxx
+      #
+      # event-kafka:
+      #   description: "Kafka event integration"
+      #   keywords: [Kafka, events, event-driven]
+      #   implementations:
+      #     - id: java-spring
+      #       module: mod-code-xxx
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PERSISTENCE (compositional)
+  # ─────────────────────────────────────────────────────────────────────────────
+  persistence:
+    description: "Data persistence strategies"
+    type: compositional
+    transformable: true
+    documentation: "model/domains/code/capabilities/persistence.md"
+    keywords:
+      - persistence
+      - persistencia
+      - data
+      - datos
+      - storage
+      - database
+      - base de datos
+    
+    features:
+      jpa:
+        description: "JPA/Hibernate persistence with relational database"
+        keywords:
+          - JPA
+          - Hibernate
+          - database
+          - SQL
+          - relational
+          - ORM
+          - entity
+          - repository
+        
+        incompatible_with:
+          - persistence.systemapi
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-016-persistence-jpa-spring
+            stack: java-spring
+        
+        default: java-spring
+
+      systemapi:
+        description: "Persistence delegated to System API (legacy backend)"
+        keywords:
+          - System API
+          - backend
+          - legacy
+          - mainframe
+          - CICS
+          - host
+        
+        requires:
+          - integration.api-rest
+        
+        incompatible_with:
+          - persistence.jpa
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-017-persistence-systemapi
+            stack: java-spring
+        
+        default: java-spring
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # RESILIENCE (compositional)
   # ─────────────────────────────────────────────────────────────────────────────
   resilience:
     description: "Fault tolerance and resilience patterns"
     type: compositional
     transformable: true
     documentation: "model/domains/code/capabilities/resilience.md"
-    compatible_with:
-      - architecture.hexagonal-base
-    stack: [java-spring]
     keywords:
       - resilience
       - resiliencia
@@ -130,218 +419,154 @@ capabilities:
     
     features:
       circuit-breaker:
-        description: "Circuit Breaker pattern to prevent cascade failures"
-        module: mod-code-001-circuit-breaker-java-resilience4j
+        description: "Circuit Breaker to prevent cascade failures"
         keywords:
           - circuit breaker
-          - CB
           - cortocircuito
           - breaker
           - fail fast
-      
+        
+        implementations:
+          - id: java-spring-resilience4j
+            module: mod-code-001-circuit-breaker-java-resilience4j
+            stack: java-spring
+            pattern: annotation
+        
+        default: java-spring-resilience4j
+
       retry:
-        description: "Retry pattern with exponential backoff"
-        module: mod-code-002-retry-java-resilience4j
+        description: "Retry with exponential backoff"
         keywords:
           - retry
           - reintento
-          - reintentos
           - backoff
           - exponential backoff
-      
+        
+        implementations:
+          - id: java-spring-resilience4j
+            module: mod-code-002-retry-java-resilience4j
+            stack: java-spring
+            pattern: annotation
+        
+        default: java-spring-resilience4j
+
       timeout:
-        description: "Timeout pattern to limit wait times"
-        module: mod-code-003-timeout-java-resilience4j
+        description: "Timeout to limit wait times"
         keywords:
           - timeout
           - tiempo límite
           - time limit
           - deadline
-      
+        
+        implementations:
+          - id: java-spring-annotation
+            module: mod-code-003-timeout-java-resilience4j
+            stack: java-spring
+            pattern: annotation
+            description: "@TimeLimiter from Resilience4j"
+          # Future alternative:
+          # - id: java-spring-client-config
+          #   module: mod-code-003b-timeout-restclient
+          #   stack: java-spring
+          #   pattern: client-config
+          #   description: "Timeout configured in RestClient"
+        
+        default: java-spring-annotation
+
       rate-limiter:
         description: "Rate Limiter to control request throughput"
-        module: mod-code-004-rate-limiter-java-resilience4j
         keywords:
           - rate limit
           - rate limiter
           - throttling
           - límite de tasa
           - control de tráfico
-
-      # Note: bulkhead not yet implemented as module
-      # bulkhead:
-      #   description: "Bulkhead isolation pattern"
-      #   module: mod-code-005-bulkhead-java-resilience4j
-      #   keywords: [bulkhead, aislamiento, isolation, semaphore]
-
-  # ─────────────────────────────────────────────────────────────────────────────
-  # PERSISTENCE
-  # ─────────────────────────────────────────────────────────────────────────────
-  persistence:
-    description: "Data persistence strategies"
-    type: compositional
-    transformable: true
-    documentation: "model/domains/code/capabilities/persistence.md"
-    compatible_with:
-      - architecture.hexagonal-base
-    stack: [java-spring]
-    keywords:
-      - persistence
-      - persistencia
-      - data
-      - datos
-      - storage
-      - almacenamiento
-      - database
-      - base de datos
-    
-    features:
-      jpa:
-        description: "JPA/Hibernate persistence with relational database"
-        module: mod-code-016-persistence-jpa-spring
-        keywords:
-          - JPA
-          - Hibernate
-          - database
-          - SQL
-          - relational
-          - ORM
-          - entity
-          - repository
-        incompatible_with:
-          - persistence.systemapi  # Mutually exclusive
-
-      systemapi:
-        description: "Persistence via System API (legacy backend wrapper)"
-        module: mod-code-017-persistence-systemapi
-        keywords:
-          - System API
-          - backend
-          - legacy
-          - mainframe
-          - wrapper
-          - CICS
-          - host
-        requires:
-          - api-integration.restclient  # Needs REST client to call backend
-        incompatible_with:
-          - persistence.jpa  # Mutually exclusive
+        
+        implementations:
+          - id: java-spring-resilience4j
+            module: mod-code-004-rate-limiter-java-resilience4j
+            stack: java-spring
+            pattern: annotation
+        
+        default: java-spring-resilience4j
 
   # ─────────────────────────────────────────────────────────────────────────────
-  # API INTEGRATION
-  # ─────────────────────────────────────────────────────────────────────────────
-  api-integration:
-    description: "Patterns for integrating with external APIs"
-    type: compositional
-    transformable: true
-    documentation: "model/domains/code/capabilities/integration.md"
-    compatible_with:
-      - architecture.hexagonal-base
-    stack: [java-spring]
-    keywords:
-      - integration
-      - integración
-      - HTTP client
-      - REST client
-      - external API
-      - API externa
-      - consumir API
-    
-    features:
-      restclient:
-        description: "Spring RestClient for synchronous HTTP calls"
-        module: mod-code-018-api-integration-rest-java-spring
-        keywords:
-          - RestClient
-          - HTTP
-          - REST client
-          - synchronous
-          - síncrono
-
-      # Future features
-      # webclient:
-      #   description: "Spring WebClient for reactive HTTP calls"
-      #   module: mod-code-018-api-integration-webclient
-      #   keywords: [WebClient, reactive, non-blocking, reactivo]
-      #   incompatible_with:
-      #     - api-integration.restclient
-
-  # ─────────────────────────────────────────────────────────────────────────────
-  # DISTRIBUTED TRANSACTIONS
+  # DISTRIBUTED-TRANSACTIONS (compositional)
   # ─────────────────────────────────────────────────────────────────────────────
   distributed-transactions:
     description: "Patterns for handling distributed transactions"
     type: compositional
     transformable: true
-    documentation: "knowledge/ADRs/adr-013-distributed-transactions/ADR.md"
-    compatible_with:
-      - architecture.hexagonal-base
-    stack: [java-spring]
+    documentation: "model/domains/code/capabilities/distributed_transactions.md"
     keywords:
       - saga
-      - compensation
-      - compensación
       - distributed transaction
       - transacción distribuida
       - eventual consistency
+      - consistencia eventual
     
     features:
-      compensation:
-        description: "Saga pattern with compensation for rollback"
-        module: mod-code-020-compensation-java-spring
+      saga-compensation:
+        description: "SAGA pattern with compensation for rollback"
         keywords:
           - compensation
           - compensación
           - saga
           - rollback
           - undo
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-020-compensation-java-spring
+            stack: java-spring
+        
+        default: java-spring
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# FUTURE COMPOSITIONAL CAPABILITIES (Not Yet Implemented)
+# FUTURE CAPABILITIES (Placeholders)
 # ═══════════════════════════════════════════════════════════════════════════════
-# These are placeholders for future capabilities
 
   # caching:
   #   description: "Caching strategies"
   #   type: compositional
-  #   transformable: true
-  #   compatible_with: [architecture.hexagonal-base]
-  #   incompatible_with: [deployment.serverless]
   #   features:
   #     redis:
-  #       module: mod-code-025-cache-redis
   #       keywords: [Redis, distributed cache]
   #     local:
-  #       module: mod-code-026-cache-local-caffeine
   #       keywords: [local cache, Caffeine, in-memory]
+
+  # security:
+  #   description: "Security patterns"
+  #   type: compositional
+  #   features:
+  #     oauth2:
+  #       keywords: [OAuth2, JWT, authentication]
+  #     api-key:
+  #       keywords: [API key, authentication]
 
   # observability:
   #   description: "Observability and monitoring"
   #   type: compositional
-  #   transformable: true
-  #   compatible_with: [architecture.*]
   #   features:
   #     metrics:
-  #       module: mod-code-030-observability-metrics
   #       keywords: [metrics, Prometheus, Micrometer]
   #     tracing:
-  #       module: mod-code-031-observability-tracing
-  #       keywords: [tracing, OpenTelemetry]
-  #     logging:
-  #       module: mod-code-032-observability-logging
-  #       keywords: [logging, structured logging]
+  #       keywords: [tracing, OpenTelemetry, Jaeger]
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# COMPATIBILITY MATRIX (Summary)
+# MODULE SUMMARY
 # ═══════════════════════════════════════════════════════════════════════════════
-# 
-# All compositional capabilities require: architecture.hexagonal-base
 #
-# Incompatibilities:
-#   - persistence.jpa ←→ persistence.systemapi (mutually exclusive)
-#   - api-integration.restclient ←→ api-integration.webclient (mutually exclusive)
-#
-# Dependencies:
-#   - persistence.systemapi → api-integration.restclient (requires)
+# Current modules (java-spring):
+#   mod-code-001-circuit-breaker-java-resilience4j
+#   mod-code-002-retry-java-resilience4j
+#   mod-code-003-timeout-java-resilience4j
+#   mod-code-004-rate-limiter-java-resilience4j
+#   mod-code-015-hexagonal-base-java-spring
+#   mod-code-016-persistence-jpa-spring
+#   mod-code-017-persistence-systemapi
+#   mod-code-018-api-integration-rest-java-spring
+#   mod-code-019-api-public-exposure-java-spring
+#   mod-code-020-compensation-java-spring
 #
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -1,58 +1,14 @@
-# Skill Type: CODE/MIGRATE
+# Flow: Migrate
 
-**Version:** 1.0  
-**Last Updated:** 2025-12-12  
-**Domain:** CODE  
-**Status:** 🔜 Planned
+## Status: TBD
 
----
+This flow is planned but not yet detailed in v3.0.
 
-## Purpose
+It will be implemented as a variant of `flow-transform` in a future version.
 
-MIGRATE skills transform code from one version or framework to another. They handle technical migrations like Spring Boot 2→3, JUnit 4→5, Java 8→17, etc.
+**Purpose:** Transform code from one pattern/version to another (e.g., migrate from RestTemplate to RestClient).
 
----
+## Related
 
-## Characteristics
-
-| Aspect | Description |
-|--------|-------------|
-| Input | Existing code + Target version/framework |
-| Output | Migrated code |
-| Modules | Migration-specific modules with transformation rules |
-| Complexity | High - extensive changes |
-
----
-
-## Planned Skills
-
-| Skill | Purpose |
-|-------|---------|
-| `skill-code-080-migrate-spring-boot-2-to-3` | Spring Boot 2.x to 3.x |
-| `skill-code-081-migrate-junit4-to-5` | JUnit 4 to JUnit 5 |
-| `skill-code-082-migrate-java-8-to-17` | Java 8 to Java 17 |
-| `skill-code-083-migrate-javax-to-jakarta` | javax.* to jakarta.* |
-
----
-
-## Migration Modules
-
-Migration modules contain transformation rules rather than templates:
-
-```
-mod-code-080-migration-springboot3/
-├── MODULE.md
-├── transformations/
-│   ├── dependencies.rules      # Dependency updates
-│   ├── annotations.rules       # Annotation changes
-│   ├── configuration.rules     # Config property changes
-│   └── code-patterns.rules     # Code pattern updates
-└── validation/
-    └── validate-migration.sh
-```
-
----
-
-## Status
-
-This skill type is planned but not yet implemented.
+- [Flow: Generate](./flow-generate.md)
+- [Flow: Transform](./flow-transform.md)
