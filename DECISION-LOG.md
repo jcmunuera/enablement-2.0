@@ -354,3 +354,47 @@ Tras DEC-010 (ayer), quedaban por revisar: FLOW.md, ADR.md, ERI.md, VALIDATOR.md
 **Implicación:**
 - Todos los authoring guides ahora coherentes con modelo v3.0.1
 - No quedan referencias a Skills en ningún documento de authoring
+
+### DEC-012: Refinamientos capability-index v2.3 {#dec-012}
+
+**Fecha:** 2026-01-22  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Durante la validación de test cases se identificaron dos problemas:
+1. `compensation_available=true` en domain-api no indica CUÁNDO generar compensación
+2. `persistence.jpa` y `persistence.systemapi` marcados como incompatibles, pero escenarios híbridos son válidos
+
+**Decisiones:**
+
+**A) Semántica de `compensation_available`:**
+- Es un flag de **capacidad**, no de acción
+- `true` = Esta API admite implementar compensación si se solicita
+- Para GENERAR compensación → usuario debe pedir `saga-compensation`
+- Nueva validación: `saga-compensation.requires_config` verifica que API tenga `compensation_available=true`
+
+**B) Persistencia híbrida:**
+- Eliminar `incompatible_with` entre `jpa` y `systemapi`
+- Escenarios válidos: Customer (JPA local) + Account (System API mainframe)
+
+**C) Nueva Rule 7: Config Prerequisite Validation:**
+```yaml
+requires_config:
+  - capability: api-architecture
+    config_key: compensation_available
+    value: true
+    error_message: "Compensation requires API that supports it"
+```
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| capability-index.yaml | v2.2 → v2.3, eliminar incompatible_with, añadir requires_config |
+| discovery-guidance.md | Añadir Rule 7, actualizar test cases 6-8 |
+| CAPABILITY.md (authoring) | v3.1 → v3.2, documentar requires_config |
+
+**Implicación:**
+- Test Case 6 ("JPA y System API") ahora es válido (híbrido)
+- Test Case 7 ("Domain API con compensación") válido
+- Test Case 8 ("API REST con compensación") error (compensation_available=false)

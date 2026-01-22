@@ -1,12 +1,19 @@
 # Authoring Guide: CAPABILITY
 
-**Version:** 3.1  
-**Last Updated:** 2026-01-21  
+**Version:** 3.2  
+**Last Updated:** 2026-01-22  
 **Asset Type:** Capability  
-**Model Version:** 3.0.1  
-**capability-index Version:** 2.2
+**Model Version:** 3.0.2  
+**capability-index Version:** 2.3
 
 ---
+
+## What's New in v3.2
+
+| Change | Description |
+|--------|-------------|
+| **requires_config** | New attribute for config prerequisite validation (Rule 7) |
+| **Hybrid persistence** | `jpa` and `systemapi` no longer incompatible |
 
 ## What's New in v3.1
 
@@ -75,7 +82,7 @@ Example: `api-architecture` is type `layered` but phase_group `structural` (exec
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                       CAPABILITY HIERARCHY (v2.2)                            │
+│                       CAPABILITY HIERARCHY (v2.3)                            │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  CAPABILITY                                                                 │
@@ -92,6 +99,7 @@ Example: `api-architecture` is type `layered` but phase_group `structural` (exec
 │              ├── is_default: true | false                                   │
 │              ├── keywords: [...]                                            │
 │              ├── requires: [capability | capability.feature]                │
+│              ├── requires_config: [{capability, config_key, value}]  NEW    │
 │              ├── incompatible_with: [other.features]                        │
 │              ├── config: { key: value }                                     │
 │              ├── input_spec: { field: schema }                              │
@@ -640,6 +648,33 @@ Mutually exclusive features:
 incompatible_with:
   - persistence.jpa    # Error if both selected
 ```
+
+**Note (v2.3):** Use sparingly. Prefer allowing combinations when technically feasible. Example: `persistence.jpa` and `persistence.systemapi` are NOT incompatible (hybrid scenarios valid).
+
+### requires_config (Optional, NEW in v2.3)
+
+Config prerequisite validation. Ensures a required config value exists in another selected feature:
+
+```yaml
+requires_config:
+  - capability: api-architecture
+    config_key: compensation_available
+    value: true
+    error_message: "Compensation requires an API type that supports it (e.g., domain-api)"
+```
+
+**Fields:**
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `capability` | Yes | Target capability to check |
+| `config_key` | Yes | Config key to validate |
+| `value` | Yes | Expected value |
+| `error_message` | Yes | Error message if validation fails |
+
+**Use case:** Features that only work with certain API types or configurations.
+
+**Example:** `saga-compensation` requires `compensation_available=true`, which only `domain-api` has.
 
 ### config (Optional)
 

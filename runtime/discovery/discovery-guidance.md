@@ -1,4 +1,4 @@
-# Discovery Guidance v3.0
+# Discovery Guidance v3.1
 
 ## Overview
 
@@ -12,7 +12,7 @@ There is **no separate skill discovery**. All logic previously in skills is now 
 
 ---
 
-## Capability Types (v2.2)
+## Capability Types (v2.3)
 
 ### Type Definitions
 
@@ -52,7 +52,7 @@ There is **no separate skill discovery**. All logic previously in skills is now 
 
 ---
 
-## Discovery Rules (v2.2)
+## Discovery Rules (v2.3)
 
 ### Rule 1: Keyword Matching Priority
 
@@ -110,6 +110,8 @@ for feature in all_features:
             raise Error(f"{feature} incompatible with {incompatible}")
 ```
 
+**Note (v2.3):** `persistence.jpa` and `persistence.systemapi` are NOT incompatible. Hybrid persistence scenarios are valid.
+
 ### Rule 6: Phase Assignment
 
 ```python
@@ -121,6 +123,52 @@ def assign_phases(features):
     # Order within phase by requires (dependencies first)
     return [sort_by_requires(p) for p in [phase_1, phase_2, phase_3]]
 ```
+
+### Rule 7: Config Prerequisite Validation (NEW in v2.3)
+
+Some features require specific config values in other selected features.
+
+```python
+def validate_config_prerequisites(all_features, capability_index):
+    for feature in all_features:
+        if 'requires_config' in feature:
+            for prereq in feature['requires_config']:
+                # Find the target capability's selected feature
+                target_cap = prereq['capability']
+                target_feature = find_selected_feature(all_features, target_cap)
+                
+                if target_feature is None:
+                    raise ConfigPrerequisiteError(
+                        f"{feature} requires {target_cap} to be selected"
+                    )
+                
+                config_key = prereq['config_key']
+                expected_value = prereq['value']
+                actual_value = target_feature.config.get(config_key)
+                
+                if actual_value != expected_value:
+                    raise ConfigPrerequisiteError(prereq['error_message'])
+```
+
+**Example:** `saga-compensation` requires `compensation_available=true` in the selected API type:
+
+```yaml
+# In capability-index.yaml
+saga-compensation:
+  requires_config:
+    - capability: api-architecture
+      config_key: compensation_available
+      value: true
+      error_message: "Compensation requires an API type that supports it (e.g., domain-api)"
+```
+
+| API Type | compensation_available | Can use saga-compensation? |
+|----------|------------------------|---------------------------|
+| standard | false | ❌ No |
+| domain-api | true | ✅ Yes |
+| system-api | false | ❌ No |
+| experience-api | false | ❌ No |
+| composable-api | false | ❌ No |
 
 ---
 
@@ -236,26 +284,30 @@ def match_features(prompt: str, context: dict) -> List[Feature]:
 | 3 | Capability keyword without default_feature = ask user | "resilience" → Ask: "Which pattern?" |
 | 4 | Multiple capability matches are valid | "microservicio con API" → both match |
 | 5 | Dependencies are auto-added from requires | `domain-api` auto-adds `hexagonal-light` |
-| 6 | Incompatibilities block execution | `jpa` + `systemapi` = error |
+| 6 | Config prerequisites validated | `saga-compensation` requires `compensation_available=true` |
 
-**v2.2 Test Cases:**
+**v2.3 Test Cases:**
 
 | # | Prompt | Expected Features | Reason |
 |---|--------|-------------------|--------|
 | 1 | "Genera un microservicio" | `architecture.hexagonal-light` | "microservicio" → architecture (capability) → default: hexagonal-light |
-| 2 | "Genera una API" | `architecture.hexagonal-light`, `api-architecture.domain-api` | "API" → api-architecture (capability) → default: domain-api → requires: hexagonal-light |
+| 2 | "Genera una API" | `architecture.hexagonal-light`, `api-architecture.standard` | "API" → api-architecture (capability) → default: standard → requires: hexagonal-light |
 | 3 | "Domain API con circuit breaker" | `architecture.hexagonal-light`, `api-architecture.domain-api`, `resilience.circuit-breaker` | Explicit feature matches + dependency |
-| 4 | "JPA y System API" | ERROR: incompatible | `persistence.jpa` ↔ `persistence.systemapi` |
+| 4 | "JPA y System API" | Both persistence features (hybrid) | v2.3: No longer incompatible |
 | 5 | "Añade retry" | `resilience.retry` | Direct feature keyword match |
+| 6 | "Domain API con compensación" | `domain-api` + `saga-compensation` | Rule 7: compensation_available=true ✓ |
+| 7 | "API con compensación" | ERROR | Rule 7: standard.compensation_available=false |
 
-**Examples with v2.2 behavior:**
+**Examples with v2.3 behavior:**
 
-| Prompt | v2.1 Result | v2.2 Result |
+| Prompt | v2.1 Result | v2.3 Result |
 |--------|-------------|-------------|
 | "microservicio" | No match ❌ | `architecture.hexagonal-light` ✅ |
-| "API" | Ask user ❓ | `api-architecture.domain-api` ✅ |
+| "API" | Ask user ❓ | `api-architecture.standard` ✅ |
+| "Domain API" | `api-architecture.domain-api` | `api-architecture.domain-api` (unchanged) |
 | "hexagonal" | `architecture.hexagonal-light` | `architecture.hexagonal-light` (unchanged) |
 | "resilience" | Ask user ❓ | Ask user ❓ (no default_feature) |
+| "JPA y System API" | ERROR ❌ | Both features ✅ (hybrid) |
 
 ---
 
@@ -503,7 +555,7 @@ prompt → capability-index → features → implementations → modules
 
 ---
 
-## Test Cases (v2.2 Validation)
+## Test Cases (v2.3 Validation)
 
 ### Test Case 1: Microservicio Básico
 
@@ -594,23 +646,74 @@ Result:
     Phase 3: resilience.circuit-breaker
 ```
 
-### Test Case 6: Incompatibilidad
+### Test Case 6: Persistencia Híbrida (válido en v2.3)
 
 ```
 Prompt: "API con JPA y System API"
 
 Expected Discovery:
+  - "API" → api-architecture.standard (default)
   - "JPA" → persistence.jpa
   - "System API" → persistence.systemapi
-  - Check incompatibility: jpa.incompatible_with contains systemapi
+  - v2.3: NO incompatibility (hybrid persistence allowed)
+  - systemapi.requires → integration.api-rest → auto-add
+  - standard.requires → architecture → auto-add hexagonal-light
 
 Result:
-  ERROR: persistence.jpa is incompatible with persistence.systemapi
+  flow: flow-generate
+  features: [architecture.hexagonal-light, api-architecture.standard,
+             persistence.jpa, persistence.systemapi, integration.api-rest]
+  phases:
+    Phase 1: architecture.hexagonal-light, api-architecture.standard
+    Phase 2: persistence.jpa, persistence.systemapi, integration.api-rest
+```
+
+Note: Hybrid persistence is valid for scenarios like:
+- Customer entity → JPA (local database)
+- Account entity → System API (mainframe)
+
+### Test Case 7: Domain API con Compensación (válido)
+
+```
+Prompt: "Genera una Domain API con compensación"
+
+Expected Discovery:
+  - "Domain API" → api-architecture.domain-api
+  - "compensación" → distributed-transactions.saga-compensation
+  - Rule 7: saga-compensation.requires_config → check compensation_available
+    - domain-api.config.compensation_available = true ✓
+  - domain-api.requires → architecture → auto-add hexagonal-light
+
+Result:
+  flow: flow-generate
+  features: [architecture.hexagonal-light, api-architecture.domain-api,
+             distributed-transactions.saga-compensation]
+  phases:
+    Phase 1: architecture.hexagonal-light, api-architecture.domain-api
+    Phase 3: distributed-transactions.saga-compensation
+  config: {hateoas: true, compensation_available: true}
+```
+
+### Test Case 8: API Estándar con Compensación (error)
+
+```
+Prompt: "Genera una API REST con compensación"
+
+Expected Discovery:
+  - "API REST" → api-architecture.standard (default)
+  - "compensación" → distributed-transactions.saga-compensation
+  - Rule 7: saga-compensation.requires_config → check compensation_available
+    - standard.config.compensation_available = false ❌
+
+Result:
+  ERROR: ConfigPrerequisiteError
+  Message: "Compensation requires an API type that supports it (e.g., domain-api)"
+  Suggestion: "Use 'Domain API' instead of 'API REST' for compensation support"
 ```
 
 ---
 
-## Summary: Discovery Algorithm v2.2
+## Summary: Discovery Algorithm v2.3
 
 ```python
 def discover(prompt: str, context: dict) -> DiscoveryResult:
@@ -636,10 +739,13 @@ def discover(prompt: str, context: dict) -> DiscoveryResult:
     # 7. Validate compatibility (Rule 5)
     validate_incompatible(all_features)
     
-    # 8. Assign phases (Rule 6)
+    # 8. Validate config prerequisites (Rule 7) - NEW in v2.3
+    validate_config_prerequisites(all_features)
+    
+    # 9. Assign phases (Rule 6)
     phases = assign_phases(all_features)
     
-    # 9. Resolve modules
+    # 10. Resolve modules
     modules = resolve_modules(all_features, stack)
     
     return DiscoveryResult(flow, stack, all_features, phases, modules)

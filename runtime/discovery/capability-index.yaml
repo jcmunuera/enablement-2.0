@@ -1,9 +1,15 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# CAPABILITY INDEX v2.2
+# CAPABILITY INDEX v2.3
 # ═══════════════════════════════════════════════════════════════════════════════
 # 
 # Single source of truth for capability → feature → implementation → module
 # 
+# Changes from v2.2:
+#   - Removed incompatible_with between persistence.jpa and persistence.systemapi
+#     (hybrid scenarios are valid: some entities via JPA, others via System API)
+#   - Added requires_config to saga-compensation (requires compensation_available=true)
+#   - Added Rule 7: Config Prerequisite Validation
+#
 # Changes from v2.1:
 #   - New capability types: foundational, layered, cross-cutting
 #   - Added phase_group for automatic phase assignment
@@ -68,11 +74,15 @@
 # Rule 6: Phase assignment
 #   Group features by phase_group attribute
 #
+# Rule 7: Config prerequisite validation
+#   Check requires_config constraints
+#   Example: saga-compensation requires compensation_available=true in API
+#
 # ═══════════════════════════════════════════════════════════════════════════════
 
-version: "2.2"
+version: "2.3"
 domain: code
-last_updated: "2026-01-21"
+last_updated: "2026-01-22"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ORGANIZATIONAL DEFAULTS
@@ -507,8 +517,8 @@ capabilities:
         requires:
           - architecture  # Points to capability
         
-        incompatible_with:
-          - persistence.systemapi
+        # NOTE: NOT incompatible with systemapi - hybrid scenarios are valid
+        # Example: Customer (JPA local) + Account (System API mainframe)
         
         implementations:
           - id: java-spring
@@ -532,8 +542,7 @@ capabilities:
           - architecture  # Points to capability
           - integration.api-rest  # Specific dependency
         
-        incompatible_with:
-          - persistence.jpa
+        # NOTE: NOT incompatible with jpa - hybrid scenarios are valid
         
         implementations:
           - id: java-spring
@@ -670,6 +679,13 @@ capabilities:
           - saga
           - rollback
           - undo
+        
+        # Config prerequisite: only APIs that support compensation
+        requires_config:
+          - capability: api-architecture
+            config_key: compensation_available
+            value: true
+            error_message: "Compensation requires an API type that supports it (e.g., domain-api)"
         
         implementations:
           - id: java-spring
