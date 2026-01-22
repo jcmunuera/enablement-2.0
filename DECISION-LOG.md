@@ -17,6 +17,14 @@ Este documento registra las decisiones de diseño importantes tomadas durante el
 - [DEC-007](#dec-007) - Feature `standard` como default en api-architecture
 - [DEC-008](#dec-008) - `requires` apunta a capability, no a feature
 - [DEC-009](#dec-009) - `phase_group` como atributo explícito
+- [DEC-010](#dec-010) - Actualizar Authoring Guides a v3.0.1
+- [DEC-011](#dec-011) - Completar actualización de Authoring Guides
+- [DEC-012](#dec-012) - Refinamientos capability-index v2.3
+- [DEC-013](#dec-013) - Idempotencia como capability, implies y config_rules
+- [DEC-014](#dec-014) - Renombrar compensation_available → supports_distributed_transactions
+- [DEC-015](#dec-015) - Roles de transacción distribuida y custom-api
+- [DEC-016](#dec-016) - Resolución de ambigüedad persistence → jpa
+- [DEC-017](#dec-017) - Semántica "transaccional" → domain-api
 
 ---
 
@@ -603,3 +611,90 @@ Después (dos roles):
 ```
 
 **Model version:** 3.0.5
+
+### DEC-016: Resolución de ambigüedad persistence → jpa {#dec-016}
+
+**Fecha:** 2026-01-22  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+TC16 "Genera un microservicio con persistencia" era ambiguo:
+- `persistence` tiene dos features: `jpa` y `systemapi`
+- Sin `default_feature`, el Discovery Agent debía preguntar
+- Pero "persistencia" sin calificador típicamente implica base de datos local
+
+**Opciones:**
+- A) Mantener sin default (preguntar siempre)
+- B) `default_feature: jpa` (asumir local)
+- C) `default_feature: systemapi` (asumir backend)
+
+**Decisión:** Opción B - `default_feature: jpa`
+
+**Justificación:**
+- JPA (local database) es el caso más común
+- Si el usuario quiere System API, dice "via System API" o "backend"
+- Reduce fricción para el caso típico
+- `systemapi` tiene keywords específicos ("mainframe", "backend", "legacy")
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| capability-index.yaml | v2.6 → v2.7, persistence.default_feature = jpa, jpa.is_default = true |
+| discovery-guidance.md | v3.4 → v3.5, documentar resolución en Handling Ambiguity |
+
+**Implicación:**
+- TC16 ahora resuelve a `persistence.jpa` sin preguntar
+- "via System API" sigue funcionando por keyword match
+
+---
+
+### DEC-017: Semántica "transaccional" → domain-api {#dec-017}
+
+**Fecha:** 2026-01-22  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+TC17/TC20 "Genera una Domain API transaccional" resolvía a SAGA:
+- Discovery Agent infería "transaccional" → distributed-transactions
+- Pero "transaccional" es genérico (puede ser ACID local o distribuido)
+- Solo hay un feature en distributed-transactions (saga-compensation)
+- Resultado: "API transaccional" = "API con SAGA" (semánticamente incorrecto)
+
+**Análisis:**
+
+| Término | Significado Real | Interpretación Anterior |
+|---------|-----------------|------------------------|
+| "transaccional" | ACID local OR distribuido | → SAGA (forzado) |
+| "SAGA/compensación" | Transacciones distribuidas | → SAGA ✅ |
+
+**Decisión:** "transaccional" es keyword de `domain-api`, no de `distributed-transactions`
+
+**Justificación:**
+- Domain API tiene semántica transaccional inherente (diseño Fusion)
+- "API transaccional" → Domain API (sin SAGA implícito)
+- "API con SAGA" → Domain API + saga-compensation (explícito)
+- Separación semántica clara: tipo de API vs patrón de transacción
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| capability-index.yaml | v2.6 → v2.7, añadir "transaccional", "transactional API" a domain-api.keywords |
+| discovery-guidance.md | v3.4 → v3.5, documentar semántica en Handling Ambiguity |
+
+**Nueva semántica:**
+
+| Prompt | Resolución |
+|--------|------------|
+| "API transaccional" | domain-api (sin SAGA) |
+| "Domain API transaccional" | domain-api (sin SAGA) |
+| "API con SAGA" | domain-api + saga-compensation |
+| "Domain API con compensación" | domain-api + saga-compensation |
+
+**Implicación:**
+- TC17/TC20 ahora resuelven a `domain-api` SIN saga-compensation
+- Para SAGA, el usuario debe decir "SAGA", "compensación", o "transacción distribuida"
+- config_flags: {transactional: false, idempotent: false} para Domain API básico
+
+**Model version:** 3.0.6

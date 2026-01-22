@@ -1,9 +1,14 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# CAPABILITY INDEX v2.6
+# CAPABILITY INDEX v2.7
 # ═══════════════════════════════════════════════════════════════════════════════
 # 
 # Single source of truth for capability → feature → implementation → module
 # 
+# Changes from v2.6:
+#   - DEC-016: persistence.default_feature = jpa (unqualified "persistencia" → jpa)
+#   - DEC-017: Added "transaccional" keyword to domain-api (not distributed-transactions)
+#     Semantic: "API transaccional" = Domain API, "API con SAGA" = Domain API + saga-compensation
+#
 # Changes from v2.5:
 #   - Split supports_distributed_transactions into two roles:
 #     - distributed_transactions.participant (can implement Compensation)
@@ -299,6 +304,8 @@ capabilities:
           - capacidades de negocio
           - API de negocio
           - producto API
+          - transaccional        # DEC-017: "API transaccional" → Domain API (not SAGA)
+          - transactional API
         
         requires:
           - architecture  # Points to capability
@@ -601,12 +608,14 @@ capabilities:
       - database
       - base de datos
     
-    # NO default_feature - user must choose between jpa and systemapi
+    # DEC-016: Default to JPA for unqualified "persistencia"
+    # User says "via System API" explicitly for backend integration
+    default_feature: jpa
     
     features:
       jpa:
         description: "JPA/Hibernate persistence with relational database"
-        is_default: false
+        is_default: true
         keywords:
           - JPA
           - Hibernate

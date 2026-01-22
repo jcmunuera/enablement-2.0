@@ -1,4 +1,4 @@
-# Discovery Guidance v3.4
+# Discovery Guidance v3.5
 
 ## Overview
 
@@ -12,7 +12,7 @@ There is **no separate skill discovery**. All logic previously in skills is now 
 
 ---
 
-## Capability Types (v2.6)
+## Capability Types (v2.7)
 
 ### Type Definitions
 
@@ -52,7 +52,7 @@ There is **no separate skill discovery**. All logic previously in skills is now 
 
 ---
 
-## Discovery Rules (v2.6)
+## Discovery Rules (v2.7)
 
 ### Rule 1: Keyword Matching Priority
 
@@ -607,18 +607,34 @@ Output:
 
 ## Handling Ambiguity
 
-When the prompt is ambiguous, ask clarifying questions:
+When the prompt is ambiguous, apply these resolution rules:
 
-| Situation | Action |
-|-----------|--------|
-| "Add resilience" (no specific pattern) | Ask: "Which patterns? circuit-breaker, retry, timeout?" |
-| "API" (no type specified) | Use `api-architecture.standard` (default) |
-| "Domain API" / "System API" / "BFF" | Use specific feature (explicit match) |
-| "persistence" (no type specified) | Ask: "Which persistence? JPA or System API?" |
-| Multiple stacks possible | Ask: "Which technology? Spring, Quarkus?" |
-| Feature has no implementation for stack | Error: "X not available for Y stack" |
+| Situation | Resolution (v2.7) | Decision |
+|-----------|-------------------|----------|
+| "Add resilience" (no specific pattern) | Ask: "Which patterns? circuit-breaker, retry, timeout?" | - |
+| "API" (no type specified) | Use `api-architecture.standard` (default) | DEC-007 |
+| "Domain API" / "System API" / "BFF" | Use specific feature (explicit match) | - |
+| "persistence" / "persistencia" (no type specified) | **Use `persistence.jpa`** (default) | **DEC-016** |
+| "via System API" / "backend" / "mainframe" | Use `persistence.systemapi` (explicit match) | DEC-016 |
+| "API transaccional" / "transactional API" | **Use `api-architecture.domain-api`** (keyword match) | **DEC-017** |
+| "API con SAGA" / "compensación" | Use `domain-api` + `saga-compensation` | DEC-017 |
+| Multiple stacks possible | Ask: "Which technology? Spring, Quarkus?" | - |
+| Feature has no implementation for stack | Error: "X not available for Y stack" | - |
 
-**Note (v2.2):** Capabilities with `default_feature` no longer ask for clarification. Only capabilities without default (like `resilience`, `persistence`) require user input.
+### Semantic Clarifications (v2.7)
+
+**DEC-016 - Persistence Ambiguity:**
+- "persistencia" sin calificador → `jpa` (base de datos local)
+- "via System API" → `systemapi` (backend externo)
+- Rationale: JPA es el caso más común; System API requiere especificación explícita
+
+**DEC-017 - "Transaccional" Semantics:**
+- "transaccional" es keyword de `domain-api`, NO de `distributed-transactions`
+- "API transaccional" → Domain API (con semántica transaccional inherente)
+- "API con SAGA/compensación" → Domain API + saga-compensation
+- Rationale: "transaccional" es genérico; SAGA/compensación son específicos
+
+**Note (v2.2):** Capabilities with `default_feature` no longer ask for clarification. Only capabilities without default (like `resilience`) require user input.
 
 ---
 
