@@ -123,7 +123,7 @@ modules:                     # Resolved modules
   - mod-code-001
 config:                      # Merged feature configs
   hateoas: true
-  compensation_available: true
+  supports_distributed_transactions: true
 input_spec:                  # Required user input
   serviceName: { type: string, required: true }
   basePackage: { type: string, required: true }

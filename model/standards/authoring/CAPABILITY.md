@@ -1,12 +1,19 @@
 # Authoring Guide: CAPABILITY
 
-**Version:** 3.3  
+**Version:** 3.4  
 **Last Updated:** 2026-01-22  
 **Asset Type:** Capability  
-**Model Version:** 3.0.3  
-**capability-index Version:** 2.4
+**Model Version:** 3.0.4  
+**capability-index Version:** 2.5
 
 ---
+
+## What's New in v3.4
+
+| Change | Description |
+|--------|-------------|
+| **supports_distributed_transactions** | Renamed from `compensation_available` (semantic clarification) |
+| **Removed static flags** | `transactional` and `idempotent` removed from domain-api.config (now calculated) |
 
 ## What's New in v3.3
 
@@ -276,7 +283,7 @@ capabilities:
         
         config:
           hateoas: false
-          compensation_available: false
+          supports_distributed_transactions: false
         
         implementations:
           - id: java-spring
@@ -298,7 +305,7 @@ capabilities:
         
         config:
           hateoas: true
-          compensation_available: true
+          supports_distributed_transactions: true
           transactional: true
           idempotent: true
         
@@ -674,7 +681,7 @@ Config prerequisite validation. Ensures a required config value exists in anothe
 ```yaml
 requires_config:
   - capability: api-architecture
-    config_key: compensation_available
+    config_key: supports_distributed_transactions
     value: true
     error_message: "Compensation requires an API type that supports it (e.g., domain-api)"
 ```
@@ -690,7 +697,7 @@ requires_config:
 
 **Use case:** Features that only work with certain API types or configurations.
 
-**Example:** `saga-compensation` requires `compensation_available=true`, which only `domain-api` has.
+**Example:** `saga-compensation` requires `supports_distributed_transactions=true`, which only `domain-api` has.
 
 ### implies (Optional, Capability-level, NEW in v2.4)
 
@@ -763,7 +770,7 @@ Feature-specific configuration passed to module:
 ```yaml
 config:
   hateoas: true
-  compensation_available: true
+  supports_distributed_transactions: true
   max_retries: 3
 ```
 

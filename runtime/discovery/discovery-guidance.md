@@ -1,4 +1,4 @@
-# Discovery Guidance v3.2
+# Discovery Guidance v3.3
 
 ## Overview
 
@@ -12,7 +12,7 @@ There is **no separate skill discovery**. All logic previously in skills is now 
 
 ---
 
-## Capability Types (v2.4)
+## Capability Types (v2.5)
 
 ### Type Definitions
 
@@ -52,7 +52,7 @@ There is **no separate skill discovery**. All logic previously in skills is now 
 
 ---
 
-## Discovery Rules (v2.4)
+## Discovery Rules (v2.5)
 
 ### Rule 1: Keyword Matching Priority
 
@@ -150,19 +150,19 @@ def validate_config_prerequisites(all_features, capability_index):
                     raise ConfigPrerequisiteError(prereq['error_message'])
 ```
 
-**Example:** `saga-compensation` requires `compensation_available=true` in the selected API type:
+**Example:** `saga-compensation` requires `supports_distributed_transactions=true` in the selected API type:
 
 ```yaml
 # In capability-index.yaml
 saga-compensation:
   requires_config:
     - capability: api-architecture
-      config_key: compensation_available
+      config_key: supports_distributed_transactions
       value: true
       error_message: "Compensation requires an API type that supports it (e.g., domain-api)"
 ```
 
-| API Type | compensation_available | Can use saga-compensation? |
+| API Type | supports_distributed_transactions | Can use saga-compensation? |
 |----------|------------------------|---------------------------|
 | standard | false | ❌ No |
 | domain-api | true | ✅ Yes |
@@ -374,7 +374,7 @@ def match_features(prompt: str, context: dict) -> List[Feature]:
 | 3 | Capability keyword without default_feature = ask user | "resilience" → Ask: "Which pattern?" |
 | 4 | Multiple capability matches are valid | "microservicio con API" → both match |
 | 5 | Dependencies are auto-added from requires | `domain-api` auto-adds `hexagonal-light` |
-| 6 | Config prerequisites validated | `saga-compensation` requires `compensation_available=true` |
+| 6 | Config prerequisites validated | `saga-compensation` requires `supports_distributed_transactions=true` |
 
 **v2.3 Test Cases:**
 
@@ -385,8 +385,8 @@ def match_features(prompt: str, context: dict) -> List[Feature]:
 | 3 | "Domain API con circuit breaker" | `architecture.hexagonal-light`, `api-architecture.domain-api`, `resilience.circuit-breaker` | Explicit feature matches + dependency |
 | 4 | "JPA y System API" | Both persistence features (hybrid) | v2.3: No longer incompatible |
 | 5 | "Añade retry" | `resilience.retry` | Direct feature keyword match |
-| 6 | "Domain API con compensación" | `domain-api` + `saga-compensation` | Rule 7: compensation_available=true ✓ |
-| 7 | "API con compensación" | ERROR | Rule 7: standard.compensation_available=false |
+| 6 | "Domain API con compensación" | `domain-api` + `saga-compensation` | Rule 7: supports_distributed_transactions=true ✓ |
+| 7 | "API con compensación" | ERROR | Rule 7: standard.supports_distributed_transactions=false |
 
 **Examples with v2.3 behavior:**
 
@@ -581,7 +581,7 @@ Step 6: Determine Flow
 
 Step 7: Extract Config
   - hateoas: true (from domain-api)
-  - compensation_available: true (from domain-api)
+  - supports_distributed_transactions: true (from domain-api)
 
 Output:
   flow: flow-generate
@@ -591,7 +591,7 @@ Output:
              resilience.circuit-breaker]
   modules: [mod-code-015, mod-code-019, mod-code-018, 
             mod-code-017, mod-code-001]
-  config: {hateoas: true, compensation_available: true}
+  config: {hateoas: true, supports_distributed_transactions: true}
   input_spec: {serviceName: {...}, basePackage: {...}, entities: {...}}
 ```
 
@@ -645,7 +645,7 @@ prompt → capability-index → features → implementations → modules
 
 ---
 
-## Test Cases (v2.4 Validation)
+## Test Cases (v2.5 Validation)
 
 ### Test Case 1: Microservicio Básico
 
@@ -695,7 +695,7 @@ Result:
   features: [architecture.hexagonal-light, api-architecture.domain-api]
   phases:
     Phase 1: architecture.hexagonal-light, api-architecture.domain-api
-  config: {hateoas: true, compensation_available: true}
+  config: {hateoas: true, supports_distributed_transactions: true}
 ```
 
 ### Test Case 4: API con Persistencia System API
@@ -770,8 +770,8 @@ Prompt: "Genera una Domain API con compensación"
 Expected Discovery:
   - "Domain API" → api-architecture.domain-api
   - "compensación" → distributed-transactions.saga-compensation
-  - Rule 7: saga-compensation.requires_config → check compensation_available
-    - domain-api.config.compensation_available = true ✓
+  - Rule 7: saga-compensation.requires_config → check supports_distributed_transactions
+    - domain-api.config.supports_distributed_transactions = true ✓
   - domain-api.requires → architecture → auto-add hexagonal-light
   - Rule 8: distributed-transactions.implies → auto-add idempotency.idempotency-key
   - Rule 9: config_flags calculated from selected capabilities
@@ -784,7 +784,7 @@ Result:
   phases:
     Phase 1: architecture.hexagonal-light, api-architecture.domain-api
     Phase 3: distributed-transactions.saga-compensation, idempotency.idempotency-key
-  static_config: {hateoas: true, compensation_available: true}  # From domain-api
+  static_config: {hateoas: true, supports_distributed_transactions: true}  # From domain-api
   config_flags: {transactional: true, idempotent: true}  # Calculated by Rule 9
   modules:
     - mod-code-015-hexagonal-base-java-spring
@@ -801,8 +801,8 @@ Prompt: "Genera una API REST con compensación"
 Expected Discovery:
   - "API REST" → api-architecture.standard (default)
   - "compensación" → distributed-transactions.saga-compensation
-  - Rule 7: saga-compensation.requires_config → check compensation_available
-    - standard.config.compensation_available = false ❌
+  - Rule 7: saga-compensation.requires_config → check supports_distributed_transactions
+    - standard.config.supports_distributed_transactions = false ❌
 
 Result:
   ERROR: ConfigPrerequisiteError
@@ -829,7 +829,7 @@ Result:
   phases:
     Phase 1: architecture.hexagonal-light, api-architecture.domain-api
     Phase 3: idempotency.idempotency-key
-  static_config: {hateoas: true, compensation_available: true}
+  static_config: {hateoas: true, supports_distributed_transactions: true}
   config_flags: {transactional: false, idempotent: true}
   modules:
     - mod-code-015-hexagonal-base-java-spring
@@ -839,7 +839,7 @@ Result:
 ```
 ---
 
-## Summary: Discovery Algorithm v2.4
+## Summary: Discovery Algorithm v2.5
 
 ```python
 def discover(prompt: str, context: dict) -> DiscoveryResult:

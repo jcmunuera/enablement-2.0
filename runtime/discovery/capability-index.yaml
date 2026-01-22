@@ -1,9 +1,17 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# CAPABILITY INDEX v2.4
+# CAPABILITY INDEX v2.5
 # ═══════════════════════════════════════════════════════════════════════════════
 # 
 # Single source of truth for capability → feature → implementation → module
 # 
+# Changes from v2.4:
+#   - Renamed: compensation_available → supports_distributed_transactions
+#     (more accurate: Domain API supports ANY distributed transaction pattern, not just SAGA)
+#   - Removed static flags from domain-api.config: transactional, idempotent
+#     (these are now CALCULATED by config_rules based on selected capabilities)
+#   - Semantic clarification: supports_distributed_transactions is a CAPACITY,
+#     transactional/idempotent are ACTIONS (calculated when features selected)
+#
 # Changes from v2.3:
 #   - New capability: idempotency (cross-cutting, independent of transactions)
 #   - New attribute: implies (automatic dependencies between capabilities)
@@ -14,7 +22,7 @@
 # Changes from v2.2:
 #   - Removed incompatible_with between persistence.jpa and persistence.systemapi
 #     (hybrid scenarios are valid: some entities via JPA, others via System API)
-#   - Added requires_config to saga-compensation (requires compensation_available=true)
+#   - Added requires_config to saga-compensation (requires supports_distributed_transactions=true)
 #   - Added Rule 7: Config Prerequisite Validation
 #
 # Changes from v2.1:
@@ -83,7 +91,7 @@
 #
 # Rule 7: Config prerequisite validation
 #   Check requires_config constraints
-#   Example: saga-compensation requires compensation_available=true in API
+#   Example: saga-compensation requires supports_distributed_transactions=true in API
 #
 # Rule 8: Resolve implications
 #   Check implies at capability level
@@ -95,7 +103,7 @@
 #
 # ═══════════════════════════════════════════════════════════════════════════════
 
-version: "2.4"
+version: "2.5"
 domain: code
 last_updated: "2026-01-22"
 
@@ -243,7 +251,7 @@ capabilities:
         
         config:
           hateoas: false
-          compensation_available: false
+          supports_distributed_transactions: false
         
         input_spec:
           serviceName:
@@ -288,9 +296,9 @@ capabilities:
         
         config:
           hateoas: true
-          compensation_available: true
-          transactional: true
-          idempotent: true
+          supports_distributed_transactions: true
+          # NOTE: transactional and idempotent are CALCULATED by config_rules
+          # based on selected features, not static values here
         
         constraints:
           - "Must not call other Domain APIs directly"
@@ -343,7 +351,7 @@ capabilities:
         
         config:
           hateoas: false
-          compensation_available: false
+          supports_distributed_transactions: false
         
         input_spec:
           serviceName:
@@ -381,7 +389,7 @@ capabilities:
         
         config:
           hateoas: true
-          compensation_available: false
+          supports_distributed_transactions: false
         
         input_spec:
           serviceName:
@@ -420,7 +428,7 @@ capabilities:
         
         config:
           hateoas: false
-          compensation_available: false
+          supports_distributed_transactions: false
         
         input_spec:
           serviceName:
@@ -701,12 +709,12 @@ capabilities:
           - rollback
           - undo
         
-        # Config prerequisite: only APIs that support compensation
+        # Config prerequisite: only APIs that support distributed transactions
         requires_config:
           - capability: api-architecture
-            config_key: compensation_available
+            config_key: supports_distributed_transactions
             value: true
-            error_message: "Compensation requires an API type that supports it (e.g., domain-api)"
+            error_message: "SAGA compensation requires an API type that supports distributed transactions (e.g., domain-api)"
         
         implementations:
           - id: java-spring

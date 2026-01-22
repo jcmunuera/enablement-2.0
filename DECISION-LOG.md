@@ -453,3 +453,72 @@ Análisis de config flags `transactional` e `idempotent` en domain-api reveló:
 - Caso 7 ("Domain API con compensación"): implies añade idempotency pero sin módulo aún
 - Caso 9 ("Domain API idempotente"): capability matched pero WARNING: no implementation
 - Model version: 3.0.3
+
+### DEC-014: Renombrar compensation_available → supports_distributed_transactions {#dec-014}
+
+**Fecha:** 2026-01-22  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Test Case 17 ("Domain API transaccional") reveló confusión semántica:
+- domain-api.config tenía `transactional: true` como valor **estático**
+- Pero `transactional` también es un flag **calculado** por config_rules
+- `compensation_available` es muy específico (solo SAGA), pero Domain API soporta CUALQUIER patrón de transacción distribuida
+
+**Análisis:**
+
+```
+Domain API
+  └── compensation_available: true  ← Muy específico (solo SAGA)
+  
+Lo correcto:
+  └── supports_distributed_transactions: true  ← Capacidad general
+      └── Puede implementarse con:
+          ├── SAGA + Compensación
+          ├── Two-Phase Commit (2PC)
+          ├── TCC (Try-Confirm-Cancel)
+          └── Otros patrones futuros
+```
+
+**Decisiones:**
+
+1. **Renombrar flag de capacidad:**
+   - `compensation_available` → `supports_distributed_transactions`
+   - Semántica: "Esta API PUEDE participar en transacciones distribuidas"
+
+2. **Eliminar flags estáticos de domain-api.config:**
+   - QUITAR: `transactional: true`
+   - QUITAR: `idempotent: true`
+   - Estos son CALCULADOS por config_rules cuando se seleccionan features
+
+3. **Actualizar requires_config de saga-compensation:**
+   - `config_key: supports_distributed_transactions`
+   - `error_message: "SAGA compensation requires an API type that supports distributed transactions"`
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| capability-index.yaml | v2.4 → v2.5, rename flag, eliminar transactional/idempotent de domain-api |
+| discovery-guidance.md | v3.2 → v3.3, actualizar referencias |
+| CAPABILITY.md | v3.3 → v3.4, documentar cambio |
+| FLOW.md | Actualizar referencia |
+
+**Tabla de API Types (actualizada):**
+
+| API Type | supports_distributed_transactions | Puede usar SAGA | Puede usar 2PC |
+|----------|:---------------------------------:|:---------------:|:--------------:|
+| standard | false | ❌ | ❌ |
+| domain-api | true | ✅ | ✅ (futuro) |
+| system-api | false | ❌ | ❌ |
+| experience-api | false | ❌ | ❌ |
+| composable-api | false | ❌ | ❌ |
+
+**Clarificación semántica:**
+
+| Tipo | Ejemplo | Naturaleza |
+|------|---------|------------|
+| CAPACIDAD (estática) | `supports_distributed_transactions` | Define QUÉ puede hacer el API type |
+| ACCIÓN (calculada) | `transactional`, `idempotent` | Define QUÉ se está generando |
+
+**Model version:** 3.0.4
