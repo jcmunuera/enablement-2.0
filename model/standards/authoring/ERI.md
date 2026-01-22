@@ -1,10 +1,18 @@
 # Authoring Guide: ERI (Enterprise Reference Implementation)
 
-**Version:** 1.2  
-**Last Updated:** 2025-12-22  
-**Asset Type:** ERI
+**Version:** 1.3  
+**Last Updated:** 2026-01-22  
+**Asset Type:** ERI  
+**Model Version:** 3.0.1
 
 ---
+
+## What's New in v1.3
+
+| Change | Description |
+|--------|-------------|
+| **Skills Eliminated** | References to skills removed; modules are discovered via capabilities |
+| **automated_by Removed** | ERIs no longer reference skills; modules implement features directly |
 
 ## What's New in v1.2
 
@@ -26,7 +34,7 @@ Create an ERI when:
 - An ADR needs a concrete implementation for a specific technology
 - A new technology stack requires standardized patterns
 - A reference implementation is needed for developer guidance
-- Automation (skills) need a template to generate from
+- Automation (modules) need a template to generate from
 
 Do NOT create an ERI for:
 
@@ -238,8 +246,8 @@ tags:
   - {tag2}
 related:
   - eri-{domain}-XXX-...
-automated_by:
-  - skill-{domain}-XXX-...
+derived_modules:                    # Modules that derive from this ERI
+  - mod-{domain}-XXX-...
 cross_domain_usage: {domain}    # Optional: qa, design, gov
 ---
 ```
@@ -414,7 +422,7 @@ Requirements that implementations MUST satisfy:
 - List MUST have requirements (ERROR level)
 - List SHOULD have requirements (WARNING level)
 - Each item must be verifiable
-- These become validation rules for modules/skills
+- These become validation rules for modules
 
 ---
 
@@ -427,7 +435,7 @@ Before marking an ERI as "Active":
 - [ ] All dependencies are specified with versions
 - [ ] Configuration is complete and documented
 - [ ] Compliance checklist is defined
-- [ ] At least one module or skill references this ERI
+- [ ] At least one module references this ERI
 - [ ] Test examples are provided
 - [ ] Technology versions are specified
 
@@ -444,17 +452,17 @@ ADR
  ▼
 ERI
  │
- │ abstracts_to (1:N)
+ │ derived_to (1:N)
  │ One ERI typically has one Module, complex ERIs may have multiple
  │
  ▼
 Module
  │
- │ automated_by (1:N)
- │ Modules are used by Skills
+ │ implements (N:1)
+ │ Modules implement capability features via capability-index.yaml
  │
  ▼
-Skill
+Capability.Feature
 ```
 
 ### Required Relationships
@@ -462,14 +470,14 @@ Skill
 | Relationship | Requirement |
 |--------------|-------------|
 | `implements` | MUST reference at least one ADR |
-| `automated_by` | SHOULD have at least one skill |
+| `derived_modules` | SHOULD have at least one module that derives from this ERI |
 
 ### Optional Relationships
 
 | Relationship | When to Use |
 |--------------|-------------|
 | `related` | For related ERIs in the same pattern family |
-| `cross_domain_usage` | When used by skills in other domains |
+| `cross_domain_usage` | When used by modules in other domains (e.g., QA validation) |
 
 ---
 
@@ -481,7 +489,7 @@ ERIs have a primary domain but may be used by other domains:
 cross_domain_usage: qa
 ```
 
-This allows QA skills to validate code against the same ERI that CODE skills use to generate it.
+This allows QA modules to validate code against the same ERI that CODE modules use to generate it.
 
 ---
 
@@ -506,13 +514,13 @@ This allows QA skills to validate code against the same ERI that CODE skills use
 
 ## Machine-Readable Annex (MANDATORY)
 
-Every ERI **MUST** include a machine-readable annex at the end of the document. This annex defines constraints that automation (Modules, Skills) must respect when implementing the ERI.
+Every ERI **MUST** include a machine-readable annex at the end of the document. This annex defines constraints that automation (Modules) must respect when implementing the ERI.
 
 ### Purpose
 
 The annex serves as:
 - **Source of truth** for deriving MODULE validators
-- **Contract** that Skills must satisfy
+- **Contract** that Modules must satisfy
 - **AI-interpretable** specification for automated code generation
 - **Compliance checklist** in structured format
 
@@ -528,7 +536,7 @@ The annex MUST be the **last section** of the ERI, after "Changelog":
 
 ## Annex: Implementation Constraints
 
-> This annex defines rules that MUST be respected when creating Modules or Skills
+> This annex defines rules that MUST be respected when creating Modules
 > based on this ERI. Compliance is mandatory.
 
 ```yaml
@@ -718,7 +726,7 @@ MODULE Validator (tier-3-module)
     │
     │ executed by
     ▼
-SKILL validate.sh
+Flow Validation (flow-generate / flow-transform)
 ```
 
 When creating a MODULE from an ERI:
@@ -733,8 +741,9 @@ When creating a MODULE from an ERI:
 - `model/standards/ASSET-STANDARDS-v1.4.md` - ERI structure specification
 - `authoring/ADR.md` - How to create ADRs that ERIs implement
 - `authoring/MODULE.md` - How to create Modules from ERIs
+- `authoring/CAPABILITY.md` - How modules implement capability features
 - `knowledge/ERIs/` - Existing ERIs
 
 ---
 
-**Last Updated:** 2025-12-01
+**Last Updated:** 2026-01-22

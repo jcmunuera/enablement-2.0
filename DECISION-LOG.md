@@ -329,3 +329,28 @@ Las guías de authoring estaban desactualizadas:
 **Implicación:**
 - Los autores ahora tienen guías coherentes con capability-index v2.2
 - Nuevas capabilities deben seguir taxonomía foundational/layered/cross-cutting
+
+---
+
+## 2026-01-22 (Sesión: Revisión Authoring Guides)
+
+### DEC-011: Completar actualización de Authoring Guides {#dec-011}
+
+**Fecha:** 2026-01-22  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Tras DEC-010 (ayer), quedaban por revisar: FLOW.md, ADR.md, ERI.md, VALIDATOR.md
+
+**Revisión realizada:**
+
+| Documento | Versión | Cambios |
+|-----------|---------|---------|
+| FLOW.md | 3.0 → 3.1 | Ya actualizado ayer (phase_group, cross-cutting independence) |
+| ADR.md | 1.0 | ✅ Sin cambios necesarios (agnóstico de Skills) |
+| ERI.md | 1.2 → 1.3 | Eliminar refs a Skills, actualizar automated_by → derived_modules, diagrama relationships |
+| VALIDATOR.md | 1.0 → 1.1 | Eliminar refs a Skills, actualizar a modules/flows |
+
+**Implicación:**
+- Todos los authoring guides ahora coherentes con modelo v3.0.1
+- No quedan referencias a Skills en ningún documento de authoring

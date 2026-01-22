@@ -1,8 +1,18 @@
 # Authoring Guide: VALIDATOR
 
-**Version:** 1.0  
-**Last Updated:** 2025-11-28  
-**Asset Type:** Validator
+**Version:** 1.1  
+**Last Updated:** 2026-01-22  
+**Asset Type:** Validator  
+**Model Version:** 3.0.1
+
+---
+
+## What's New in v1.1
+
+| Change | Description |
+|--------|-------------|
+| **Skills Eliminated** | References updated from skills to modules/flows |
+| **Flow Integration** | Validators now executed by flows (flow-generate/flow-transform) |
 
 ---
 
@@ -16,12 +26,12 @@ Create a Validator when:
 
 - A new technology stack needs validation support
 - A new artifact type is being generated
-- Validation logic should be reusable across skills
+- Validation logic should be reusable across modules
 - ERI constraints need automated verification
 
 Do NOT create a Validator for:
 
-- One-off validation logic (embed in skill instead)
+- One-off validation logic (embed in module instead)
 - Module-specific validation (use Tier 3 in module)
 - Runtime/CI-CD validation (Tier 4, future)
 
@@ -264,11 +274,11 @@ Validators are organized by **artifact type**, not domain:
 ```
 val-tier2-code-projects-java-spring
   │
-  ├── Used by: skill-code-020-generate-microservice-java-spring
-  │            (CODE domain - generate)
+  ├── Used by: mod-code-020-microservice-java-spring
+  │            (CODE domain - flow-generate)
   │
-  └── Used by: skill-qa-010-analyze-java-code
-               (QA domain - analyze)
+  └── Used by: mod-qa-010-analyze-java-code
+               (QA domain - validation)
 ```
 
 Document cross-domain usage in VALIDATOR.md:
@@ -292,7 +302,7 @@ Before deploying a validator:
 - [ ] Skip conditions are documented
 - [ ] Dependencies are listed
 - [ ] Cross-domain usage is documented
-- [ ] At least one skill references this validator
+- [ ] At least one module references this validator
 
 ---
 
@@ -392,9 +402,9 @@ When adding support for a new technology (e.g., Python):
    - `requirements-check.sh` - Dependencies present
    - `test-check.sh` - Tests pass
 
-4. **Update skills** that generate Python code to use validators
+4. **Update modules** that generate Python code to use validators
 
-5. **Document cross-domain usage** for QA skills
+5. **Document cross-domain usage** for QA modules
 
 ---
 
@@ -403,9 +413,9 @@ When adding support for a new technology (e.g., Python):
 - `model/standards/validation/README.md` - Validation system overview
 - `model/standards/ASSET-STANDARDS-v1.4.md` - Validator structure
 - `runtime/validators/` - Existing validators
-- `authoring/SKILL.md` - How skills use validators
 - `authoring/MODULE.md` - Tier 3 validators in modules
+- `authoring/FLOW.md` - How flows execute validators
 
 ---
 
-**Last Updated:** 2025-11-28
+**Last Updated:** 2026-01-22

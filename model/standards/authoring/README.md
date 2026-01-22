@@ -51,11 +51,11 @@ Capability Types (v2.2):
 | Asset Type | Guide | Version | Description |
 |------------|-------|---------|-------------|
 | ADR | [ADR.md](./ADR.md) | 1.0 | Architecture Decision Records |
-| ERI | [ERI.md](./ERI.md) | 1.2 | Enterprise Reference Implementations |
+| ERI | [ERI.md](./ERI.md) | **1.3** | Enterprise Reference Implementations ⭐ |
 | Module | [MODULE.md](./MODULE.md) | **3.0** | Reusable code templates ⭐ |
 | **Capability** | [CAPABILITY.md](./CAPABILITY.md) | **3.1** | **Feature definitions with implementations** ⭐ |
-| Validator | [VALIDATOR.md](./VALIDATOR.md) | 1.0 | Artifact validation components |
-| Flow | [FLOW.md](./FLOW.md) | **3.0** | Execution flows (generate/transform) ⭐ |
+| Validator | [VALIDATOR.md](./VALIDATOR.md) | **1.1** | Artifact validation components ⭐ |
+| Flow | [FLOW.md](./FLOW.md) | **3.1** | Execution flows (generate/transform) ⭐ |
 | Tags | [TAGS.md](./TAGS.md) | 2.0 | Discovery keywords (deprecated, see CAPABILITY.md) |
 
 ### Removed in v3.0

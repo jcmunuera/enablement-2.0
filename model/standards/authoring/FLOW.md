@@ -1,10 +1,18 @@
 # Authoring Guide: Execution Flows
 
-**Version:** 3.0  
-**Date:** 2026-01-20  
-**Model Version:** 3.0
+**Version:** 3.1  
+**Date:** 2026-01-22  
+**Model Version:** 3.0.1  
+**capability-index Version:** 2.2
 
 ---
+
+## What's New in v3.1
+
+| Change | Description |
+|--------|-------------|
+| **phase_group Attribute** | Phase assignment now reads `phase_group` from capability-index (not hardcoded) |
+| **Cross-cutting Independence** | Cross-cutting capabilities can apply without foundational (flow-transform) |
 
 ## What's New in v3.0
 
@@ -12,7 +20,7 @@
 |--------|-------------|
 | **Skills Eliminated** | Flows are now triggered by discovery, not by skill selection |
 | **Two Primary Flows** | `flow-generate` and `flow-transform` replace GENERATE/ADD |
-| **Phase-Based Execution** | Features grouped by nature (structural → implementation → cross-cutting) |
+| **Phase-Based Execution** | Features grouped by `phase_group` attribute |
 | **Flow Selection** | Automatic based on context (existing code or not) |
 
 ---
@@ -126,46 +134,85 @@ input_spec:                  # Required user input
 
 ## Phase Planning
 
-Features are grouped into phases based on their **nature**:
+Features are grouped into phases based on their **`phase_group`** attribute in capability-index.yaml:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           PHASE PLANNING                                     │
+│                           PHASE PLANNING (v2.2)                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  PHASE 1: STRUCTURAL                                                        │
+│  PHASE 1: STRUCTURAL (phase_group: structural)                              │
 │  Nature: Defines project structure, cannot be modified later                │
-│  Features: architecture.*, api-architecture.*                               │
-│  Examples: hexagonal-light, domain-api                                      │
+│  Capabilities: architecture, api-architecture                               │
+│  Examples: hexagonal-light, standard, domain-api                            │
 │                                                                              │
-│  PHASE 2: IMPLEMENTATION                                                    │
+│  PHASE 2: IMPLEMENTATION (phase_group: implementation)                      │
 │  Nature: Implements ports, connects to backends                             │
-│  Features: persistence.*, integration.*                                     │
-│  Examples: systemapi, api-rest                                              │
+│  Capabilities: persistence, integration                                     │
+│  Examples: jpa, systemapi, api-rest                                         │
 │                                                                              │
-│  PHASE 3+: CROSS-CUTTING                                                    │
+│  PHASE 3+: CROSS-CUTTING (phase_group: cross-cutting)                       │
 │  Nature: Adds aspects on top of existing code                               │
-│  Features: resilience.*, distributed-transactions.*                         │
+│  Capabilities: resilience, distributed-transactions                         │
 │  Examples: circuit-breaker, retry, saga-compensation                        │
+│                                                                              │
+│  NOTE: Cross-cutting capabilities do NOT require foundational.              │
+│        They can be applied via flow-transform to any existing code.         │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Phase Grouping Rules
+### Phase Grouping Algorithm (v2.2)
+
+Phase assignment reads from `capability-index.yaml`, NOT from hardcoded lists:
 
 ```python
-def get_feature_nature(feature: str) -> str:
-    capability = feature.split('.')[0]
+def get_feature_phase_group(feature: str, capability_index: dict) -> str:
+    """
+    Get phase_group for a feature from capability-index.yaml.
     
-    STRUCTURAL = ['architecture', 'api-architecture']
-    IMPLEMENTATION = ['persistence', 'integration']
+    In v2.2, each capability has an explicit phase_group attribute:
+    - structural → Phase 1
+    - implementation → Phase 2  
+    - cross-cutting → Phase 3+
+    """
+    capability_name = feature.split('.')[0]
+    capability = capability_index['capabilities'][capability_name]
+    return capability['phase_group']
+
+
+def group_features_by_phase(features: list, capability_index: dict) -> dict:
+    """Group features into phases based on their phase_group."""
+    phases = {
+        'structural': [],      # Phase 1
+        'implementation': [],  # Phase 2
+        'cross-cutting': []    # Phase 3+
+    }
     
-    if capability in STRUCTURAL:
-        return 'structural'
-    elif capability in IMPLEMENTATION:
-        return 'implementation'
-    else:
-        return 'cross-cutting'
+    for feature in features:
+        phase_group = get_feature_phase_group(feature, capability_index)
+        phases[phase_group].append(feature)
+    
+    return phases
+```
+
+### Why phase_group is Explicit
+
+In capability-index v2.2, `phase_group` is a required attribute because:
+
+1. **Type ≠ Phase:** `api-architecture` is type `layered` but phase_group `structural`
+2. **Flexibility:** New capabilities can be assigned to any phase
+3. **No Ambiguity:** Phase assignment is deterministic from the index
+
+```yaml
+# Example from capability-index.yaml v2.2
+api-architecture:
+  type: layered              # What it IS
+  phase_group: structural    # When it EXECUTES (Phase 1)
+
+persistence:
+  type: layered              # What it IS  
+  phase_group: implementation # When it EXECUTES (Phase 2)
 ```
 
 ---
@@ -349,12 +396,14 @@ Before considering a flow complete:
 
 ## Related Documents
 
-- `runtime/discovery/discovery-guidance.md` - Flow selection logic
+- `runtime/discovery/capability-index.yaml` - Source of `phase_group` attribute (v2.2)
+- `runtime/discovery/discovery-guidance.md` - Flow selection logic and 6 discovery rules
 - `runtime/flows/code/flow-generate.md` - Generation flow
 - `runtime/flows/code/flow-transform.md` - Transformation flow
 - `model/standards/DETERMINISM-RULES.md` - Code generation rules
 - `authoring/MODULE.md` - Module structure
+- `authoring/CAPABILITY.md` - Capability types and phase_group
 
 ---
 
-**END OF DOCUMENT**
+**Last Updated:** 2026-01-22
