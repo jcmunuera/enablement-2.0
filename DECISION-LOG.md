@@ -25,6 +25,10 @@ Este documento registra las decisiones de diseño importantes tomadas durante el
 - [DEC-015](#dec-015) - Roles de transacción distribuida y custom-api
 - [DEC-016](#dec-016) - Resolución de ambigüedad persistence → jpa
 - [DEC-017](#dec-017) - Semántica "transaccional" → domain-api
+- [DEC-018](#dec-018) - Output Specification por Flow
+- [DEC-019](#dec-019) - Formato manifest.json v3.0 (sin skills)
+- [DEC-020](#dec-020) - Schemas de Trazabilidad
+- [DEC-021](#dec-021) - Templates de Test en Módulos
 
 ---
 
@@ -698,3 +702,187 @@ TC17/TC20 "Genera una Domain API transaccional" resolvía a SAGA:
 - config_flags: {transactional: false, idempotent: false} para Domain API básico
 
 **Model version:** 3.0.6
+
+---
+
+## 2026-01-23 (Sesión: Reproducibilidad y Testing)
+
+### DEC-018: Output Specification por Flow {#dec-018}
+
+**Fecha:** 2026-01-23  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+El modelo v3.0 no especificaba completamente qué debe producir una generación. Esto impedía:
+- Reproducibilidad (diferentes sesiones producían estructuras diferentes)
+- Validación automática (no había contrato de output)
+- Testing determinístico
+
+**Análisis del gap:**
+
+| Elemento | Generado | Documentado |
+|----------|----------|-------------|
+| Estructura proyecto | ✅ | ✅ (flow-generate.md) |
+| Paquete completo | ✅ | ❌ |
+| Directorio /input | ✅ | ❌ |
+| Directorio /trace | ✅ | ❌ |
+| manifest.json | ✅ | ❌ |
+
+**Opciones:**
+- A) Documento único para todos los flows
+- B) Output spec por flow (flow-generate-output.md, flow-transform-output.md)
+
+**Decisión:** Opción B - Output specification por flow
+
+**Justificación:**
+- Cada flow produce output diferente:
+  - `flow-generate`: Proyecto nuevo completo + trazas
+  - `flow-transform`: Posiblemente solo diffs o proyecto modificado
+- Separación de concerns: proceso (flow) vs contrato (output-spec)
+- Permite evolución independiente
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `runtime/flows/code/flow-generate-output.md` | NUEVO - Especifica paquete completo |
+| `runtime/flows/code/flow-generate.md` | Añadida referencia a output-spec |
+| `runtime/flows/code/GENERATION-ORCHESTRATOR.md` | MOVIDO desde flows/ |
+
+**Estructura definida:**
+
+```
+gen_{service-name}_{YYYYMMDD_HHMMSS}/
+├── input/           # Inputs originales preservados
+├── output/          # Proyecto generado + .enablement/manifest.json
+├── trace/           # discovery-trace, generation-trace, modules-used
+└── validation/      # Scripts tier1/2/3 + reports/
+```
+
+---
+
+### DEC-019: Formato manifest.json v3.0 (sin skills) {#dec-019}
+
+**Fecha:** 2026-01-23  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+El manifest.json de paquetes generados aún usaba estructura de v2.x con `skill` object, inconsistente con el modelo v3.0 que eliminó skills (DEC-001).
+
+**Antes (v2.x):**
+```json
+{
+  "skill": {
+    "id": "skill-code-001-domain-api-java-spring",
+    "version": "3.0.6"
+  },
+  "modules": [...]
+}
+```
+
+**Después (v3.0):**
+```json
+{
+  "enablement": {
+    "version": "3.0.6",
+    "domain": "code",
+    "flow": "flow-generate"
+  },
+  "discovery": {
+    "stack": "java-spring",
+    "capabilities": ["architecture.hexagonal-light", ...],
+    "features": ["hexagonal-light", ...]
+  },
+  "modules": [...]
+}
+```
+
+**Decisión:** Reemplazar `skill` con `enablement` + `discovery`
+
+**Justificación:**
+- Alineación con modelo v3.0 (capability-driven)
+- `enablement` captura metadata de plataforma
+- `discovery` captura resultado del capability discovery
+- Cada módulo referencia su capability de origen
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `runtime/schemas/trace/manifest.schema.json` | Actualizado: skill → enablement + discovery |
+| `runtime/flows/code/flow-generate-output.md` | Ejemplo actualizado |
+| `runtime/flows/code/GENERATION-ORCHESTRATOR.md` | Código ejemplo actualizado |
+
+---
+
+### DEC-020: Schemas de Trazabilidad {#dec-020}
+
+**Fecha:** 2026-01-23  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Los archivos de traza (discovery-trace.json, generation-trace.json, etc.) no tenían schemas formales, lo que impedía:
+- Validación automática de trazas
+- Documentación clara de estructura esperada
+- Integración con herramientas de análisis
+
+**Decisión:** Crear JSON Schemas para todos los archivos de traza
+
+**Schemas creados:**
+
+| Schema | Propósito | Valida |
+|--------|-----------|--------|
+| `manifest.schema.json` | Metadata de generación | `.enablement/manifest.json` |
+| `discovery-trace.schema.json` | Traza de discovery | `trace/discovery-trace.json` |
+| `generation-trace.schema.json` | Traza de generación por fases | `trace/generation-trace.json` |
+| `modules-used.schema.json` | Contribución de cada módulo | `trace/modules-used.json` |
+| `validation-results.schema.json` | Resultados de validación | `validation/reports/validation-results.json` |
+
+**Justificación:**
+- Validación automática con `ajv` o `jsonschema`
+- Documentación ejecutable
+- Base para testing de determinismo
+- Facilita debugging de generaciones fallidas
+
+**Ubicación:** `runtime/schemas/trace/`
+
+---
+
+### DEC-021: Templates de Test en Módulos {#dec-021}
+
+**Fecha:** 2026-01-23  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Los módulos generaban código de producción pero los tests eran ad-hoc o incompletos. Esto causaba:
+- Tests inconsistentes entre generaciones
+- No todos los módulos contribuían tests
+- Difícil saber qué tests debería generar cada módulo
+
+**Decisión:** Cada módulo define explícitamente qué tests genera en `templates/test/`
+
+**Templates añadidos:**
+
+| Módulo | Templates de Test | Propósito |
+|--------|-------------------|-----------|
+| mod-015 | `EntityTest.java.tpl` | Factory methods, domain behavior |
+| mod-015 | `EntityIdTest.java.tpl` | Value object creation, equality |
+| mod-015 | `ControllerTest.java.tpl` | REST endpoints (@WebMvcTest) |
+| mod-019 | `AssemblerTest.java.tpl` | HATEOAS link generation |
+
+**Justificación:**
+- Cada módulo es responsable de sus propios tests
+- Tests consistentes entre generaciones
+- Sección "Tests Generated" en MODULE.md documenta expectativa
+- Patrones claros: Domain tests sin Spring, Controller tests con @WebMvcTest
+
+**Convención de patrones de test:**
+
+| Layer | Spring Context | Framework |
+|-------|---------------|-----------|
+| Domain (Entity, ValueObject) | None (pure POJO) | JUnit 5 + AssertJ |
+| Domain Service | None (Mockito only) | JUnit 5 + Mockito + AssertJ |
+| Adapter OUT (SystemApi) | None (Mockito only) | JUnit 5 + Mockito + AssertJ |
+| Adapter IN (Controller) | @WebMvcTest | Spring Test + MockMvc |
+
+**Model version:** 3.0.7

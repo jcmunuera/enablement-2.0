@@ -69,8 +69,29 @@ templates/
 │   ├── pom.xml.tpl                   # Maven configuration
 │   └── application.yml.tpl           # Spring configuration
 └── test/
-    └── DomainServiceTest.java.tpl    # Domain layer tests
+    ├── DomainServiceTest.java.tpl    # Domain service tests
+    ├── EntityTest.java.tpl           # Domain entity tests
+    ├── EntityIdTest.java.tpl         # Value object ID tests
+    └── ControllerTest.java.tpl       # REST controller tests
 ```
+
+---
+
+## Tests Generated
+
+This module generates the following unit tests:
+
+| Test File | Layer | Purpose | Spring Context |
+|-----------|-------|---------|----------------|
+| `{{Entity}}Test.java` | Domain | Factory methods, domain behavior, equality | None (pure POJO) |
+| `{{Entity}}IdTest.java` | Domain | Value object creation, equality, validation | None (pure POJO) |
+| `{{Entity}}DomainServiceTest.java` | Domain | Domain service logic with mocked repository | None (Mockito only) |
+| `{{Entity}}ControllerTest.java` | Adapter IN | REST endpoint behavior, request validation | @WebMvcTest |
+
+**Test Patterns:**
+- Domain tests: Pure POJO testing, no Spring context
+- Controller tests: @WebMvcTest with @MockBean for application service
+- All tests use AssertJ for assertions and Mockito for mocks
 
 ---
 

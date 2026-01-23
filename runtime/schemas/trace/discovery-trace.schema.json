@@ -1,0 +1,179 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "enablement/schemas/trace/discovery-trace.schema.json",
+  "title": "Discovery Trace",
+  "description": "Trace of the discovery phase - how capabilities and modules were determined from the prompt",
+  "type": "object",
+  "required": ["version", "timestamp", "prompt_analysis", "capability_resolution", "module_resolution"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Discovery timestamp (ISO-8601)"
+    },
+    "prompt_analysis": {
+      "type": "object",
+      "description": "Analysis of the user prompt",
+      "required": ["raw_prompt", "detected_intent"],
+      "properties": {
+        "raw_prompt": {
+          "type": "string",
+          "description": "Original user prompt verbatim"
+        },
+        "detected_intent": {
+          "type": "string",
+          "enum": ["generate", "transform", "migrate", "refactor"],
+          "description": "Detected user intent"
+        },
+        "entities_identified": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Domain entities identified in prompt (e.g., Customer, Account)"
+        },
+        "features_mentioned": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Features or patterns mentioned (e.g., hexagonal, resilience)"
+        },
+        "constraints": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Constraints or requirements mentioned"
+        }
+      }
+    },
+    "capability_resolution": {
+      "type": "object",
+      "description": "How capabilities were resolved from the prompt",
+      "required": ["capabilities_detected"],
+      "properties": {
+        "rules_applied": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["rule", "result"],
+            "properties": {
+              "rule": {
+                "type": "string",
+                "description": "Rule identifier (e.g., DC-001)"
+              },
+              "condition": {
+                "type": "string",
+                "description": "Condition that triggered the rule"
+              },
+              "result": {
+                "type": "string",
+                "description": "Capability or feature added"
+              }
+            }
+          },
+          "description": "Discovery rules that were applied"
+        },
+        "capabilities_detected": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z-]+\\.[a-z-]+$"
+          },
+          "description": "Final list of capabilities (e.g., architecture.hexagonal-light)"
+        },
+        "dependencies_added": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Capabilities added due to dependencies"
+        },
+        "implications_resolved": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Capabilities added due to implications (e.g., distributed-transactions implies idempotency)"
+        }
+      }
+    },
+    "module_resolution": {
+      "type": "object",
+      "description": "How modules were resolved for the stack",
+      "required": ["stack", "modules_selected"],
+      "properties": {
+        "stack": {
+          "type": "string",
+          "description": "Technology stack (e.g., java-spring)"
+        },
+        "stack_detection": {
+          "type": "string",
+          "enum": ["explicit", "inferred", "default"],
+          "description": "How the stack was determined"
+        },
+        "modules_selected": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["capability", "module"],
+            "properties": {
+              "capability": {
+                "type": "string",
+                "description": "Capability being implemented"
+              },
+              "module": {
+                "type": "string",
+                "description": "Module selected for this capability"
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why this module was selected"
+              }
+            }
+          }
+        }
+      }
+    },
+    "config_derivation": {
+      "type": "object",
+      "description": "Configuration derived from capabilities",
+      "properties": {
+        "static_config": {
+          "type": "object",
+          "description": "Static config from feature definitions (e.g., hateoas: true)",
+          "additionalProperties": true
+        },
+        "config_flags": {
+          "type": "object",
+          "description": "Calculated config flags (e.g., transactional, idempotent)",
+          "additionalProperties": {"type": "boolean"}
+        }
+      }
+    },
+    "phase_assignment": {
+      "type": "object",
+      "description": "How features were assigned to phases",
+      "properties": {
+        "phase_1_structural": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "phase_2_implementation": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "phase_3_cross_cutting": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Any warnings generated during discovery"
+    },
+    "errors": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Any errors encountered (should be empty for successful discovery)"
+    }
+  }
+}

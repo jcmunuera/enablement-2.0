@@ -1,0 +1,175 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "enablement/schemas/trace/validation-results.schema.json",
+  "title": "Validation Results",
+  "description": "Results from running the validation suite",
+  "type": "object",
+  "required": ["version", "run_id", "timestamp", "tiers", "summary"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Schema version"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[0-9]{8}_[0-9]{6}$",
+      "description": "Run identifier (YYYYMMDD_HHMMSS)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Validation run timestamp"
+    },
+    "project_path": {
+      "type": "string",
+      "description": "Path to the validated project"
+    },
+    "tiers": {
+      "type": "object",
+      "description": "Results by validation tier",
+      "properties": {
+        "tier1": {
+          "$ref": "#/definitions/tierResult"
+        },
+        "tier2": {
+          "$ref": "#/definitions/tierResult"
+        },
+        "tier3": {
+          "$ref": "#/definitions/tierResult"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "description": "Overall validation summary",
+      "required": ["overall_result", "total_validations", "passed", "failed"],
+      "properties": {
+        "overall_result": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "PASS_WITH_WARNINGS"],
+          "description": "Overall validation result"
+        },
+        "total_validations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total validation duration in milliseconds"
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "description": "Environment information",
+      "properties": {
+        "os": {"type": "string"},
+        "shell": {"type": "string"},
+        "java_version": {"type": "string"},
+        "maven_version": {"type": "string"}
+      }
+    }
+  },
+  "definitions": {
+    "tierResult": {
+      "type": "object",
+      "required": ["result", "validations"],
+      "properties": {
+        "result": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "PASS_WITH_WARNINGS", "SKIPPED"]
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "skipped": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "validations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/validationResult"
+          }
+        }
+      }
+    },
+    "validationResult": {
+      "type": "object",
+      "required": ["name", "result"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Validation name (e.g., naming-conventions)"
+        },
+        "script": {
+          "type": "string",
+          "description": "Script filename"
+        },
+        "result": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "SKIPPED", "WARN"]
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "message": {
+          "type": "string",
+          "description": "Result message or error"
+        },
+        "details": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "Detailed output lines"
+        },
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "result": {
+                "type": "string",
+                "enum": ["PASS", "FAIL", "WARN"]
+              },
+              "message": {"type": "string"}
+            }
+          },
+          "description": "Individual checks within this validation"
+        }
+      }
+    }
+  }
+}

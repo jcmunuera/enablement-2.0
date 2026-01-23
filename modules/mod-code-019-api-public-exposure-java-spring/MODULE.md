@@ -79,9 +79,26 @@ templates/
 │   └── FilterRequest.java.tpl        # Base filter criteria
 ├── assembler/
 │   └── EntityModelAssembler.java.tpl # HATEOAS link builder
-└── config/
-    └── WebConfig.java.tpl            # Web configuration (NO Spring Data)
+├── config/
+│   └── WebConfig.java.tpl            # Web configuration (NO Spring Data)
+└── test/
+    └── AssemblerTest.java.tpl        # HATEOAS assembler tests
 ```
+
+---
+
+## Tests Generated
+
+This module generates the following unit tests:
+
+| Test File | Layer | Purpose | Spring Context |
+|-----------|-------|---------|----------------|
+| `{{Entity}}ModelAssemblerTest.java` | Adapter IN | HATEOAS link generation | None (pure POJO) |
+
+**Test Patterns:**
+- Assembler tests: Verify HATEOAS links (self, collection)
+- No Spring context needed - test link building logic directly
+- Uses AssertJ for assertions
 
 ---
 

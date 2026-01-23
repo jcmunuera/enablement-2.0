@@ -3,8 +3,13 @@
 # MOD-002: Retry Pattern Validation Script
 # Tier 3 validation for Resilience4j Retry implementation
 # =============================================================================
+# Version: 1.1
+# Updated: 2026-01-23
+# Changes: Accept @Retry in output adapters (infrastructure/adapter/out/)
+#          in addition to application layer
+# =============================================================================
 
-set -e
+# Note: Not using 'set -e' because we handle errors manually
 
 # Colors for output
 RED='\033[0;31m'
@@ -30,12 +35,12 @@ echo "=============================================="
 
 error() {
     echo -e "${RED}[ERROR]${NC} $1"
-    ((ERRORS++))
+    ERRORS=$((ERRORS + 1))
 }
 
 warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
-    ((WARNINGS++))
+    WARNINGS=$((WARNINGS + 1))
 }
 
 success() {
@@ -56,7 +61,7 @@ echo "--- Structural Constraints ---"
 # Check 1: @Retry not in domain layer
 info "Checking @Retry not in domain layer..."
 if grep -r "@Retry" "$TARGET_DIR/src/main/java" 2>/dev/null | grep -q "/domain/"; then
-    error "@Retry annotation found in domain layer - MUST be in application layer only"
+    error "@Retry annotation found in domain layer - MUST NOT be in domain"
 else
     success "@Retry not in domain layer"
 fi
@@ -64,17 +69,22 @@ fi
 # Check 2: @Retry not directly on controllers
 info "Checking @Retry not on controllers..."
 if grep -r "@Retry" "$TARGET_DIR/src/main/java" 2>/dev/null | grep -q "/controller/"; then
-    warning "@Retry found on controller - SHOULD be on application service"
+    warning "@Retry found on controller - SHOULD be on service or adapter"
 else
     success "@Retry not on controllers"
 fi
 
-# Check 3: @Retry exists somewhere in application layer
-info "Checking @Retry exists in application layer..."
-if grep -r "@Retry" "$TARGET_DIR/src/main/java" 2>/dev/null | grep -q "/application/"; then
-    success "@Retry found in application layer"
+# Check 3: @Retry exists in application layer OR output adapters (both valid)
+info "Checking @Retry location..."
+RETRY_IN_APP=$(grep -r "@Retry" "$TARGET_DIR/src/main/java" 2>/dev/null | grep -c "/application/" || true)
+RETRY_IN_ADAPTER=$(grep -r "@Retry" "$TARGET_DIR/src/main/java" 2>/dev/null | grep -c "/adapter/out/\|/infrastructure/adapter/" || true)
+
+if [ "$RETRY_IN_APP" -gt 0 ]; then
+    success "@Retry found in application layer ($RETRY_IN_APP occurrences)"
+elif [ "$RETRY_IN_ADAPTER" -gt 0 ]; then
+    success "@Retry found in output adapter ($RETRY_IN_ADAPTER occurrences) - valid for System API calls"
 else
-    warning "@Retry not found in application layer - expected for retry pattern"
+    warning "@Retry not found in application layer or output adapters"
 fi
 
 # Check 4: CircuitBreaker before Retry (if both exist)

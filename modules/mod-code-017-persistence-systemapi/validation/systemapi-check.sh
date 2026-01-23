@@ -3,8 +3,12 @@
 # MOD-017: System API Persistence Validation Script
 # Tier 3 validation for System API persistence implementation
 # =============================================================================
+# Version: 1.1
+# Updated: 2026-01-23
+# Changes: Support multiple valid path variants for repository and adapter
+# =============================================================================
 
-set -e
+# Note: Not using 'set -e' because we handle errors manually with ERRORS counter
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -23,12 +27,12 @@ echo "=============================================="
 
 error() {
     echo -e "${RED}[ERROR]${NC} $1"
-    ((ERRORS++))
+    ERRORS=$((ERRORS + 1))
 }
 
 warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
-    ((WARNINGS++))
+    WARNINGS=$((WARNINGS + 1))
 }
 
 success() {
@@ -42,28 +46,51 @@ info() {
 echo ""
 echo "--- Structural Constraints ---"
 
-# Check 1: Repository interface in domain
-info "Checking repository interface in domain/repository/..."
-if find "$TARGET_DIR/src/main/java" -path "*/domain/repository/*Repository.java" 2>/dev/null | grep -q .; then
-    success "Repository interface found in domain/repository/"
-else
-    error "Repository interface not found in domain/repository/"
+# Check 1: Repository interface in domain (supports multiple valid locations)
+# Valid paths: domain/repository/, domain/port/, domain/port/out/
+info "Checking repository interface in domain layer..."
+REPO_FOUND=false
+for pattern in "*/domain/repository/*Repository.java" "*/domain/port/*Repository.java" "*/domain/port/out/*Repository.java"; do
+    if find "$TARGET_DIR/src/main/java" -path "$pattern" 2>/dev/null | grep -q .; then
+        REPO_PATH=$(find "$TARGET_DIR/src/main/java" -path "$pattern" 2>/dev/null | head -1)
+        success "Repository interface found: ${REPO_PATH#$TARGET_DIR/}"
+        REPO_FOUND=true
+        break
+    fi
+done
+if [ "$REPO_FOUND" = false ]; then
+    error "Repository interface not found in domain layer (checked: domain/repository/, domain/port/, domain/port/out/)"
 fi
 
-# Check 2: System API adapter in correct location
-info "Checking System API adapter in adapter/systemapi/..."
-if find "$TARGET_DIR/src/main/java" -path "*/adapter/systemapi/*Adapter.java" 2>/dev/null | grep -q .; then
-    success "System API adapter found in adapter/systemapi/"
-else
-    error "System API adapter not found in adapter/systemapi/"
+# Check 2: System API adapter in correct location (supports multiple valid locations)
+# Valid paths: adapter/systemapi/, adapter/out/systemapi/, infrastructure/adapter/out/systemapi/
+info "Checking System API adapter..."
+ADAPTER_FOUND=false
+for pattern in "*/adapter/systemapi/*Adapter.java" "*/adapter/out/systemapi/*Adapter.java" "*/infrastructure/adapter/out/systemapi/*Adapter.java"; do
+    if find "$TARGET_DIR/src/main/java" -path "$pattern" 2>/dev/null | grep -q .; then
+        ADAPTER_PATH=$(find "$TARGET_DIR/src/main/java" -path "$pattern" 2>/dev/null | head -1)
+        success "System API adapter found: ${ADAPTER_PATH#$TARGET_DIR/}"
+        ADAPTER_FOUND=true
+        break
+    fi
+done
+if [ "$ADAPTER_FOUND" = false ]; then
+    error "System API adapter not found (checked: adapter/systemapi/, adapter/out/systemapi/, infrastructure/adapter/out/systemapi/)"
 fi
 
-# Check 3: Client in adapter/systemapi/client
-info "Checking client in adapter/systemapi/client/..."
-if find "$TARGET_DIR/src/main/java" -path "*/adapter/systemapi/client/*Client.java" 2>/dev/null | grep -q .; then
-    success "System API client found in adapter/systemapi/client/"
-else
-    warning "System API client not found in adapter/systemapi/client/"
+# Check 3: Client in adapter (supports multiple valid locations)
+info "Checking System API client..."
+CLIENT_FOUND=false
+for pattern in "*/systemapi/client/*Client.java" "*/systemapi/*Client.java"; do
+    if find "$TARGET_DIR/src/main/java" -path "$pattern" 2>/dev/null | grep -q .; then
+        CLIENT_PATH=$(find "$TARGET_DIR/src/main/java" -path "$pattern" 2>/dev/null | head -1)
+        success "System API client found: ${CLIENT_PATH#$TARGET_DIR/}"
+        CLIENT_FOUND=true
+        break
+    fi
+done
+if [ "$CLIENT_FOUND" = false ]; then
+    warning "System API client not found in expected location"
 fi
 
 echo ""
@@ -100,7 +127,7 @@ echo "--- Configuration Constraints ---"
 
 # Check 7: Base URL externalized
 info "Checking base URL externalization..."
-if grep -r "base-url\|baseUrl" "$TARGET_DIR/src/main/resources" 2>/dev/null | grep -q '\${'; then
+if grep -rE "(base-url|baseUrl|url).*\\\$\{" "$TARGET_DIR/src/main/resources" 2>/dev/null | grep -q .; then
     success "Base URL uses environment variable"
 else
     warning "Base URL should be externalized via environment variable"
@@ -119,7 +146,7 @@ echo "--- Headers Constraints ---"
 
 # Check 9: Correlation headers
 info "Checking correlation headers..."
-if grep -r "X-Correlation-Id\|X-Source-System" "$TARGET_DIR/src/main/java" 2>/dev/null | grep -q .; then
+if grep -ri "X-Correlation-Id\|X-Source-System\|correlationId" "$TARGET_DIR/src/main/java" 2>/dev/null | grep -q .; then
     success "Correlation headers found"
 else
     warning "X-Correlation-Id and X-Source-System headers should be set"

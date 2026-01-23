@@ -91,6 +91,22 @@ mod-code-017-persistence-systemapi/
     └── systemapi-check.sh
 ```
 
+---
+
+## Tests Generated
+
+This module generates the following unit tests:
+
+| Test File | Layer | Purpose | Spring Context |
+|-----------|-------|---------|----------------|
+| `{{Entity}}SystemApiAdapterTest.java` | Adapter OUT | Adapter logic with mocked client and mapper | None (Mockito only) |
+
+**Test Patterns:**
+- Adapter tests: Mock the client and mapper, verify mapping and delegation
+- Test findById, findAll, save, deleteById operations
+- No Spring context needed - pure unit testing with Mockito
+- Resilience behavior (circuit breaker, retry) should be tested separately with integration tests
+
 > **Note:** REST client templates have been moved to 
 > [mod-code-018-api-integration-rest-java-spring](../mod-code-018-api-integration-rest-java-spring/MODULE.md).
 > This module focuses on the persistence adapter that wraps the client with resilience patterns.

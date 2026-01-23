@@ -311,8 +311,22 @@ Each generated file includes metadata:
  */
 ```
 
+## Output
+
+The complete output package structure is defined in [Flow Generate - Output Specification](./flow-generate-output.md).
+
+Summary:
+```
+gen_{service-name}_{timestamp}/
+├── input/           # Original inputs (prompt, specs)
+├── output/          # Generated project with .enablement/manifest.json
+├── trace/           # Discovery and generation traces
+└── validation/      # Validation scripts and results
+```
+
 ## Related
 
-- [Discovery Guidance](./discovery-guidance.md)
-- [Phase Planning Design](../../docs/phase-planner-design.md)
-- [Flow: Transform](./flow-transform.md)
+- [Flow Generate - Output Specification](./flow-generate-output.md) - Package structure
+- [Generation Orchestrator](./GENERATION-ORCHESTRATOR.md) - Execution flow
+- [Discovery Guidance](../../discovery/discovery-guidance.md) - Capability detection
+- [Flow: Transform](./flow-transform.md) - Modifying existing code

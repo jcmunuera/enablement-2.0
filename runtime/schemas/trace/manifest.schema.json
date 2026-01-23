@@ -1,0 +1,165 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "enablement/schemas/trace/manifest.schema.json",
+  "title": "Generation Manifest",
+  "description": "Metadata for a generated project, stored in .enablement/manifest.json. Aligned with Enablement 2.0 v3.0 model (capability-driven, no skills).",
+  "type": "object",
+  "required": ["generation", "enablement", "discovery", "modules", "status"],
+  "properties": {
+    "generation": {
+      "type": "object",
+      "description": "Unique identifiers for this generation run",
+      "required": ["id", "timestamp", "run_id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Unique generation identifier (UUID v4)"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Generation timestamp (ISO-8601)"
+        },
+        "run_id": {
+          "type": "string",
+          "pattern": "^[0-9]{8}_[0-9]{6}$",
+          "description": "Run identifier (YYYYMMDD_HHMMSS)"
+        }
+      }
+    },
+    "enablement": {
+      "type": "object",
+      "description": "Enablement platform metadata",
+      "required": ["version", "domain", "flow"],
+      "properties": {
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+          "description": "Enablement model version (semver)"
+        },
+        "domain": {
+          "type": "string",
+          "enum": ["code", "documentation", "deployment", "testing"],
+          "description": "Generation domain"
+        },
+        "flow": {
+          "type": "string",
+          "enum": ["flow-generate", "flow-transform", "flow-migrate", "flow-refactor"],
+          "description": "Flow used for generation"
+        }
+      }
+    },
+    "discovery": {
+      "type": "object",
+      "description": "Discovery results from capability-index",
+      "required": ["stack", "capabilities"],
+      "properties": {
+        "stack": {
+          "type": "string",
+          "description": "Technology stack (e.g., java-spring, nodejs)"
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z-]+\\.[a-z-]+$"
+          },
+          "description": "Detected capabilities (e.g., architecture.hexagonal-light)"
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Resolved features (e.g., hexagonal-light, domain-api)"
+        },
+        "config_flags": {
+          "type": "object",
+          "description": "Calculated config flags (transactional, idempotent, etc.)",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "description": "Modules used in generation",
+      "items": {
+        "type": "object",
+        "required": ["id", "phase"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^mod-[a-z]+-[0-9]{3}-[a-z0-9-]+$",
+            "description": "Module identifier"
+          },
+          "version": {
+            "type": "string",
+            "description": "Module version"
+          },
+          "capability": {
+            "type": "string",
+            "description": "Capability this module implements"
+          },
+          "phase": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Generation phase (1=structural, 2=implementation, 3+=cross-cutting)"
+          }
+        }
+      }
+    },
+    "status": {
+      "type": "object",
+      "description": "Validation status",
+      "required": ["overall"],
+      "properties": {
+        "overall": {
+          "type": "string",
+          "enum": ["SUCCESS", "PARTIAL", "FAILED", "PENDING"]
+        },
+        "compilation": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "PENDING", "SKIPPED"]
+        },
+        "tier1": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "PENDING", "PASS_WITH_WARNINGS"]
+        },
+        "tier2": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "PENDING", "PASS_WITH_WARNINGS"]
+        },
+        "tier3": {
+          "type": "string",
+          "enum": ["PASS", "FAIL", "PENDING", "PASS_WITH_WARNINGS"]
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Generation metrics",
+      "properties": {
+        "files_generated": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "lines_of_code": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "test_files": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total generation duration in milliseconds"
+        }
+      }
+    }
+  }
+}
