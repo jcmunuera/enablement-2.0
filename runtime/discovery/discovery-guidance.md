@@ -270,6 +270,86 @@ If we add `two-phase-commit` to `distributed-transactions`, it automatically act
 
 ---
 
+### Rule 10: Resilience Target Resolution (NEW in v2.7)
+
+**Purpose:** Determine which files/classes resilience patterns should be applied to.
+
+**Trigger:** Resilience capabilities detected (circuit-breaker, retry, timeout, bulkhead, rate-limiter)
+
+**Resolution Modes:**
+
+| Mode | Trigger | Resolution |
+|------|---------|------------|
+| **Explicit** | User specifies target | Use specified target |
+| **Implicit** | No target specified | Convention: all adapter OUT |
+
+**Algorithm:**
+
+```python
+def resolve_resilience_targets(prompt: str, features: List[str], architecture: dict) -> dict:
+    """
+    Resolve where to apply resilience patterns.
+    """
+    targets = {"mode": "implicit", "targets": []}
+    
+    # Check for explicit target in prompt
+    explicit_patterns = [
+        r"(?:apply|add)\s+(?:circuit.?breaker|retry|timeout)\s+(?:to|for)\s+(\w+)",
+        r"resilience\s+(?:to|for|on)\s+(\w+(?:Adapter|Client)?)",
+    ]
+    
+    for pattern in explicit_patterns:
+        match = re.search(pattern, prompt, re.IGNORECASE)
+        if match:
+            targets["mode"] = "explicit"
+            targets["targets"].append({
+                "hint": match.group(1),
+                "pattern": f"*{match.group(1)}*.java"
+            })
+            return targets
+    
+    # Implicit: determine by architecture
+    if "persistence.systemapi" in features:
+        targets["targets"].append({
+            "type": "adapter_out",
+            "pattern": "*SystemApiAdapter.java"
+        })
+    
+    if "integration.api-rest" in features:
+        targets["targets"].append({
+            "type": "http_client", 
+            "pattern": "*Client.java"
+        })
+    
+    return targets
+```
+
+**Output in generation-context.json:**
+
+```json
+{
+  "resilience": {
+    "target_resolution": {
+      "mode": "implicit",
+      "resolved_at": "discovery"
+    },
+    "targets": [
+      {
+        "type": "adapter_out",
+        "pattern": "*SystemApiAdapter.java"
+      }
+    ],
+    "features": {
+      "circuit-breaker": { "enabled": true },
+      "retry": { "enabled": true }
+    }
+  }
+}
+```
+
+---
+
+
 ## Discovery Flow
 
 ### Step 1: Stack Resolution
