@@ -1129,3 +1129,66 @@ Actualizar todos los templates críticos para el PoC Customer API con un header 
 4. **Determinismo:** Elimina ambigüedad sobre qué variables necesita cada template
 
 **Model version:** 3.0.10
+---
+
+## DEC-027: Tier-0 Conformance Validation
+
+**Fecha:** 2026-01-26  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Las reglas DEC-024 (CONTEXT_RESOLUTION) y DEC-025 (No Improvisation) definen cómo debe comportarse el generador, pero no existía un mecanismo de validación post-generación que verificara que el código generado realmente sigue los templates.
+
+En pruebas con v3.0.8, se detectó que Claude "improvisaba" código en lugar de seguir estrictamente los templates:
+- `CorrelationIdFilter`: usaba `private static final` en lugar de `public static final`, faltaba método `getCurrentCorrelationId()`
+- `CustomerModelAssembler`: usaba `implements RepresentationModelAssembler` en lugar de `extends RepresentationModelAssemblerSupport`
+
+Esto impedía alcanzar el determinismo necesario para pruebas reproducibles.
+
+**Decisión:**  
+Crear un nuevo tier de validación (Tier-0) que se ejecuta ANTES de las validaciones de código:
+
+```
+runtime/validators/
+├── tier-0-conformance/           ← NUEVO: Valida proceso de generación
+│   └── template-conformance-check.sh
+├── tier-1-universal/             ← Valida estructura, naming
+├── tier-2-technology/            ← Valida compilación, sintaxis
+└── (tier-3 en modules/*/validation/)  ← Valida requisitos de módulo
+```
+
+**Orden de Ejecución:**
+```
+tier-0 (conformidad generación) → tier-1 (universal) → tier-2 (tecnología) → tier-3 (módulo)
+```
+
+**Mecanismo de Validación:**
+
+El script `template-conformance-check.sh` usa "fingerprints" - patrones únicos que DEBEN aparecer si el template fue seguido correctamente:
+
+```bash
+# Ejemplo de fingerprints para mod-015
+MODULE_FINGERPRINTS["mod-code-015:CorrelationIdFilter.java"]="public static final String CORRELATION_ID_HEADER|public static String getCurrentCorrelationId|extractOrGenerate"
+
+# Ejemplo de fingerprints para mod-019
+MODULE_FINGERPRINTS["mod-code-019:*ModelAssembler.java"]="extends RepresentationModelAssemblerSupport|super(.*Controller.class.*Response.class)"
+```
+
+**Validaciones Incluidas:**
+1. **Fingerprints por módulo:** Patrones obligatorios de cada template
+2. **Anti-improvisación:** Detecta patrones incorrectos conocidos (ej: `implements RepresentationModelAssembler` en lugar de `extends`)
+3. **Naming conventions:** Verifica nombres correctos (ej: `*ModelAssembler` no `*ResponseAssembler`)
+
+**Justificación de Tier-0:**
+- Tier-0 valida el **proceso de generación**, no el código en sí
+- Debe ejecutarse primero porque si la generación fue incorrecta, las demás validaciones son irrelevantes
+- Mantiene coherencia con el modelo de tiers existente donde tier-3 es específico de módulo
+
+**Resultado esperado:**
+- Código v3.0.8 (improvisado): FAIL con errores específicos
+- Código v3.0.10 (template-driven): PASS
+
+**Archivos Añadidos:**
+- `runtime/validators/tier-0-conformance/template-conformance-check.sh`
+
+**Model version:** 3.0.10-003
