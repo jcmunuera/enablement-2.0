@@ -1266,3 +1266,76 @@ runtime/discovery/
 ```
 
 **Model version:** 3.0.10-008
+
+---
+
+## DEC-029: Package Delivery Validation
+
+**Date:** 2026-01-26  
+**Status:** Approved  
+**Category:** Validation  
+**Model Version:** 3.0.10-009
+
+**Context:**  
+Durante la validación E2E del PoC Customer API, se detectaron dos fallos:
+
+1. **TAR incompleto:** Faltaban directorios `/input` y `/validation`
+2. **Error de compilación:** Import incorrecto de `RepresentationModelAssemblerSupport`
+   - Incorrecto: `org.springframework.hateoas.server.RepresentationModelAssemblerSupport`
+   - Correcto: `org.springframework.hateoas.server.mvc.RepresentationModelAssemblerSupport`
+
+**Root Cause Analysis:**
+
+| Fallo | Causa | Template existe? |
+|-------|-------|------------------|
+| TAR incompleto | Error de ejecución, no de KB | N/A |
+| Import incorrecto | Código improvisado, violación DEC-025 | ✅ Template correcto |
+
+El template `EntityModelAssembler.java.tpl` tenía el import correcto. El error ocurrió porque el código fue improvisado en lugar de usar el template (violación de DEC-025 No Improvisation Rule).
+
+El fingerprint Tier-0 existente (`extends RepresentationModelAssemblerSupport`) no detectó el error porque solo validaba la herencia, no el import.
+
+**Decisión:**  
+Añadir validaciones preventivas para evitar estos errores:
+
+1. **Script `package-structure-check.sh`** en `runtime/validation/scripts/tier-0/`
+   - Valida estructura obligatoria: input/, output/, trace/, validation/
+   - Se ejecuta antes de entregar el package
+
+2. **Mejora de `hateoas-check.sh`** en `mod-019/validation/`
+   - Añadida validación específica de import path
+   - Detecta import incorrecto (`server.RMAS` vs `server.mvc.RMAS`)
+
+3. **Package Delivery Checklist** en `GENERATION-ORCHESTRATOR.md`
+   - Checklist obligatorio antes de entregar
+   - Incluye comandos de validación automatizada
+
+**Archivos Modificados:**
+
+```
+runtime/validation/scripts/tier-0/
+  package-structure-check.sh                    # NUEVO
+
+modules/mod-code-019-api-public-exposure-java-spring/validation/
+  hateoas-check.sh                              # Import validation añadida
+
+runtime/flows/code/
+  GENERATION-ORCHESTRATOR.md                    # Package Delivery Checklist
+```
+
+**Validation Commands:**
+
+```bash
+# Antes de entregar:
+./validation/scripts/tier-0/package-structure-check.sh .
+./validation/run-all.sh
+cd output/{project} && mvn compile
+```
+
+**Lessons Learned:**
+
+1. **DEC-025 es crítico:** Nunca improvisar código, siempre usar templates
+2. **Fingerprints deben ser específicos:** Validar imports, no solo estructuras
+3. **Validación automatizada:** Scripts deben ejecutarse antes de entregar
+
+**Model version:** 3.0.10-009

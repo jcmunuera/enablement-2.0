@@ -1050,3 +1050,53 @@ After each phase, verify:
 - [OUTPUT-PACKAGE-SPEC.md](./OUTPUT-PACKAGE-SPEC.md) - Package structure
 - [flow-generate.md](./code/flow-generate.md) - Generation phases detail
 - [Discovery Rules](../discovery/discovery-rules.md) - Capability detection
+
+---
+
+## Package Delivery Checklist
+
+**MANDATORY**: Before delivering a generation package, verify ALL items:
+
+### Structure Checklist
+
+| # | Item | Validation |
+|---|------|------------|
+| 1 | `input/` directory exists | Contains prompt.md/txt and input specs |
+| 2 | `output/` directory exists | Contains generated project |
+| 3 | `trace/` directory exists | Contains discovery-trace.json, generation-context.json |
+| 4 | `validation/` directory exists | Contains run-all.sh and scripts/ |
+
+### Content Checklist
+
+| # | Item | Validation |
+|---|------|------------|
+| 5 | Project compiles | `mvn compile` exits with 0 |
+| 6 | Tier-0 validation passes | `validation/scripts/tier-0/*.sh` all exit 0 |
+| 7 | All templates used | No improvised code (DEC-025) |
+| 8 | Imports are correct | Validated by Tier-0 fingerprints |
+
+### Automated Validation
+
+Run before delivery:
+
+```bash
+# 1. Package structure check
+./validation/scripts/tier-0/package-structure-check.sh .
+
+# 2. All validations
+./validation/run-all.sh
+
+# 3. Compilation (if Maven available)
+cd output/{project-name} && mvn compile
+```
+
+### Common Errors to Avoid
+
+| Error | Cause | Prevention |
+|-------|-------|------------|
+| Missing `/input` | Forgot to include inputs | Run package-structure-check.sh |
+| Missing `/validation` | Forgot validation scripts | Run package-structure-check.sh |
+| Import errors | Improvised code | ALWAYS use templates (DEC-025) |
+| Wrong package path | Variable substitution error | Check generation-context.json |
+
+> **DEC-025 Reminder**: NEVER generate code without using a template. If a template doesn't exist, create it first.

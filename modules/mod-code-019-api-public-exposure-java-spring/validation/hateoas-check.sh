@@ -1,8 +1,15 @@
 #!/bin/bash
+# ═══════════════════════════════════════════════════════════════════════════════
 # hateoas-check.sh
 # Tier 3 validation for mod-code-019-api-public-exposure
-# Validates ERI constraint: hateoas-self-link, model-assembler-exists
-# Updated: 2026-01-26 - Accept both *ModelAssembler and *Assembler patterns
+# ═══════════════════════════════════════════════════════════════════════════════
+# Validates ERI constraints:
+#   - hateoas-self-link
+#   - model-assembler-exists
+#   - CRITICAL: correct import path for RepresentationModelAssemblerSupport
+#
+# Updated: 2026-01-26 - Added import validation (DEC-025 compliance)
+# ═══════════════════════════════════════════════════════════════════════════════
 
 SERVICE_DIR="${1:-.}"
 PACKAGE_PATH="${2:-}"
@@ -18,45 +25,67 @@ warn() { echo -e "${YELLOW}⚠️  WARN:${NC} $1"; }
 
 ERRORS=0
 
-echo "=== HATEOAS Structure Check ==="
+echo "═══════════════════════════════════════════════════════════════════════════════"
+echo "TIER-3: HATEOAS Structure Check (mod-019)"
+echo "═══════════════════════════════════════════════════════════════════════════════"
 echo "Service directory: $SERVICE_DIR"
 echo ""
 
-# Check 1: Find Assembler classes (both *ModelAssembler and *Assembler patterns)
+# ─────────────────────────────────────────────────────────────────────────────────
+# Check 1: Find Assembler classes
+# ─────────────────────────────────────────────────────────────────────────────────
+echo ">>> Assembler Classes"
+
 ASSEMBLERS=$(find "$SERVICE_DIR" -name "*Assembler.java" -type f 2>/dev/null | grep -v "Test")
 ASSEMBLER_COUNT=$(echo "$ASSEMBLERS" | grep -c "Assembler" 2>/dev/null || echo "0")
 
 if [ -n "$ASSEMBLERS" ] && [ "$ASSEMBLER_COUNT" -gt 0 ]; then
     pass "Found $ASSEMBLER_COUNT Assembler class(es)"
     
-    # Check each assembler
     for ASSEMBLER in $ASSEMBLERS; do
         ASSEMBLER_NAME=$(basename "$ASSEMBLER")
         echo ""
         echo "--- Checking: $ASSEMBLER_NAME ---"
         
-        # Check 1a: Extends RepresentationModelAssemblerSupport OR implements RepresentationModelAssembler
-        if grep -q "RepresentationModelAssemblerSupport\|RepresentationModelAssembler" "$ASSEMBLER" 2>/dev/null; then
-            pass "$ASSEMBLER_NAME uses HATEOAS assembler pattern"
+        # ─────────────────────────────────────────────────────────────────────────
+        # CRITICAL CHECK: Correct import path for RepresentationModelAssemblerSupport
+        # ─────────────────────────────────────────────────────────────────────────
+        # CORRECT:   org.springframework.hateoas.server.mvc.RepresentationModelAssemblerSupport
+        # INCORRECT: org.springframework.hateoas.server.RepresentationModelAssemblerSupport
+        # ─────────────────────────────────────────────────────────────────────────
+        
+        if grep -q "import org.springframework.hateoas.server.mvc.RepresentationModelAssemblerSupport" "$ASSEMBLER" 2>/dev/null; then
+            pass "$ASSEMBLER_NAME has CORRECT import (server.mvc.RMAS)"
+        elif grep -q "import org.springframework.hateoas.server.RepresentationModelAssemblerSupport" "$ASSEMBLER" 2>/dev/null; then
+            fail "$ASSEMBLER_NAME has INCORRECT import (server.RMAS) - should be server.mvc.RMAS"
+        elif grep -q "RepresentationModelAssemblerSupport" "$ASSEMBLER" 2>/dev/null; then
+            warn "$ASSEMBLER_NAME uses RMAS but import not found - verify manually"
+        fi
+        
+        # Check: Extends RepresentationModelAssemblerSupport
+        if grep -q "extends RepresentationModelAssemblerSupport" "$ASSEMBLER" 2>/dev/null; then
+            pass "$ASSEMBLER_NAME extends RepresentationModelAssemblerSupport"
+        elif grep -q "implements.*RepresentationModelAssembler" "$ASSEMBLER" 2>/dev/null; then
+            pass "$ASSEMBLER_NAME implements RepresentationModelAssembler"
         else
             fail "$ASSEMBLER_NAME does not use HATEOAS assembler pattern"
         fi
         
-        # Check 1b: Has @Component annotation
+        # Check: @Component annotation
         if grep -q "@Component" "$ASSEMBLER" 2>/dev/null; then
             pass "$ASSEMBLER_NAME has @Component annotation"
         else
             fail "$ASSEMBLER_NAME missing @Component annotation"
         fi
         
-        # Check 1c: Adds self link
+        # Check: Self link
         if grep -q "withSelfRel" "$ASSEMBLER" 2>/dev/null; then
             pass "$ASSEMBLER_NAME adds self link (withSelfRel)"
         else
             fail "$ASSEMBLER_NAME missing self link (withSelfRel)"
         fi
         
-        # Check 1d: Uses WebMvcLinkBuilder
+        # Check: WebMvcLinkBuilder
         if grep -q "WebMvcLinkBuilder\|linkTo\|methodOn" "$ASSEMBLER" 2>/dev/null; then
             pass "$ASSEMBLER_NAME uses WebMvcLinkBuilder"
         else
@@ -64,37 +93,35 @@ if [ -n "$ASSEMBLERS" ] && [ "$ASSEMBLER_COUNT" -gt 0 ]; then
         fi
     done
 else
-    fail "No Assembler classes found (expected *ModelAssembler.java or *Assembler.java in assembler/ directory)"
+    fail "No Assembler classes found"
 fi
 
-# Check 2: Response DTOs extend RepresentationModel
+# ─────────────────────────────────────────────────────────────────────────────────
+# Check 2: Response DTOs
+# ─────────────────────────────────────────────────────────────────────────────────
 echo ""
-echo "--- Response DTO Check ---"
+echo ">>> Response DTO Check"
 
 RESPONSE_DTOS=$(find "$SERVICE_DIR" -name "*Response.java" \( -path "*/dto/*" -o -path "*/application/*" \) -type f 2>/dev/null)
 
 for DTO in $RESPONSE_DTOS; do
     DTO_NAME=$(basename "$DTO")
     
-    # Skip PageResponse as it uses Links directly
-    if [[ "$DTO_NAME" == "PageResponse.java" ]]; then
-        continue
-    fi
-    
-    # Skip external DTOs (from systemapi)
-    if echo "$DTO" | grep -q "systemapi"; then
+    # Skip PageResponse and external DTOs
+    if [[ "$DTO_NAME" == "PageResponse.java" ]] || echo "$DTO" | grep -q "systemapi"; then
         continue
     fi
     
     if grep -q "RepresentationModel" "$DTO" 2>/dev/null; then
         pass "$DTO_NAME extends RepresentationModel"
     else
-        warn "$DTO_NAME does not extend RepresentationModel (may not support HATEOAS links)"
+        warn "$DTO_NAME does not extend RepresentationModel"
     fi
 done
 
 echo ""
-echo "=== HATEOAS Check Complete ==="
-echo "Errors: $ERRORS"
+echo "═══════════════════════════════════════════════════════════════════════════════"
+echo "RESULT: $ERRORS error(s)"
+echo "═══════════════════════════════════════════════════════════════════════════════"
 
 exit $ERRORS
