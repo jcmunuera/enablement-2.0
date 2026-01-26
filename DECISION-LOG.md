@@ -1196,3 +1196,73 @@ MODULE_FINGERPRINTS["mod-code-019:*ModelAssembler.java"]="extends Representation
 - `runtime/validators/tier-0-conformance/template-conformance-check.sh`
 
 **Model version:** 3.0.10-003
+
+---
+
+## DEC-028: Phase 3 Cross-Cutting Model Clarification
+
+**Fecha:** 2026-01-26  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Durante la validación del PoC Customer API, se detectó que el template de mod-017 (SystemApiAdapter) tenía anotaciones de resiliencia (@CircuitBreaker, @Retry) y métodos fallback hardcodeados. Esto violaba el modelo de fases donde:
+
+- **Phase 1-2:** GENERAN archivos nuevos (structural, implementation)
+- **Phase 3+:** TRANSFORMAN archivos existentes (cross-cutting)
+
+El hardcoding de resiliencia en Phase 2 hacía que los módulos de Phase 3 (mod-001, mod-002, mod-003) fueran redundantes, y el código generado no seguía la arquitectura definida.
+
+**Investigación:**  
+Revisando la documentación del modelo:
+
+1. `flow-transform.md` define claramente que cross-cutting modules son transformadores
+2. `ENABLEMENT-MODEL-v3.0.md` especifica phase_group: cross-cutting para resilience
+3. `mod-001/MODULE.md` describe templates como "fragments for transformation"
+4. El orchestrator tracking distingue `files_generated` vs `files_modified`
+
+El modelo estaba correctamente diseñado, pero alguien había "solucionado" un problema de implementación hardcodeando resiliencia en mod-017.
+
+**Decisión:**  
+Restaurar la separación correcta entre phases:
+
+1. **mod-017:** Template genera adapter SIN resiliencia
+2. **mod-018:** RestClientConfig con timeouts ALTOS (30s/60s) como protección de infraestructura
+3. **mod-003 (client-timeout):** Cambia de GENERAR a MODIFICAR - ajusta timeouts para resiliencia
+4. **GENERATION-ORCHESTRATOR:** Nueva sección documentando comportamiento de Phase 3+
+5. **discovery-guidance:** Nueva Rule 10 para target resolution de resiliencia
+
+**Modelo de Timeout:**
+
+| Capa | Responsabilidad | Valores | Módulo |
+|------|-----------------|---------|--------|
+| Infraestructura | Protección contra cuelgues infinitos | 30s/60s | mod-018 |
+| Resiliencia | Control fino de fault tolerance | 5s/10s | mod-003 |
+
+**Modelo de Target Resolution:**
+
+| Modo | Trigger | Resultado |
+|------|---------|-----------|
+| Explicit | "apply X to CustomerAdapter" | Target específico |
+| Implicit | "con circuit-breaker" (sin target) | Todos los adapter OUT |
+
+**Archivos Modificados:**
+
+```
+modules/mod-code-017-persistence-systemapi/
+  templates/adapter/SystemApiAdapter.java.tpl    # Removida resiliencia
+
+modules/mod-code-018-api-integration-rest-java-spring/
+  templates/config/restclient-config.java.tpl    # Timeouts 30s/60s
+
+modules/mod-code-003-timeout-java-resilience4j/
+  MODULE.md                                       # Frontmatter v1.2
+  templates/client/timeout-config-transform.yaml  # NUEVO: descriptor de transformación
+
+runtime/flows/code/
+  GENERATION-ORCHESTRATOR.md                      # Sección Cross-Cutting
+
+runtime/discovery/
+  discovery-guidance.md                           # Rule 10 Target Resolution
+```
+
+**Model version:** 3.0.10-008

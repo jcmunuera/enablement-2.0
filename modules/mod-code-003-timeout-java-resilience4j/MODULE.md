@@ -1,8 +1,9 @@
 ---
 id: mod-code-003-timeout-java-resilience4j
 title: "MOD-003: Timeout Pattern - Java/Resilience4j"
-version: 1.1
+version: 1.2
 date: 2025-12-22
+updated: 2026-01-26
 status: Active
 derived_from: eri-code-010-timeout-java-resilience4j
 domain: code
@@ -13,7 +14,11 @@ tags:
   - time-limiter
   - fault-tolerance
 
-# Variant Configuration (v1.1)
+# Variant Configuration (v1.2)
+# 
+# CHANGE in v1.2: client-timeout is now a TRANSFORMATION, not generation.
+# It MODIFIES RestClientConfig.java from mod-018.
+#
 variants:
   enabled: true
   selection_mode: auto-suggest
@@ -21,19 +26,23 @@ variants:
   default:
     id: client-timeout
     name: "Client-level Timeout (Recommended)"
-    description: "Configure timeout in HTTP client (RestClient/WebClient). Simpler, synchronous."
-    templates:
-      - client/timeout-config.java.tpl
-      - config/application-client-timeout.yml.tpl
+    description: "Configure timeout in HTTP client. MODIFIES RestClientConfig from mod-018."
+    type: transformation
+    targets:
+      - pattern: "**/infrastructure/config/RestClientConfig.java"
+        generated_by: mod-code-018-api-integration-rest-java-spring
+    transformation_descriptor: client/timeout-config-transform.yaml
+    yaml_config: config/application-client-timeout.yml.tpl
     
   alternatives:
     - id: annotation-async
       name: "Annotation-based Timeout (@TimeLimiter)"
       description: "Use @TimeLimiter with CompletableFuture. Async required."
+      type: annotation
       templates:
         - annotation/basic-timeout.java.tpl
         - annotation/timeout-with-fallback.java.tpl
-        - config/application-timeout.yml.tpl
+      yaml_config: config/application-timeout.yml.tpl
       recommend_when:
         - condition: "service.async = true"
           reason: "Service already uses async patterns with CompletableFuture"
@@ -46,9 +55,19 @@ variants:
 # ═══════════════════════════════════════════════════════════════════
 implements:
   stack: java-spring
-  pattern: annotation
+  pattern: mixed
   capability: resilience
   feature: timeout
+
+phase_group: cross-cutting
+transformation:
+  client-timeout:
+    type: modification
+    modifies: RestClientConfig.java
+    generated_by: mod-code-018-api-integration-rest-java-spring
+  annotation-async:
+    type: annotation
+    targets: adapter_out
 ---
 
 # MOD-003: Timeout Pattern - Java/Resilience4j

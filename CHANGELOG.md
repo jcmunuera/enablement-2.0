@@ -1,5 +1,27 @@
 # Changelog
 
+## [3.0.10-008] - 2026-01-26
+
+### Fixed
+- **mod-017:** Removed hardcoded resilience annotations (@CircuitBreaker, @Retry) and fallback methods from SystemApiAdapter.java.tpl. Resilience is now properly added in Phase 3 by cross-cutting modules.
+
+### Changed
+- **mod-018:** RestClientConfig now uses HIGH default timeouts (30s connect, 60s read) as infrastructure protection. Resilience-level timeouts are configured by mod-003 in Phase 3.
+- **mod-003:** client-timeout variant changed from GENERATION to TRANSFORMATION. Now modifies RestClientConfig instead of generating a new file.
+
+### Added
+- **mod-003:** New `timeout-config-transform.yaml` transformation descriptor
+- **GENERATION-ORCHESTRATOR:** New section "Cross-Cutting Transformation (Phase 3+)" documenting how cross-cutting modules transform existing files
+- **discovery-guidance:** New Rule 10 "Resilience Target Resolution" for determining where to apply resilience patterns
+- **DECISION-LOG:** DEC-028 documenting the Phase 3 cross-cutting model clarification
+
+### Documentation
+- Clarified the distinction between infrastructure timeouts (mod-018) and resilience timeouts (mod-003)
+- Documented explicit vs implicit target resolution for resilience patterns
+- Added transformation types table (annotation, modification, configuration)
+
+
+
 All notable changes to Enablement 2.0 will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

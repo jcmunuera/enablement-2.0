@@ -704,6 +704,89 @@ resilience4j:
 
 ---
 
+### Cross-Cutting Transformation (Phase 3+)
+
+Cross-cutting modules (resilience, distributed-transactions) behave differently from
+structural and implementation modules:
+
+| Phase | Module Type | Behavior |
+|-------|-------------|----------|
+| 1 (Structural) | Foundational, API | **GENERATE** new files |
+| 2 (Implementation) | Persistence, Integration | **GENERATE** new files |
+| 3+ (Cross-cutting) | Resilience, Transactions | **TRANSFORM** existing files |
+
+#### Key Difference
+
+```python
+# Phases 1-2: Generate new files
+for template in module.templates:
+    content = apply_template(template, context)
+    write_file(output_path, content)  # Creates new file
+
+# Phase 3+: Transform existing files (uses flow-transform.md logic)
+for transformation in module.transformations:
+    existing_content = read_file(transformation.target)
+    modified_content = apply_transformation(existing_content, transformation)
+    write_file(transformation.target, modified_content)
+```
+
+#### Transformation Types
+
+| Type | Description | Modules |
+|------|-------------|---------|
+| **annotation** | Add annotations to existing methods | mod-001 (circuit-breaker), mod-002 (retry) |
+| **modification** | Modify existing code/config | mod-003 sync (timeout) |
+| **configuration** | Merge YAML configuration | All resilience modules |
+
+#### Target Resolution
+
+Targets for cross-cutting modules come from:
+
+1. **Explicit** (from prompt): "apply circuit-breaker to CustomerSystemApiAdapter"
+2. **Implicit** (convention): All adapter OUT classes when no target specified
+
+```python
+def resolve_targets(ctx, generated_files, module):
+    # Check for explicit targets in context
+    explicit = ctx.resilience.get("explicit_targets", {}).get(module.feature)
+    if explicit:
+        return match_files(generated_files, explicit)
+    
+    # Default: apply to adapter OUT (convention)
+    if module.capability == "resilience":
+        return [f for f in generated_files if "/adapter/out/" in f and "Adapter.java" in f]
+    
+    return []
+```
+
+#### Example: Resilience Application
+
+```python
+def apply_resilience_transformations(ctx, generated_files, resilience_modules):
+    """
+    Apply resilience patterns to files generated in Phase 1-2.
+    """
+    for module in resilience_modules:
+        targets = resolve_targets(ctx, generated_files, module)
+        
+        for target_file in targets:
+            if module.transformation_type == "annotation":
+                # Add @CircuitBreaker, @Retry annotations + fallback methods
+                add_annotations_to_methods(target_file, module)
+                add_fallback_methods(target_file, module)
+                add_imports(target_file, module.required_imports)
+            
+            elif module.transformation_type == "modification":
+                # Modify RestClientConfig timeout values
+                apply_modification_descriptor(target_file, module.transformation_descriptor)
+        
+        # Always merge YAML config
+        merge_yaml_config(ctx.application_yml, module.yaml_config)
+```
+
+**See also:** `flow-transform.md` for detailed transformation contracts.
+
+
 ## Phase 4: TESTS
 
 ### Objective
