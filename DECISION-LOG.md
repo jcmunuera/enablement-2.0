@@ -35,6 +35,9 @@ Este documento registra las decisiones de diseño importantes tomadas durante el
 - [DEC-025](#dec-025) - No Improvisation Rule
 - [DEC-026](#dec-026) - Template Headers Estandarizados
 - [DEC-027](#dec-027) - Tier-0 Conformance Validation
+- [DEC-028](#dec-028) - Phase 3 Cross-Cutting Model
+- [DEC-029](#dec-029) - Package Delivery Validation
+- [DEC-030](#dec-030) - Transform Descriptors Implementation
 
 ---
 
@@ -1339,3 +1342,117 @@ cd output/{project} && mvn compile
 3. **Validación automatizada:** Scripts deben ejecutarse antes de entregar
 
 **Model version:** 3.0.10-009
+
+---
+
+## DEC-030: Transform Descriptors Implementation {#dec-030}
+
+**Date:** 2026-01-27  
+**Status:** ✅ Implemented  
+**Category:** Architecture  
+**Model Version:** 3.0.10-010
+
+**Context:**  
+DEC-028 established the conceptual model for Phase 3 cross-cutting transformations, but the actual implementation artifacts (transform descriptors, snippets, execution order metadata) were missing from the KB. This prevented automated Golden Master generation because:
+
+1. **mod-001 (circuit-breaker):** No transform descriptor existed
+2. **mod-002 (retry):** No transform descriptor existed  
+3. **mod-003 (timeout):** Transform descriptor existed but was in wrong location
+4. **MODULE.md files:** Missing `phase_group` and `execution_order` metadata
+5. **GENERATION-ORCHESTRATOR.md:** Phase 6 (Validation Assembly) was incomplete
+
+**Decision:**  
+Implement complete transform descriptor infrastructure:
+
+### 1. Transform Descriptors Created
+
+| Module | File | Type |
+|--------|------|------|
+| mod-001 | `transform/circuit-breaker-transform.yaml` | annotation |
+| mod-002 | `transform/retry-transform.yaml` | annotation |
+| mod-003 | `transform/timeout-config-transform.yaml` | modification |
+
+### 2. Code Snippets for mod-001
+
+```
+modules/mod-code-001-.../transform/snippets/
+├── service-name-constant.java    # SERVICE_NAME constant
+└── fallback-method.java          # Fallback method template
+```
+
+### 3. MODULE.md Metadata
+
+Each cross-cutting module now includes:
+
+```yaml
+phase_group: cross-cutting
+execution_order: N  # 1=circuit-breaker, 2=retry, 3=timeout
+
+transformation:
+  type: annotation | modification
+  descriptor: transform/{name}.yaml
+```
+
+### 4. Execution Order Enforcement
+
+```java
+// Order in generated code:
+@CircuitBreaker(name = SERVICE_NAME, fallbackMethod = "findByIdFallback")  // Order 1
+@Retry(name = SERVICE_NAME)                                                  // Order 2
+public Optional<Customer> findById(CustomerId id) { ... }
+```
+
+### 5. Phase 6 Documentation Complete
+
+GENERATION-ORCHESTRATOR.md now includes:
+- Complete validation directory structure
+- Script collection from all tiers (0-3)
+- Dynamic Tier-0 script generation based on modules used
+- Module validation scripts reference table
+- Shell compatibility notes (POSIX vs bash)
+
+**Additional Fixes:**
+
+| File | Change | Reason |
+|------|--------|--------|
+| `pom-circuitbreaker.xml.tpl` | Added `spring-boot-starter-aop` | Required for @CircuitBreaker annotations |
+| `syntax-check.sh` | `head -10` → `head -20` | Templates have longer headers |
+
+**Files Created:**
+
+```
+decisions/
+└── DEC-028-phase3-cross-cutting-model.md
+
+modules/mod-code-001-circuit-breaker-java-resilience4j/transform/
+├── circuit-breaker-transform.yaml
+└── snippets/
+    ├── service-name-constant.java
+    └── fallback-method.java
+
+modules/mod-code-002-retry-java-resilience4j/transform/
+└── retry-transform.yaml
+
+modules/mod-code-003-timeout-java-resilience4j/transform/
+└── timeout-config-transform.yaml (reorganized)
+```
+
+**Files Modified:**
+
+```
+modules/mod-code-001-.../MODULE.md
+modules/mod-code-001-.../templates/config/pom-circuitbreaker.xml.tpl
+modules/mod-code-002-.../MODULE.md
+modules/mod-code-003-.../MODULE.md
+runtime/flows/code/GENERATION-ORCHESTRATOR.md
+runtime/validators/tier-2-technology/.../syntax-check.sh
+```
+
+**Justification:**
+
+1. **Completeness:** KB now has all artifacts needed for automated generation
+2. **Traceability:** Each transformation step is documented and auditable
+3. **Determinism:** Execution order is explicit, not implicit
+4. **Validation:** Transform descriptors include fingerprints for Tier-0 checks
+
+**Model version:** 3.0.10-010
