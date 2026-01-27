@@ -39,6 +39,7 @@ Este documento registra las decisiones de diseño importantes tomadas durante el
 - [DEC-029](#dec-029) - Package Delivery Validation
 - [DEC-030](#dec-030) - Transform Descriptors Implementation
 - [DEC-031](#dec-031) - PoC Validation Fixes (Golden Master)
+- [DEC-032](#dec-032) - Human Approval Checkpoint Pattern
 
 ---
 
@@ -1637,3 +1638,129 @@ gen_customer-api_20260127_145144-v2.tar
 5. **Validators must be flexible:** Accept constants, multiple file locations
 
 **Model version:** 3.0.10-011
+
+---
+
+## DEC-032: Human Approval Checkpoint Pattern {#dec-032}
+
+**Date:** 2026-01-27  
+**Status:** ✅ Implemented  
+**Category:** Orchestration, Process  
+**Model Version:** 3.0.10-012
+
+**Context:**  
+During the customer-api PoC Golden Master validation, we observed that:
+
+1. **Context compaction risk**: Long generation sessions risk mid-execution compaction, causing incomplete outputs
+2. **Wasted effort**: Errors in discovery/context resolution only surface after expensive code generation
+3. **No course correction**: Once generation starts, there's no opportunity to catch misunderstandings
+4. **Non-determinism**: Without explicit approval, the "contract" for generation is implicit
+
+We successfully used a two-phase pattern during the PoC:
+- **Phase 1 (Planning)**: INIT → DISCOVERY → CONTEXT_RESOLUTION → Present plan for approval
+- **Phase 2 (Execution)**: Human approves → GENERATION → TESTS → VALIDATION → PACKAGE
+
+This pattern proved valuable enough to formalize as a best practice.
+
+**Decision:**  
+Introduce a mandatory **Human Approval Checkpoint** (Phase 2.7) between CONTEXT_RESOLUTION and GENERATION.
+
+### Pattern Definition
+
+```
+PLANNING PHASES (Pre-Approval)
+├── Phase 1: INIT
+├── Phase 2: DISCOVERY  
+├── Phase 2.5: CONTEXT_RESOLUTION
+└── Phase 2.7: HUMAN APPROVAL CHECKPOINT ← NEW
+    ├── Generate execution-plan.md
+    ├── Present to human
+    └── Await "approved" response
+
+EXECUTION PHASES (Post-Approval)
+├── Phase 3: GENERATION (3.1, 3.2, 3.3)
+├── Phase 4: TESTS
+├── Phase 5: TRACEABILITY
+├── Phase 6: VALIDATION ASSEMBLY
+└── Phase 7: PACKAGE
+```
+
+### Checkpoint Artifact
+
+The checkpoint produces `trace/execution-plan.md` containing:
+- Package metadata (ID, stack, KB version)
+- Capabilities detected with modules
+- Phase-by-phase file generation plan
+- All resolved variables
+- Explicit approval request
+
+### Approval Protocol
+
+| Response | Action |
+|----------|--------|
+| "approved", "yes", "proceed" | Continue to GENERATION |
+| "rejected", "no", "cancel" | Abort generation |
+| Other text | Treat as modification request, re-run discovery |
+
+### Benefits
+
+| Benefit | Impact |
+|---------|--------|
+| **Anti-Compaction** | Natural breakpoint prevents mid-generation context loss |
+| **Early Validation** | Catch misunderstandings before expensive code generation |
+| **Auditability** | `execution-plan.md` provides approval record |
+| **Determinism** | Approved plan becomes the generation contract |
+| **Resumability** | If session ends, plan can be re-submitted for continuation |
+
+### Applicability
+
+| Scenario | Checkpoint Required? |
+|----------|---------------------|
+| Interactive chat (Claude.ai) | ✅ ALWAYS |
+| Automated CI/CD pipeline | ⚠️ OPTIONAL (`--auto-approve` flag) |
+| Agentic orchestration | ✅ RECOMMENDED |
+| Batch processing | ⚠️ Can be disabled for trusted inputs |
+
+### Integration Points
+
+For multi-agent or automated systems:
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│  Discovery  │────▶│  Checkpoint  │────▶│ Generation  │
+│    Agent    │     │   Gateway    │     │    Agent    │
+└─────────────┘     └──────────────┘     └─────────────┘
+                           │
+                    ┌──────┴──────┐
+                    │             │
+               ┌────▼────┐  ┌─────▼─────┐
+               │  Human  │  │   Auto    │
+               │ Approval│  │  Approve  │
+               └─────────┘  │ (trusted) │
+                            └───────────┘
+```
+
+Implementation options:
+- **Slack/Teams**: Notification with approval buttons
+- **Web UI**: Modal requiring explicit approval
+- **CLI**: Interactive prompt
+- **API**: Callback with manual override capability
+
+**Files Modified:**
+
+```
+runtime/flows/code/GENERATION-ORCHESTRATOR.md
+├── Version: 1.1 → 1.2
+├── Orchestration Flow diagram updated
+└── New section: Phase 2.7: HUMAN APPROVAL CHECKPOINT
+```
+
+**Justification:**
+
+1. **Proven in practice**: Successfully used in customer-api PoC
+2. **Low overhead**: Single checkpoint, clear approval protocol
+3. **High value**: Prevents wasted generation effort
+4. **Flexible**: Can be disabled for automated trusted pipelines
+5. **Auditable**: Creates approval artifact for compliance
+
+**Model version:** 3.0.10-012

@@ -1,7 +1,7 @@
 # Generation Orchestrator
 
-## Version: 1.1
-## Last Updated: 2026-01-26
+## Version: 1.2
+## Last Updated: 2026-01-27
 
 ---
 
@@ -18,32 +18,42 @@ This document defines the complete orchestration flow for code generation. An ag
 │                        GENERATION ORCHESTRATION FLOW                         │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  ┌──────┐  ┌───────────┐  ┌─────────────────┐  ┌────────────┐  ┌───────┐   │
-│  │ INIT │─▶│ DISCOVERY │─▶│CONTEXT_RESOLUTION│─▶│ GENERATION │─▶│ TESTS │   │
-│  └──────┘  └───────────┘  └─────────────────┘  └────────────┘  └───────┘   │
-│      │           │                │                   │             │       │
-│      ▼           ▼                ▼                   ▼             ▼       │
-│   Create      Write           Write              Write         Generate    │
-│   Package    discovery-    generation-        generation-       unit       │
-│   Structure  trace.json    context.json       trace.json        tests      │
-│                                  │                                          │
+│  ┌──────┐  ┌───────────┐  ┌─────────────────┐  ┌──────────┐  ┌───────────┐ │
+│  │ INIT │─▶│ DISCOVERY │─▶│CONTEXT_RESOLUTION│─▶│CHECKPOINT│─▶│ GENERATION│ │
+│  └──────┘  └───────────┘  └─────────────────┘  └──────────┘  └───────────┘ │
+│      │           │                │                  │              │       │
+│      ▼           ▼                ▼                  ▼              ▼       │
+│   Create      Write           Write            Present         Generate     │
+│   Package    discovery-    generation-       execution-         code        │
+│   Structure  trace.json    context.json       plan.md                       │
+│                                  │                │                         │
 │                                  │ ┌──────────────────────────────────┐    │
 │                                  └▶│ FAIL if variables unresolvable  │    │
 │                                    └──────────────────────────────────┘    │
+│                                               │                             │
+│                                               ▼                             │
+│                                    ┌──────────────────────┐                │
+│                                    │  HUMAN APPROVAL      │                │
+│                                    │  (DEC-032)           │                │
+│                                    │  "approved" to       │                │
+│                                    │   proceed            │                │
+│                                    └──────────────────────┘                │
 │                                                                             │
-│  ┌───────────┐   ┌──────────┐                                              │
-│  │ VALIDATE  │──▶│ PACKAGE  │                                              │
-│  └───────────┘   └──────────┘                                              │
-│       │               │                                                     │
-│       ▼               ▼                                                     │
-│   Execute        Create .tar.gz                                            │
-│   validation     with all artifacts                                        │
-│   scripts                                                                   │
+│  ┌───────┐  ┌───────────┐   ┌──────────┐                                   │
+│  │ TESTS │─▶│ VALIDATE  │──▶│ PACKAGE  │                                   │
+│  └───────┘  └───────────┘   └──────────┘                                   │
+│      │           │               │                                          │
+│      ▼           ▼               ▼                                          │
+│   Generate   Execute        Create .tar                                     │
+│   unit       validation     with all artifacts                              │
+│   tests      scripts                                                        │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Key Change (DEC-024):** CONTEXT_RESOLUTION phase ensures ALL template variables are resolved BEFORE code generation begins. If any variable cannot be resolved from inputs, generation FAILS immediately.
+**Key Changes:**
+- **(DEC-024):** CONTEXT_RESOLUTION phase ensures ALL template variables are resolved BEFORE code generation begins.
+- **(DEC-032):** HUMAN APPROVAL CHECKPOINT allows review and approval of execution plan before generation starts.
 
 ---
 
@@ -340,6 +350,164 @@ def context_resolution_phase(ctx: PackageContext, discovery: DiscoveryResult) ->
 | OpenAPI spec malformed | FAIL with parse error |
 | mapping.json missing when System API present | FAIL: "mapping.json required for System API integration" |
 | Entity has no fields | FAIL: "Entity {name} has no fields defined" |
+
+---
+## Phase 2.7: HUMAN APPROVAL CHECKPOINT (DEC-032)
+
+### Objective
+Provide a mandatory approval checkpoint before code generation begins. This pattern:
+1. **Prevents wasted effort** - Human validates plan before expensive generation
+2. **Enables course correction** - Misunderstandings caught early
+3. **Mitigates context compaction** - Natural breakpoint for long conversations
+4. **Ensures determinism** - Approved plan becomes the contract
+
+### When to Apply
+
+| Scenario | Checkpoint Required? |
+|----------|---------------------|
+| Interactive chat generation | ✅ ALWAYS |
+| Automated CI/CD pipeline | ⚠️ OPTIONAL (can be skipped with `--auto-approve`) |
+| Agentic orchestration | ✅ RECOMMENDED (agent pauses for human) |
+
+### Checkpoint Artifact: `execution-plan.md`
+
+After CONTEXT_RESOLUTION completes successfully, generate and present an execution plan:
+
+```markdown
+# Execution Plan: {service-name}
+
+## Generation Context
+- **Package ID:** gen_{service-name}_{timestamp}
+- **Stack:** {stack}
+- **KB Version:** {kb-version}
+
+## Capabilities Detected
+| Capability | Feature | Module |
+|------------|---------|--------|
+| architecture.hexagonal | hexagonal-light | mod-015 |
+| api-architecture | domain-api | mod-019 |
+| ... | ... | ... |
+
+## Phase Execution Plan
+
+### Phase 3.1: STRUCTURAL
+| Module | Files to Generate |
+|--------|-------------------|
+| mod-015 | Entity.java, EntityId.java, Repository.java, ... |
+| mod-019 | Controller.java, ModelAssembler.java, ... |
+
+### Phase 3.2: IMPLEMENTATION  
+| Module | Files to Generate |
+|--------|-------------------|
+| mod-017 | SystemApiAdapter.java, SystemApiClient.java, ... |
+| mod-018 | RestClientConfig.java |
+
+### Phase 3.3: CROSS-CUTTING
+| Module | Transformation |
+|--------|----------------|
+| mod-001 | Add @CircuitBreaker to adapters |
+| mod-002 | Add @Retry to adapters |
+| mod-003 | Configure timeouts |
+
+### Phase 4: TESTS
+- Unit tests for domain entities
+- Controller tests with mocks
+- Adapter tests with mocks
+
+### Phase 5: VALIDATION
+- 17 validation scripts (Tier 0-3)
+
+## Variables Resolved
+| Variable | Value |
+|----------|-------|
+| serviceName | customer-api |
+| basePackage | com.bank.customer |
+| Entity | Customer |
+| ... | ... |
+
+## Awaiting Approval
+Please review and confirm:
+- [ ] Capabilities correctly identified
+- [ ] Modules appropriate for requirements
+- [ ] Variables correctly resolved
+
+**Reply "approved" to proceed with generation.**
+```
+
+### Approval Protocol
+
+```python
+def human_approval_checkpoint(ctx: PackageContext, discovery: DiscoveryResult, 
+                               gen_context: GenerationContext) -> bool:
+    """
+    Present execution plan and wait for human approval.
+    
+    Returns:
+        True if approved, False if rejected/modified
+    """
+    
+    # 1. Generate execution plan
+    plan = generate_execution_plan(ctx, discovery, gen_context)
+    
+    # 2. Write to trace
+    write_file(f"{ctx.package_dir}/trace/execution-plan.md", plan)
+    
+    # 3. Present to human
+    present_to_user(plan)
+    
+    # 4. Wait for response
+    response = await_user_response()
+    
+    # 5. Handle response
+    if response.lower() in ["approved", "yes", "proceed", "ok"]:
+        log("Human approved execution plan")
+        return True
+    elif response.lower() in ["rejected", "no", "stop", "cancel"]:
+        log("Human rejected execution plan")
+        return False
+    else:
+        # Treat as modification request
+        log(f"Human requested modification: {response}")
+        # Re-run discovery/context with modifications
+        return handle_modification_request(response, ctx, discovery)
+```
+
+### Benefits
+
+| Benefit | Description |
+|---------|-------------|
+| **Anti-Compaction** | Natural checkpoint prevents mid-generation context loss |
+| **Early Validation** | Catch misunderstandings before code generation |
+| **Auditability** | `execution-plan.md` provides approval record |
+| **Determinism** | Approved plan is the generation contract |
+| **Resumability** | If session ends, plan can be re-submitted for continuation |
+
+### Outputs
+- `trace/execution-plan.md` - Human-readable execution plan
+- Approval timestamp logged in generation trace
+
+### Integration with Agentic Orchestration
+
+For multi-agent systems, this checkpoint enables:
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│  Discovery  │────▶│  Checkpoint  │────▶│ Generation  │
+│    Agent    │     │    (Human)   │     │    Agent    │
+└─────────────┘     └──────────────┘     └─────────────┘
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │   Approval   │
+                    │   Required   │
+                    └──────────────┘
+```
+
+The checkpoint can be implemented as:
+- **Slack/Teams notification** with approval buttons
+- **Web UI modal** requiring explicit approval
+- **CLI prompt** in interactive mode
+- **API callback** for automated systems with manual override
 
 ---
 
