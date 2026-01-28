@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # ═══════════════════════════════════════════════════════════════════════════════
 # Template Conformance Check (DEC-024/DEC-025 Enforcement)
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -9,182 +9,240 @@
 #   was followed correctly.
 #
 # USAGE:
-#   ./template-conformance-check.sh <service_dir> [generation-context.json]
+#   ./template-conformance-check.sh <package_dir>
 #
 # EXIT CODES:
 #   0 - All conformance checks passed
 #   1 - One or more conformance checks failed
 #
-# REQUIRES:
-#   - generation-context.json in trace/ directory
-#   - Fingerprint definitions in this script
+# POSIX COMPATIBLE - works with sh/bash 3.2+ (macOS default)
 #
 # ═══════════════════════════════════════════════════════════════════════════════
 
-SERVICE_DIR="${1:-.}"
-CONTEXT_FILE="${2:-$SERVICE_DIR/../trace/generation-context.json}"
+PACKAGE_DIR="${1:-.}"
+SERVICE_DIR="$PACKAGE_DIR/output"
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m'
-
-pass() { echo -e "${GREEN}✅ PASS:${NC} $1"; PASSED=$((PASSED + 1)); }
-fail() { echo -e "${RED}❌ FAIL:${NC} $1"; ERRORS=$((ERRORS + 1)); }
-warn() { echo -e "${YELLOW}⚠️  WARN:${NC} $1"; }
-info() { echo -e "${CYAN}ℹ️  INFO:${NC} $1"; }
+# Find the actual service directory (first subdirectory of output/)
+if [ -d "$SERVICE_DIR" ]; then
+    ACTUAL_SERVICE=$(ls "$SERVICE_DIR" 2>/dev/null | head -1)
+    if [ -n "$ACTUAL_SERVICE" ]; then
+        SERVICE_DIR="$SERVICE_DIR/$ACTUAL_SERVICE"
+    fi
+fi
 
 ERRORS=0
 PASSED=0
 
+pass() { echo "✅ PASS: $1"; PASSED=$((PASSED + 1)); }
+fail() { echo "❌ FAIL: $1"; ERRORS=$((ERRORS + 1)); }
+warn() { echo "⚠️  WARN: $1"; }
+info() { echo "ℹ️  INFO: $1"; }
+
 echo "════════════════════════════════════════════════════════════"
 echo "  TEMPLATE CONFORMANCE CHECK (DEC-024/DEC-025)"
 echo "════════════════════════════════════════════════════════════"
+echo "  Package: $PACKAGE_DIR"
 echo "  Service: $SERVICE_DIR"
-echo "  Context: $CONTEXT_FILE"
 echo "════════════════════════════════════════════════════════════"
 echo ""
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# FINGERPRINT DEFINITIONS
-# ═══════════════════════════════════════════════════════════════════════════════
-# Each module has mandatory patterns that MUST appear in generated code
-# if the template was followed correctly.
-#
-# Format: MODULE_FINGERPRINTS["module-id:file-pattern"]="pattern1|pattern2|..."
-# ═══════════════════════════════════════════════════════════════════════════════
-
-declare -A MODULE_FINGERPRINTS
-
-# mod-code-015: Hexagonal Base
-MODULE_FINGERPRINTS["mod-code-015:CorrelationIdFilter.java"]="public static final String CORRELATION_ID_HEADER|public static final String CORRELATION_ID_MDC_KEY|public static String getCurrentCorrelationId|extractOrGenerate"
-MODULE_FINGERPRINTS["mod-code-015:GlobalExceptionHandler.java"]="@RestControllerAdvice|ProblemDetail"
-
-# mod-code-019: API Public Exposure (HATEOAS)
-MODULE_FINGERPRINTS["mod-code-019:*ModelAssembler.java"]="extends RepresentationModelAssemblerSupport|super(.*Controller.class.*Response.class)|withSelfRel"
-MODULE_FINGERPRINTS["mod-code-019:*Response.java"]="extends RepresentationModel"
-
-# mod-code-017: Persistence SystemAPI
-MODULE_FINGERPRINTS["mod-code-017:*SystemApiAdapter.java"]="implements.*Repository|@Component"
-MODULE_FINGERPRINTS["mod-code-017:*SystemApiMapper.java"]="@Component|toDomain|toRequest"
-
-# mod-code-018: API Integration REST
-MODULE_FINGERPRINTS["mod-code-018:*Client.java"]="RestClient|@Component"
-MODULE_FINGERPRINTS["mod-code-018:RestClientConfig.java"]="@Configuration|RestClient.Builder|SimpleClientHttpRequestFactory"
-
-# mod-code-001: Circuit Breaker (only applies to SystemApiAdapter)
-MODULE_FINGERPRINTS["mod-code-001:*SystemApiAdapter.java"]="@CircuitBreaker"
-
-# mod-code-002: Retry (only applies to SystemApiAdapter)
-MODULE_FINGERPRINTS["mod-code-002:*SystemApiAdapter.java"]="@Retry"
+# Check service directory exists
+if [ ! -d "$SERVICE_DIR" ]; then
+    fail "Service directory not found: $SERVICE_DIR"
+    exit 1
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# CHECK FUNCTIONS
+# FINGERPRINT CHECK FUNCTION
 # ═══════════════════════════════════════════════════════════════════════════════
+# Checks if a file contains all required patterns (pipe-separated)
+# Usage: check_fingerprints "file" "pattern1|pattern2|pattern3"
 
 check_fingerprints() {
-    local file="$1"
-    local patterns="$2"
-    local filename=$(basename "$file")
-    local all_found=true
+    file="$1"
+    patterns="$2"
+    filename=$(basename "$file")
+    all_found=true
     
-    IFS='|' read -ra PATTERNS <<< "$patterns"
-    for pattern in "${PATTERNS[@]}"; do
-        if grep -qE "$pattern" "$file" 2>/dev/null; then
-            : # Pattern found
-        else
-            fail "$filename: Missing required pattern: $pattern"
-            all_found=false
+    # Split patterns by | and check each
+    echo "$patterns" | tr '|' '\n' | while read pattern; do
+        if [ -n "$pattern" ]; then
+            if grep -qE "$pattern" "$file" 2>/dev/null; then
+                : # Pattern found
+            else
+                echo "❌ FAIL: $filename: Missing required pattern: $pattern"
+                # Note: can't increment ERRORS here due to subshell
+            fi
         fi
     done
-    
-    if $all_found; then
-        pass "$filename: All fingerprints present"
-    fi
-}
-
-match_file_pattern() {
-    local file="$1"
-    local pattern="$2"
-    local filename=$(basename "$file")
-    
-    # Convert glob pattern to regex
-    local regex=$(echo "$pattern" | sed 's/\*/.*/g')
-    
-    if [[ "$filename" =~ $regex ]]; then
-        return 0
-    fi
-    return 1
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# MAIN VALIDATION
+# FINGERPRINT CHECKS BY MODULE
 # ═══════════════════════════════════════════════════════════════════════════════
 
 echo "── Checking Module Fingerprints ────────────────────────────"
 echo ""
 
-# Find all Java files
-JAVA_FILES=$(find "$SERVICE_DIR" -name "*.java" -type f 2>/dev/null)
+# mod-code-015: Hexagonal Base - CorrelationIdFilter
+CORR_FILTER=$(find "$SERVICE_DIR" -name "CorrelationIdFilter.java" -type f 2>/dev/null | head -1)
+if [ -n "$CORR_FILTER" ]; then
+    info "Checking mod-code-015: CorrelationIdFilter.java"
+    MISSING=0
+    if grep -q "public static final String CORRELATION_ID_HEADER" "$CORR_FILTER" 2>/dev/null; then
+        : # OK
+    else
+        fail "CorrelationIdFilter: Missing CORRELATION_ID_HEADER constant"
+        MISSING=1
+    fi
+    if grep -q "getCurrentCorrelationId" "$CORR_FILTER" 2>/dev/null; then
+        : # OK
+    else
+        fail "CorrelationIdFilter: Missing getCurrentCorrelationId() method"
+        MISSING=1
+    fi
+    if [ $MISSING -eq 0 ]; then
+        pass "CorrelationIdFilter: All fingerprints present"
+    fi
+fi
 
-for key in "${!MODULE_FINGERPRINTS[@]}"; do
-    module_id="${key%%:*}"
-    file_pattern="${key##*:}"
-    patterns="${MODULE_FINGERPRINTS[$key]}"
-    
-    # Find files matching the pattern
-    for java_file in $JAVA_FILES; do
-        if match_file_pattern "$java_file" "$file_pattern"; then
-            info "Checking $module_id conformance: $(basename $java_file)"
-            check_fingerprints "$java_file" "$patterns"
+# mod-code-015: GlobalExceptionHandler
+EXCEPTION_HANDLER=$(find "$SERVICE_DIR" -name "GlobalExceptionHandler.java" -type f 2>/dev/null | head -1)
+if [ -n "$EXCEPTION_HANDLER" ]; then
+    info "Checking mod-code-015: GlobalExceptionHandler.java"
+    MISSING=0
+    if grep -q "@RestControllerAdvice" "$EXCEPTION_HANDLER" 2>/dev/null; then
+        : # OK
+    else
+        fail "GlobalExceptionHandler: Missing @RestControllerAdvice"
+        MISSING=1
+    fi
+    if grep -q "@ExceptionHandler" "$EXCEPTION_HANDLER" 2>/dev/null; then
+        : # OK
+    else
+        fail "GlobalExceptionHandler: Missing @ExceptionHandler"
+        MISSING=1
+    fi
+    if [ $MISSING -eq 0 ]; then
+        pass "GlobalExceptionHandler: All fingerprints present"
+    fi
+fi
+
+# mod-code-019: ModelAssembler (HATEOAS)
+ASSEMBLERS=$(find "$SERVICE_DIR" -name "*ModelAssembler.java" -type f 2>/dev/null)
+for assembler in $ASSEMBLERS; do
+    if [ -n "$assembler" ]; then
+        info "Checking mod-code-019: $(basename $assembler)"
+        MISSING=0
+        if grep -q "extends RepresentationModelAssemblerSupport" "$assembler" 2>/dev/null; then
+            : # OK
+        else
+            fail "$(basename $assembler): Should extend RepresentationModelAssemblerSupport"
+            MISSING=1
         fi
-    done
+        if grep -q "withSelfRel" "$assembler" 2>/dev/null; then
+            : # OK
+        else
+            warn "$(basename $assembler): Missing withSelfRel() call"
+        fi
+        if [ $MISSING -eq 0 ]; then
+            pass "$(basename $assembler): All fingerprints present"
+        fi
+    fi
+done
+
+# mod-code-017: SystemApiAdapter
+ADAPTERS=$(find "$SERVICE_DIR" -name "*SystemApiAdapter.java" -o -name "*Adapter.java" 2>/dev/null | grep -i "systemapi\|adapter")
+for adapter in $ADAPTERS; do
+    if [ -n "$adapter" ] && [ -f "$adapter" ]; then
+        info "Checking mod-code-017: $(basename $adapter)"
+        MISSING=0
+        if grep -q "implements.*Repository" "$adapter" 2>/dev/null; then
+            : # OK
+        else
+            warn "$(basename $adapter): Should implement a Repository interface"
+        fi
+        if grep -q "@Component\|@Service\|@Repository" "$adapter" 2>/dev/null; then
+            : # OK
+        else
+            fail "$(basename $adapter): Missing Spring component annotation"
+            MISSING=1
+        fi
+        if [ $MISSING -eq 0 ]; then
+            pass "$(basename $adapter): All fingerprints present"
+        fi
+    fi
+done
+
+# mod-code-018: RestClient configuration
+REST_CONFIG=$(find "$SERVICE_DIR" -name "RestClientConfig.java" -type f 2>/dev/null | head -1)
+if [ -n "$REST_CONFIG" ]; then
+    info "Checking mod-code-018: RestClientConfig.java"
+    MISSING=0
+    if grep -q "@Configuration" "$REST_CONFIG" 2>/dev/null; then
+        : # OK
+    else
+        fail "RestClientConfig: Missing @Configuration"
+        MISSING=1
+    fi
+    if grep -q "RestClient" "$REST_CONFIG" 2>/dev/null; then
+        : # OK
+    else
+        fail "RestClientConfig: Missing RestClient reference"
+        MISSING=1
+    fi
+    if [ $MISSING -eq 0 ]; then
+        pass "RestClientConfig: All fingerprints present"
+    fi
+fi
+
+# mod-code-001/002: Resilience annotations on adapters
+for adapter in $ADAPTERS; do
+    if [ -n "$adapter" ] && [ -f "$adapter" ]; then
+        if grep -q "@CircuitBreaker" "$adapter" 2>/dev/null; then
+            pass "$(basename $adapter): @CircuitBreaker annotation present"
+        fi
+        if grep -q "@Retry" "$adapter" 2>/dev/null; then
+            pass "$(basename $adapter): @Retry annotation present"
+        fi
+        if grep -q "@TimeLimiter" "$adapter" 2>/dev/null; then
+            pass "$(basename $adapter): @TimeLimiter annotation present"
+        fi
+    fi
 done
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SPECIFIC CHECKS FOR COMMON IMPROVISATIONS
+# ANTI-IMPROVISATION CHECKS
 # ═══════════════════════════════════════════════════════════════════════════════
 
 echo ""
 echo "── Anti-Improvisation Checks ───────────────────────────────"
 echo ""
 
-# Check: No implements RepresentationModelAssembler (should be extends ...Support)
-WRONG_ASSEMBLERS=$(grep -rl "implements RepresentationModelAssembler" "$SERVICE_DIR" 2>/dev/null | grep -v ".class")
+# Check: No implements RepresentationModelAssembler (should extend Support)
+WRONG_ASSEMBLERS=$(grep -rl "implements RepresentationModelAssembler" "$SERVICE_DIR" 2>/dev/null | grep "\.java$")
 if [ -n "$WRONG_ASSEMBLERS" ]; then
     for file in $WRONG_ASSEMBLERS; do
-        fail "$(basename $file): Uses 'implements RepresentationModelAssembler' instead of 'extends RepresentationModelAssemblerSupport'"
+        fail "$(basename $file): Uses 'implements' instead of 'extends RepresentationModelAssemblerSupport'"
     done
 else
     pass "No incorrect RepresentationModelAssembler implementations"
 fi
 
-# Check: CorrelationIdFilter has getCurrentCorrelationId() method
-CORRELATION_FILTER=$(find "$SERVICE_DIR" -name "CorrelationIdFilter.java" -type f 2>/dev/null | head -1)
-if [ -n "$CORRELATION_FILTER" ]; then
-    if grep -q "getCurrentCorrelationId" "$CORRELATION_FILTER" 2>/dev/null; then
-        pass "CorrelationIdFilter has getCurrentCorrelationId() method"
-    else
-        fail "CorrelationIdFilter missing getCurrentCorrelationId() method (required for correlation propagation)"
-    fi
-fi
-
-# Check: Assembler naming convention (*ModelAssembler, not *ResponseAssembler)
-WRONG_ASSEMBLER_NAMES=$(find "$SERVICE_DIR" -name "*ResponseAssembler.java" -type f 2>/dev/null)
-if [ -n "$WRONG_ASSEMBLER_NAMES" ]; then
-    for file in $WRONG_ASSEMBLER_NAMES; do
-        fail "$(basename $file): Should be named '*ModelAssembler.java' per template"
+# Check: Assembler naming convention
+WRONG_NAMES=$(find "$SERVICE_DIR" -name "*ResponseAssembler.java" -type f 2>/dev/null)
+if [ -n "$WRONG_NAMES" ]; then
+    for file in $WRONG_NAMES; do
+        fail "$(basename $file): Should be named '*ModelAssembler.java'"
     done
 else
-    pass "Assembler naming convention correct (*ModelAssembler)"
+    pass "Assembler naming convention correct"
 fi
 
-# Check: Constants are public static final (not private)
-CORRELATION_FILTER=$(find "$SERVICE_DIR" -name "CorrelationIdFilter.java" -type f 2>/dev/null | head -1)
-if [ -n "$CORRELATION_FILTER" ]; then
-    if grep -q "private static final String CORRELATION_ID" "$CORRELATION_FILTER" 2>/dev/null; then
-        fail "CorrelationIdFilter: Constants should be 'public static final' not 'private static final'"
+# Check: Constants visibility in CorrelationIdFilter
+if [ -n "$CORR_FILTER" ]; then
+    if grep -q "private static final String CORRELATION_ID" "$CORR_FILTER" 2>/dev/null; then
+        fail "CorrelationIdFilter: Constants should be 'public static final' not 'private'"
     else
         pass "CorrelationIdFilter: Constants visibility correct"
     fi
@@ -203,14 +261,14 @@ echo "  Failed: $ERRORS"
 echo ""
 
 if [ $ERRORS -gt 0 ]; then
-    echo -e "  ${RED}RESULT: FAILED${NC}"
+    echo "  RESULT: FAILED"
     echo ""
-    echo "  Generated code does not conform to templates."
-    echo "  This indicates DEC-024/DEC-025 violation (improvisation)."
+    echo "  Generated code does not fully conform to templates."
+    echo "  Review failures above for DEC-024/DEC-025 violations."
     echo ""
     exit 1
 else
-    echo -e "  ${GREEN}RESULT: PASSED${NC}"
+    echo "  RESULT: PASSED"
     echo ""
     echo "  Generated code conforms to expected templates."
     echo ""

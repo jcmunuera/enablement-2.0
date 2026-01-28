@@ -11,6 +11,7 @@
 
 #### Files Changed
 - `runtime/validators/tier-0-conformance/template-conformance-check.sh` - POSIX compatible rewrite
+- `runtime/validators/tier-3-conformance/template-conformance-check.sh` - Synced with tier-0 (same file)
 
 ---
 
