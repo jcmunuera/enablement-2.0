@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.0.10-017] - 2026-01-28
+
+### Fixed (POSIX Compatibility)
+
+#### Bug 4: template-conformance-check.sh used bash 4.0+ features
+- **Problem:** Script used `declare -A` (associative arrays) which requires bash 4.0+
+- **Error:** `declare: -A: invalid option` on macOS (bash 3.2)
+- **Fix:** Rewrote script without associative arrays, using simple functions and if/grep checks
+
+#### Files Changed
+- `runtime/validators/tier-0-conformance/template-conformance-check.sh` - POSIX compatible rewrite
+
+---
+
 ## [3.0.10-016] - 2026-01-28
 
 ### Fixed (Validation Script Bugs)
