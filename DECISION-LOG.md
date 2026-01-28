@@ -39,6 +39,9 @@ Este documento registra las decisiones de diseño importantes tomadas durante el
 - [DEC-029](#dec-029) - Package Delivery Validation
 - [DEC-030](#dec-030) - Transform Descriptors Implementation
 - [DEC-031](#dec-031) - PoC Validation Fixes (Golden Master)
+- [DEC-032](#dec-032) - Human Approval Checkpoint Pattern
+- [DEC-033](#dec-033) - Validation Script Management (No Improvisation)
+- [DEC-034](#dec-034) - Validation Assembly Script (Automation)
 
 ---
 
@@ -1637,3 +1640,352 @@ gen_customer-api_20260127_145144-v2.tar
 5. **Validators must be flexible:** Accept constants, multiple file locations
 
 **Model version:** 3.0.10-011
+
+---
+
+## DEC-032: Human Approval Checkpoint Pattern {#dec-032}
+
+**Date:** 2026-01-27  
+**Status:** ✅ Implemented  
+**Category:** Orchestration, Process  
+**Model Version:** 3.0.10-012
+
+**Context:**  
+During the customer-api PoC Golden Master validation, we observed that:
+
+1. **Context compaction risk**: Long generation sessions risk mid-execution compaction, causing incomplete outputs
+2. **Wasted effort**: Errors in discovery/context resolution only surface after expensive code generation
+3. **No course correction**: Once generation starts, there's no opportunity to catch misunderstandings
+4. **Non-determinism**: Without explicit approval, the "contract" for generation is implicit
+
+We successfully used a two-phase pattern during the PoC:
+- **Phase 1 (Planning)**: INIT → DISCOVERY → CONTEXT_RESOLUTION → Present plan for approval
+- **Phase 2 (Execution)**: Human approves → GENERATION → TESTS → VALIDATION → PACKAGE
+
+This pattern proved valuable enough to formalize as a best practice.
+
+**Decision:**  
+Introduce a mandatory **Human Approval Checkpoint** (Phase 2.7) between CONTEXT_RESOLUTION and GENERATION.
+
+### Pattern Definition
+
+```
+PLANNING PHASES (Pre-Approval)
+├── Phase 1: INIT
+├── Phase 2: DISCOVERY  
+├── Phase 2.5: CONTEXT_RESOLUTION
+└── Phase 2.7: HUMAN APPROVAL CHECKPOINT ← NEW
+    ├── Generate execution-plan.md
+    ├── Present to human
+    └── Await "approved" response
+
+EXECUTION PHASES (Post-Approval)
+├── Phase 3: GENERATION (3.1, 3.2, 3.3)
+├── Phase 4: TESTS
+├── Phase 5: TRACEABILITY
+├── Phase 6: VALIDATION ASSEMBLY
+└── Phase 7: PACKAGE
+```
+
+### Checkpoint Artifact
+
+The checkpoint produces `trace/execution-plan.md` containing:
+- Package metadata (ID, stack, KB version)
+- Capabilities detected with modules
+- Phase-by-phase file generation plan
+- All resolved variables
+- Explicit approval request
+
+### Approval Protocol
+
+| Response | Action |
+|----------|--------|
+| "approved", "yes", "proceed" | Continue to GENERATION |
+| "rejected", "no", "cancel" | Abort generation |
+| Other text | Treat as modification request, re-run discovery |
+
+### Benefits
+
+| Benefit | Impact |
+|---------|--------|
+| **Anti-Compaction** | Natural breakpoint prevents mid-generation context loss |
+| **Early Validation** | Catch misunderstandings before expensive code generation |
+| **Auditability** | `execution-plan.md` provides approval record |
+| **Determinism** | Approved plan becomes the generation contract |
+| **Resumability** | If session ends, plan can be re-submitted for continuation |
+
+### Applicability
+
+| Scenario | Checkpoint Required? |
+|----------|---------------------|
+| Interactive chat (Claude.ai) | ✅ ALWAYS |
+| Automated CI/CD pipeline | ⚠️ OPTIONAL (`--auto-approve` flag) |
+| Agentic orchestration | ✅ RECOMMENDED |
+| Batch processing | ⚠️ Can be disabled for trusted inputs |
+
+### Integration Points
+
+For multi-agent or automated systems:
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│  Discovery  │────▶│  Checkpoint  │────▶│ Generation  │
+│    Agent    │     │   Gateway    │     │    Agent    │
+└─────────────┘     └──────────────┘     └─────────────┘
+                           │
+                    ┌──────┴──────┐
+                    │             │
+               ┌────▼────┐  ┌─────▼─────┐
+               │  Human  │  │   Auto    │
+               │ Approval│  │  Approve  │
+               └─────────┘  │ (trusted) │
+                            └───────────┘
+```
+
+Implementation options:
+- **Slack/Teams**: Notification with approval buttons
+- **Web UI**: Modal requiring explicit approval
+- **CLI**: Interactive prompt
+- **API**: Callback with manual override capability
+
+**Files Modified:**
+
+```
+runtime/flows/code/GENERATION-ORCHESTRATOR.md
+├── Version: 1.1 → 1.2
+├── Orchestration Flow diagram updated
+└── New section: Phase 2.7: HUMAN APPROVAL CHECKPOINT
+```
+
+**Justification:**
+
+1. **Proven in practice**: Successfully used in customer-api PoC
+2. **Low overhead**: Single checkpoint, clear approval protocol
+3. **High value**: Prevents wasted generation effort
+4. **Flexible**: Can be disabled for automated trusted pipelines
+5. **Auditable**: Creates approval artifact for compliance
+
+**Model version:** 3.0.10-012
+
+---
+
+## DEC-033: Validation Script Management (No Improvisation) {#dec-033}
+
+**Date:** 2026-01-28  
+**Status:** ✅ Implemented  
+**Category:** Orchestration, Validation  
+**Model Version:** 3.0.10-013
+
+**Context:**  
+During the new-chat PoC test (2026-01-27), we discovered that the chat agent **improvised validation scripts** instead of copying them from the KB. This violates DEC-025 (No Improvisation Rule).
+
+### Observed Behavior
+
+The chat generated 17 custom validation scripts instead of copying the existing ones:
+
+| Expected | Actual |
+|----------|--------|
+| Copy `hateoas-check.sh` (~80 lines, colors, import validation) | Generated new script (~30 lines, basic) |
+| Copy `systemapi-check.sh` | Created `systemapi-adapter-check.sh` (different name) |
+| Copy `circuit-breaker-check.sh` | Created `circuit-breaker-annotations-check.sh` |
+| Use `run-all.sh.tpl` from KB | Generated custom `run-all.sh` with `${tier^^}` (macOS incompatible) |
+
+Scripts created by chat that don't exist in KB:
+- `application-config-check.sh`
+- `correlation-id-check.sh`
+- `domain-api-check.sh`
+- `exception-handling-check.sh`
+- `field-mapping-check.sh`
+- `java-version-check.sh`
+- `resilience4j-check.sh`
+- `spring-boot-check.sh`
+- `tests-exist-check.sh`
+
+### Root Cause Analysis
+
+`GENERATION-ORCHESTRATOR.md` Phase 6 said "Copy Tier-X Scripts" but:
+1. No prominent warning about NOT generating scripts
+2. No explicit statement that improvisation is prohibited
+3. The instruction was buried in pseudocode, not highlighted
+
+### Decision
+
+Add explicit **WARNING** at the start of Phase 6 in `GENERATION-ORCHESTRATOR.md`:
+
+```markdown
+### ⚠️ CRITICAL WARNING - DEC-033
+
+**DO NOT GENERATE validation scripts. COPY them from the KB.**
+
+This is a violation of DEC-025 (No Improvisation Rule). Validation scripts:
+- MUST be copied from their source locations in the KB
+- MUST NOT be generated or improvised
+- MUST use the exact script names from the KB
+- MUST preserve the full content (colors, detailed checks, import validation)
+
+**If a validation script does not exist in the KB, it should NOT be included.**
+```
+
+### Script Location Reference
+
+| Tier | Source Location | What to Do |
+|------|-----------------|------------|
+| Tier 0 | `runtime/validators/tier-0-conformance/template-conformance-check.sh` | GENERATE using template + module fingerprints |
+| Tier 1 | `runtime/validators/tier-1-universal/**/*.sh` | COPY all applicable scripts |
+| Tier 2 | `runtime/validators/tier-2-technology/{stack}/**/*.sh` | COPY based on stack |
+| Tier 3 | `modules/{module-id}/validation/*.sh` | COPY for each module used |
+| run-all.sh | `runtime/validators/run-all.sh.tpl` | COPY and replace `{{SERVICE_NAME}}` |
+
+### Module → Script Mapping
+
+| Module | Script(s) to Copy |
+|--------|-------------------|
+| mod-code-015 | `hexagonal-structure-check.sh` |
+| mod-code-017 | `systemapi-check.sh` |
+| mod-code-018 | `integration-check.sh` |
+| mod-code-019 | `hateoas-check.sh`, `config-check.sh` |
+| mod-code-001 | `circuit-breaker-check.sh` |
+| mod-code-002 | `retry-check.sh` |
+| mod-code-003 | `timeout-check.sh` |
+
+### Impact
+
+| Aspect | Before | After |
+|--------|--------|-------|
+| Phase 6 clarity | Implicit "copy" in pseudocode | Explicit WARNING at top |
+| Script quality | Risk of improvised, basic scripts | Guaranteed use of KB scripts |
+| macOS compatibility | Risk of bash 4.0+ syntax | Uses KB's POSIX-compatible scripts |
+| Validation coverage | Inconsistent | Consistent with KB standards |
+
+### Files Modified
+
+```
+runtime/flows/code/GENERATION-ORCHESTRATOR.md
+├── Version: 1.2 → 1.3
+├── Phase 6: Added ⚠️ CRITICAL WARNING section at top
+└── Key Changes: Added DEC-033 reference
+```
+
+### Verification
+
+After this change, a new chat executing Phase 6 should:
+1. ✅ Read the WARNING before proceeding
+2. ✅ COPY scripts from listed locations
+3. ✅ NOT generate custom scripts
+4. ✅ Use exact script names from KB
+5. ✅ Preserve full script content
+
+**Model version:** 3.0.10-013
+
+---
+
+## DEC-034: Validation Assembly Script (Automation) {#dec-034}
+
+**Date:** 2026-01-28  
+**Status:** ✅ Implemented  
+**Category:** Orchestration, Validation, Automation  
+**Model Version:** 3.0.10-014
+
+**Context:**  
+DEC-033 added a WARNING to Phase 6 instructing agents to copy validation scripts from KB instead of generating them. However, testing showed that **the WARNING was not effective** - agents continued to improvise all validation scripts.
+
+### Problem Evidence (PoC 2026-01-28)
+
+Despite the explicit WARNING in Phase 6:
+- 100% of validation scripts were improvised
+- Scripts with matching names had completely different content
+- Wrong tier assignments (hexagonal-structure-check.sh in tier-2 instead of tier-3)
+- Missing scripts from KB (integration-check.sh, config-check.sh, etc.)
+
+Example comparison of `naming-conventions-check.sh`:
+
+| Aspect | KB Version | Improvised Version |
+|--------|------------|-------------------|
+| Shebang | `#!/bin/sh` (POSIX) | `#!/bin/bash` |
+| Lines | ~60 | ~25 |
+| Functions | `pass()`, `fail()`, `warn()` | None |
+| Output | Structured with colors | Basic echo |
+
+### Root Cause
+
+Text-based warnings are not enforceable. The agent:
+1. Reads the warning
+2. Understands the intent
+3. Still improvises because it's "easier" than navigating KB paths
+
+### Solution
+
+Create an **executable script** that the agent MUST run instead of manually copying files.
+
+```bash
+runtime/validators/assemble-validation.sh <validation-dir> <service-name> <stack> <module-1> [module-2] ...
+```
+
+The script:
+1. Takes modules discovered in Phase 2 as input
+2. Automatically copies scripts from correct KB locations
+3. Handles path resolution (module names with suffixes like `-java-resilience4j`)
+4. Configures `run-all.sh` with variable substitution
+5. Sets executable permissions
+
+### Additional Fix: Consolidate Duplicate Folders
+
+Eliminated confusion between two similar folders:
+
+| Before | After |
+|--------|-------|
+| `runtime/validators/` | `runtime/validators/` ✅ (kept) |
+| `runtime/validation/` | (deleted) |
+
+Moved `runtime/validation/scripts/tier-0/package-structure-check.sh` → `runtime/validators/tier-0-conformance/`
+
+### Files Changed
+
+```
+NEW:
+  runtime/validators/assemble-validation.sh
+
+UPDATED:
+  runtime/flows/code/GENERATION-ORCHESTRATOR.md (v1.3 → v1.4)
+    - Phase 6: Replaced WARNING with MANDATORY script execution
+    - Key Changes: Added DEC-034 reference
+
+MOVED:
+  runtime/validation/scripts/tier-0/package-structure-check.sh
+    → runtime/validators/tier-0-conformance/package-structure-check.sh
+
+DELETED:
+  runtime/validation/ (entire folder - was duplicate/confusing)
+```
+
+### Usage in Phase 6
+
+```bash
+# Agent MUST execute this command, not manually copy scripts
+./runtime/validators/assemble-validation.sh \
+    "${PACKAGE_DIR}/validation" \
+    "${SERVICE_NAME}" \
+    "${STACK}" \
+    mod-code-015 mod-code-017 mod-code-018 mod-code-019 \
+    mod-code-001 mod-code-002 mod-code-003
+```
+
+### Expected Outcome
+
+| Aspect | Before (DEC-033) | After (DEC-034) |
+|--------|------------------|-----------------|
+| Agent action | Read warning, ignore it | Execute script |
+| Script source | Improvised | Copied from KB |
+| Tier assignment | Often wrong | Automatic/correct |
+| Missing scripts | Common | None (script handles all) |
+| Consistency | Variable | Guaranteed |
+
+### Verification
+
+After running `assemble-validation.sh`, the `validation/` directory should contain:
+- Tier-0: 2 scripts (template-conformance-check.sh, package-structure-check.sh)
+- Tier-1: 3 scripts (naming-conventions, project-structure, traceability)
+- Tier-2: 5+ scripts (compile, syntax, application-yml, etc.)
+- Tier-3: N scripts (one per module with validation/*.sh)
+
+**Model version:** 3.0.10-014

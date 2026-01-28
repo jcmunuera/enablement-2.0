@@ -1,5 +1,57 @@
 # Changelog
 
+## [3.0.10-014] - 2026-01-28
+
+### Added (Validation Assembly Automation)
+
+DEC-034: Created `assemble-validation.sh` script to automate validation script collection.
+
+#### Problem Solved
+DEC-033's WARNING was not effective - agents continued improvising validation scripts despite explicit instructions to copy from KB.
+
+#### Solution
+- **NEW:** `runtime/validators/assemble-validation.sh` - executable script that agents MUST run
+- Script automatically copies scripts from correct KB locations based on modules used
+- Eliminates human error and improvisation
+
+#### Additional Cleanup
+- **CONSOLIDATED:** Merged `runtime/validation/` into `runtime/validators/`
+- **MOVED:** `package-structure-check.sh` to `tier-0-conformance/`
+- **DELETED:** `runtime/validation/` (was duplicate/confusing)
+
+#### Files Changed
+- `runtime/validators/assemble-validation.sh` (NEW)
+- `runtime/validators/tier-0-conformance/package-structure-check.sh` (MOVED)
+- `runtime/flows/code/GENERATION-ORCHESTRATOR.md` (v1.3 → v1.4)
+- `runtime/validation/` (DELETED)
+
+---
+
+## [3.0.10-013] - 2026-01-28
+
+### Fixed (Validation Script Management)
+
+Addresses issue discovered during new-chat PoC test where validation scripts were improvised instead of copied from KB.
+
+#### DEC-033: Validation Script Management (No Improvisation)
+- **Phase 6 WARNING**: Added prominent warning at start of Phase 6 in GENERATION-ORCHESTRATOR.md
+- **Explicit instructions**: Scripts MUST be copied from KB, NOT generated
+- **Script location reference**: Clear table mapping tiers to source locations
+- **Module mapping**: Table showing which scripts to copy per module
+
+#### Files Modified
+- `runtime/flows/code/GENERATION-ORCHESTRATOR.md` (v1.2 → v1.3)
+  - Added ⚠️ CRITICAL WARNING section at top of Phase 6
+  - Updated Key Changes to include DEC-033
+
+#### Root Cause
+GENERATION-ORCHESTRATOR.md Phase 6 had instructions to "copy" scripts but:
+1. No prominent warning about NOT generating
+2. Instructions buried in pseudocode
+3. New chat agents missed the implicit requirement
+
+---
+
 ## [3.0.10-012] - 2026-01-27
 
 ### Added (Human Approval Checkpoint)

@@ -1,7 +1,7 @@
 # Generation Orchestrator
 
-## Version: 1.1
-## Last Updated: 2026-01-26
+## Version: 1.4
+## Last Updated: 2026-01-28
 
 ---
 
@@ -18,32 +18,44 @@ This document defines the complete orchestration flow for code generation. An ag
 │                        GENERATION ORCHESTRATION FLOW                         │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  ┌──────┐  ┌───────────┐  ┌─────────────────┐  ┌────────────┐  ┌───────┐   │
-│  │ INIT │─▶│ DISCOVERY │─▶│CONTEXT_RESOLUTION│─▶│ GENERATION │─▶│ TESTS │   │
-│  └──────┘  └───────────┘  └─────────────────┘  └────────────┘  └───────┘   │
-│      │           │                │                   │             │       │
-│      ▼           ▼                ▼                   ▼             ▼       │
-│   Create      Write           Write              Write         Generate    │
-│   Package    discovery-    generation-        generation-       unit       │
-│   Structure  trace.json    context.json       trace.json        tests      │
-│                                  │                                          │
+│  ┌──────┐  ┌───────────┐  ┌─────────────────┐  ┌──────────┐  ┌───────────┐ │
+│  │ INIT │─▶│ DISCOVERY │─▶│CONTEXT_RESOLUTION│─▶│CHECKPOINT│─▶│ GENERATION│ │
+│  └──────┘  └───────────┘  └─────────────────┘  └──────────┘  └───────────┘ │
+│      │           │                │                  │              │       │
+│      ▼           ▼                ▼                  ▼              ▼       │
+│   Create      Write           Write            Present         Generate     │
+│   Package    discovery-    generation-       execution-         code        │
+│   Structure  trace.json    context.json       plan.md                       │
+│                                  │                │                         │
 │                                  │ ┌──────────────────────────────────┐    │
 │                                  └▶│ FAIL if variables unresolvable  │    │
 │                                    └──────────────────────────────────┘    │
+│                                               │                             │
+│                                               ▼                             │
+│                                    ┌──────────────────────┐                │
+│                                    │  HUMAN APPROVAL      │                │
+│                                    │  (DEC-032)           │                │
+│                                    │  "approved" to       │                │
+│                                    │   proceed            │                │
+│                                    └──────────────────────┘                │
 │                                                                             │
-│  ┌───────────┐   ┌──────────┐                                              │
-│  │ VALIDATE  │──▶│ PACKAGE  │                                              │
-│  └───────────┘   └──────────┘                                              │
-│       │               │                                                     │
-│       ▼               ▼                                                     │
-│   Execute        Create .tar.gz                                            │
-│   validation     with all artifacts                                        │
-│   scripts                                                                   │
+│  ┌───────┐  ┌───────────┐   ┌──────────┐                                   │
+│  │ TESTS │─▶│ VALIDATE  │──▶│ PACKAGE  │                                   │
+│  └───────┘  └───────────┘   └──────────┘                                   │
+│      │           │               │                                          │
+│      ▼           ▼               ▼                                          │
+│   Generate   Execute        Create .tar                                     │
+│   unit       validation     with all artifacts                              │
+│   tests      scripts                                                        │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Key Change (DEC-024):** CONTEXT_RESOLUTION phase ensures ALL template variables are resolved BEFORE code generation begins. If any variable cannot be resolved from inputs, generation FAILS immediately.
+**Key Changes:**
+- **(DEC-024):** CONTEXT_RESOLUTION phase ensures ALL template variables are resolved BEFORE code generation begins.
+- **(DEC-032):** HUMAN APPROVAL CHECKPOINT allows review and approval of execution plan before generation starts.
+- **(DEC-033):** VALIDATION ASSEMBLY must COPY scripts from KB, not generate them.
+- **(DEC-034):** Use `assemble-validation.sh` script to automate validation script collection.
 
 ---
 
@@ -340,6 +352,164 @@ def context_resolution_phase(ctx: PackageContext, discovery: DiscoveryResult) ->
 | OpenAPI spec malformed | FAIL with parse error |
 | mapping.json missing when System API present | FAIL: "mapping.json required for System API integration" |
 | Entity has no fields | FAIL: "Entity {name} has no fields defined" |
+
+---
+## Phase 2.7: HUMAN APPROVAL CHECKPOINT (DEC-032)
+
+### Objective
+Provide a mandatory approval checkpoint before code generation begins. This pattern:
+1. **Prevents wasted effort** - Human validates plan before expensive generation
+2. **Enables course correction** - Misunderstandings caught early
+3. **Mitigates context compaction** - Natural breakpoint for long conversations
+4. **Ensures determinism** - Approved plan becomes the contract
+
+### When to Apply
+
+| Scenario | Checkpoint Required? |
+|----------|---------------------|
+| Interactive chat generation | ✅ ALWAYS |
+| Automated CI/CD pipeline | ⚠️ OPTIONAL (can be skipped with `--auto-approve`) |
+| Agentic orchestration | ✅ RECOMMENDED (agent pauses for human) |
+
+### Checkpoint Artifact: `execution-plan.md`
+
+After CONTEXT_RESOLUTION completes successfully, generate and present an execution plan:
+
+```markdown
+# Execution Plan: {service-name}
+
+## Generation Context
+- **Package ID:** gen_{service-name}_{timestamp}
+- **Stack:** {stack}
+- **KB Version:** {kb-version}
+
+## Capabilities Detected
+| Capability | Feature | Module |
+|------------|---------|--------|
+| architecture.hexagonal | hexagonal-light | mod-015 |
+| api-architecture | domain-api | mod-019 |
+| ... | ... | ... |
+
+## Phase Execution Plan
+
+### Phase 3.1: STRUCTURAL
+| Module | Files to Generate |
+|--------|-------------------|
+| mod-015 | Entity.java, EntityId.java, Repository.java, ... |
+| mod-019 | Controller.java, ModelAssembler.java, ... |
+
+### Phase 3.2: IMPLEMENTATION  
+| Module | Files to Generate |
+|--------|-------------------|
+| mod-017 | SystemApiAdapter.java, SystemApiClient.java, ... |
+| mod-018 | RestClientConfig.java |
+
+### Phase 3.3: CROSS-CUTTING
+| Module | Transformation |
+|--------|----------------|
+| mod-001 | Add @CircuitBreaker to adapters |
+| mod-002 | Add @Retry to adapters |
+| mod-003 | Configure timeouts |
+
+### Phase 4: TESTS
+- Unit tests for domain entities
+- Controller tests with mocks
+- Adapter tests with mocks
+
+### Phase 5: VALIDATION
+- 17 validation scripts (Tier 0-3)
+
+## Variables Resolved
+| Variable | Value |
+|----------|-------|
+| serviceName | customer-api |
+| basePackage | com.bank.customer |
+| Entity | Customer |
+| ... | ... |
+
+## Awaiting Approval
+Please review and confirm:
+- [ ] Capabilities correctly identified
+- [ ] Modules appropriate for requirements
+- [ ] Variables correctly resolved
+
+**Reply "approved" to proceed with generation.**
+```
+
+### Approval Protocol
+
+```python
+def human_approval_checkpoint(ctx: PackageContext, discovery: DiscoveryResult, 
+                               gen_context: GenerationContext) -> bool:
+    """
+    Present execution plan and wait for human approval.
+    
+    Returns:
+        True if approved, False if rejected/modified
+    """
+    
+    # 1. Generate execution plan
+    plan = generate_execution_plan(ctx, discovery, gen_context)
+    
+    # 2. Write to trace
+    write_file(f"{ctx.package_dir}/trace/execution-plan.md", plan)
+    
+    # 3. Present to human
+    present_to_user(plan)
+    
+    # 4. Wait for response
+    response = await_user_response()
+    
+    # 5. Handle response
+    if response.lower() in ["approved", "yes", "proceed", "ok"]:
+        log("Human approved execution plan")
+        return True
+    elif response.lower() in ["rejected", "no", "stop", "cancel"]:
+        log("Human rejected execution plan")
+        return False
+    else:
+        # Treat as modification request
+        log(f"Human requested modification: {response}")
+        # Re-run discovery/context with modifications
+        return handle_modification_request(response, ctx, discovery)
+```
+
+### Benefits
+
+| Benefit | Description |
+|---------|-------------|
+| **Anti-Compaction** | Natural checkpoint prevents mid-generation context loss |
+| **Early Validation** | Catch misunderstandings before code generation |
+| **Auditability** | `execution-plan.md` provides approval record |
+| **Determinism** | Approved plan is the generation contract |
+| **Resumability** | If session ends, plan can be re-submitted for continuation |
+
+### Outputs
+- `trace/execution-plan.md` - Human-readable execution plan
+- Approval timestamp logged in generation trace
+
+### Integration with Agentic Orchestration
+
+For multi-agent systems, this checkpoint enables:
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│  Discovery  │────▶│  Checkpoint  │────▶│ Generation  │
+│    Agent    │     │    (Human)   │     │    Agent    │
+└─────────────┘     └──────────────┘     └─────────────┘
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │   Approval   │
+                    │   Required   │
+                    └──────────────┘
+```
+
+The checkpoint can be implemented as:
+- **Slack/Teams notification** with approval buttons
+- **Web UI modal** requiring explicit approval
+- **CLI prompt** in interactive mode
+- **API callback** for automated systems with manual override
 
 ---
 
@@ -986,6 +1156,40 @@ def traceability_phase(ctx: PackageContext, generation: GenerationResult, tests:
 
 ## Phase 6: VALIDATION ASSEMBLY
 
+### ⚠️ MANDATORY: Use assemble-validation.sh (DEC-034)
+
+**DO NOT manually copy or generate validation scripts.**
+
+Execute the KB's assembly script instead:
+
+```bash
+# From within the KB directory, run:
+./runtime/validators/assemble-validation.sh \
+    "${PACKAGE_DIR}/validation" \
+    "${SERVICE_NAME}" \
+    "${STACK}" \
+    ${MODULES_USED[@]}
+
+# Example with actual values:
+./runtime/validators/assemble-validation.sh \
+    "./gen_customer-api_20260128/validation" \
+    "customer-api" \
+    "java-spring" \
+    mod-code-015 mod-code-017 mod-code-018 mod-code-019 \
+    mod-code-001 mod-code-002 mod-code-003
+```
+
+**The script automatically:**
+1. Creates the `validation/scripts/tier{0,1,2,3}/` directory structure
+2. Copies Tier-0 scripts from `runtime/validators/tier-0-conformance/`
+3. Copies Tier-1 scripts from `runtime/validators/tier-1-universal/`
+4. Copies Tier-2 scripts from `runtime/validators/tier-2-technology/{stack}/`
+5. Copies Tier-3 scripts from `modules/{module-id}/validation/` for each module
+6. Generates `run-all.sh` from template with variable substitution
+7. Sets executable permissions on all scripts
+
+**If you cannot execute the script**, follow the manual process below but DO NOT improvise script content.
+
 ### Objective
 Assemble the `validation/` directory with all applicable scripts from each tier, then execute validations.
 
@@ -993,39 +1197,39 @@ Assemble the `validation/` directory with all applicable scripts from each tier,
 
 | Tier | Purpose | Source Location | Applies To |
 |------|---------|-----------------|------------|
-| **Tier-0** | Template conformance (DEC-024/DEC-025) | `runtime/validators/tier-0-conformance/` + dynamic | All generated code |
+| **Tier-0** | Template conformance (DEC-024/DEC-025) | `runtime/validators/tier-0-conformance/` | All generated code |
 | **Tier-1** | Universal validations | `runtime/validators/tier-1-universal/` | All projects |
 | **Tier-2** | Technology-specific | `runtime/validators/tier-2-technology/{stack}/` | Based on stack |
 | **Tier-3** | Module-specific | `modules/{module-id}/validation/` | Based on modules used |
 
-### CRITICAL: Complete Script Collection
-
-**MANDATORY:** The validation suite MUST include scripts from ALL tiers:
+### Expected Output Structure
 
 ```
 validation/
-├── run-all.sh                          # Generated from run-all.sh.tpl
+├── run-all.sh                          # From run-all.sh.tpl
 ├── scripts/
 │   ├── tier0/
-│   │   └── conformance-check.sh        # GENERATED dynamically per generation
+│   │   ├── template-conformance-check.sh
+│   │   └── package-structure-check.sh
 │   ├── tier1/
-│   │   ├── naming-conventions-check.sh # From runtime/validators/tier-1-universal/
-│   │   ├── project-structure-check.sh  # From runtime/validators/tier-1-universal/
-│   │   └── traceability-check.sh       # From runtime/validators/tier-1-universal/
+│   │   ├── naming-conventions-check.sh
+│   │   ├── project-structure-check.sh
+│   │   └── traceability-check.sh
 │   ├── tier2/
-│   │   ├── compile-check.sh            # From runtime/validators/tier-2-technology/java-spring/
-│   │   ├── syntax-check.sh             # From runtime/validators/tier-2-technology/java-spring/
-│   │   └── application-yml-check.sh    # From runtime/validators/tier-2-technology/java-spring/
+│   │   ├── compile-check.sh
+│   │   ├── syntax-check.sh
+│   │   ├── application-yml-check.sh
+│   │   └── (other stack-specific scripts)
 │   └── tier3/
-│       ├── hexagonal-structure-check.sh  # From modules/mod-015/validation/
-│       ├── systemapi-check.sh            # From modules/mod-017/validation/
-│       ├── integration-check.sh          # From modules/mod-018/validation/
-│       ├── hateoas-check.sh              # From modules/mod-019/validation/
-│       ├── circuit-breaker-check.sh      # From modules/mod-001/validation/
-│       ├── retry-check.sh                # From modules/mod-002/validation/
-│       └── timeout-check.sh              # From modules/mod-003/validation/
+│       ├── hexagonal-structure-check.sh  # mod-015
+│       ├── systemapi-check.sh            # mod-017
+│       ├── integration-check.sh          # mod-018
+│       ├── hateoas-check.sh              # mod-019
+│       ├── circuit-breaker-check.sh      # mod-001
+│       ├── retry-check.sh                # mod-002
+│       └── timeout-check.sh              # mod-003
 └── reports/
-    └── validation-results.json         # Generated after execution
+    └── validation-results.json
 ```
 
 ### Steps
