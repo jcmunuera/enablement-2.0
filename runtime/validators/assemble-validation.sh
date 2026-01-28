@@ -154,9 +154,16 @@ if [ -f "$TEMPLATE" ]; then
     sed -e "s/{{SERVICE_NAME}}/$SERVICE_NAME/g" \
         -e "s/{{STACK}}/$STACK/g" \
         "$TEMPLATE" > "$VALIDATION_DIR/run-all.sh"
-    echo "   ✓ run-all.sh (from template)"
+    
+    # Verify the marker exists (proves it came from template)
+    if grep -q "TEMPLATE_MARKER: ENABLEMENT_2_0_RUN_ALL_V2" "$VALIDATION_DIR/run-all.sh"; then
+        echo "   ✓ run-all.sh (from template, verified)"
+    else
+        echo "   ⚠ run-all.sh created but marker not found - may be corrupted"
+    fi
 else
     echo "   ✗ Template not found: $TEMPLATE"
+    echo "   ⚠ DO NOT generate run-all.sh manually!"
 fi
 
 # ─────────────────────────────────────────────────────────────────────────────

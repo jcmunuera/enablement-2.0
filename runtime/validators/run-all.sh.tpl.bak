@@ -3,22 +3,11 @@
 # Enablement 2.0 - Validation Suite Runner
 # Template: runtime/validators/run-all.sh.tpl
 # ═══════════════════════════════════════════════════════════════════
-# 
-# ⚠️ DO NOT MODIFY OR REGENERATE THIS FILE
-# This file MUST come from the KB template via assemble-validation.sh
-# If this marker is missing, the file was incorrectly generated.
-# TEMPLATE_MARKER: ENABLEMENT_2_0_RUN_ALL_V2
-#
-# ═══════════════════════════════════════════════════════════════════
 #
 # USAGE: ./run-all.sh
 #
-# This script runs all validation scripts in tier0, tier1, tier2, tier3 directories
+# This script runs all validation scripts in tier1, tier2, tier3 directories
 # and generates a JSON report.
-#
-# IMPORTANT: 
-# - Tier-0 scripts receive PACKAGE_DIR (the generation package root)
-# - Tier 1-3 scripts receive PROJECT_DIR (the generated project)
 #
 # EXIT CODES:
 #   0 - All validations passed
@@ -32,11 +21,10 @@
 # IMPORTANT: Do NOT use 'set -e' - we want to continue even if validations fail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PACKAGE_DIR="$SCRIPT_DIR/.."
 PROJECT_DIR="$SCRIPT_DIR/../output/{{SERVICE_NAME}}"
 REPORTS_DIR="$SCRIPT_DIR/reports"
 
-# Colors for output (compatible with bash 3.2+)
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -57,7 +45,6 @@ declare -a TIER3_RESULTS
 run_validation() {
     local tier=$1
     local script=$2
-    local target_dir=$3
     local name=$(basename "$script" .sh)
     
     # Aligned output
@@ -71,7 +58,7 @@ run_validation() {
     # Run script and capture output and exit code
     local output
     local exit_code
-    output=$("$script" "$target_dir" 2>&1)
+    output=$("$script" "$PROJECT_DIR" 2>&1)
     exit_code=$?
     
     # Process result based on exit code
@@ -112,12 +99,11 @@ fi
 
 # ─────────────────────────────────────────────────────────────────────
 # TIER 0: Conformance Validations (Generation Process)
-# NOTE: Tier-0 receives PACKAGE_DIR (not PROJECT_DIR)
 # ─────────────────────────────────────────────────────────────────────
 echo -e "${BLUE}▶ TIER 0: Conformance Validations (DEC-024/DEC-025)${NC}"
 if [[ -d "$SCRIPT_DIR/scripts/tier0" ]]; then
     for script in "$SCRIPT_DIR/scripts/tier0/"*.sh; do
-        [[ -f "$script" ]] && run_validation "0" "$script" "$PACKAGE_DIR"
+        [[ -f "$script" ]] && run_validation "0" "$script"
     done
 else
     echo "  (no tier0 scripts found)"
@@ -130,7 +116,7 @@ echo ""
 echo -e "${BLUE}▶ TIER 1: Universal Validations${NC}"
 if [[ -d "$SCRIPT_DIR/scripts/tier1" ]]; then
     for script in "$SCRIPT_DIR/scripts/tier1/"*.sh; do
-        [[ -f "$script" ]] && run_validation "1" "$script" "$PROJECT_DIR"
+        [[ -f "$script" ]] && run_validation "1" "$script"
     done
 else
     echo "  (no tier1 scripts found)"
@@ -143,7 +129,7 @@ echo ""
 echo -e "${BLUE}▶ TIER 2: Technology Validations ({{STACK}})${NC}"
 if [[ -d "$SCRIPT_DIR/scripts/tier2" ]]; then
     for script in "$SCRIPT_DIR/scripts/tier2/"*.sh; do
-        [[ -f "$script" ]] && run_validation "2" "$script" "$PROJECT_DIR"
+        [[ -f "$script" ]] && run_validation "2" "$script"
     done
 else
     echo "  (no tier2 scripts found)"
@@ -156,7 +142,7 @@ echo ""
 echo -e "${BLUE}▶ TIER 3: Module-specific Validations${NC}"
 if [[ -d "$SCRIPT_DIR/scripts/tier3" ]]; then
     for script in "$SCRIPT_DIR/scripts/tier3/"*.sh; do
-        [[ -f "$script" ]] && run_validation "3" "$script" "$PROJECT_DIR"
+        [[ -f "$script" ]] && run_validation "3" "$script"
     done
 else
     echo "  (no tier3 scripts found)"

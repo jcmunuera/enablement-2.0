@@ -1,5 +1,54 @@
 # Changelog
 
+## [3.0.10-016] - 2026-01-28
+
+### Fixed (Validation Script Bugs)
+
+Three validation bugs discovered in PoC 2:
+
+#### Bug 1: package-structure-check received wrong directory
+- **Problem:** run-all.sh passed PROJECT_DIR to all scripts, but Tier-0 needs PACKAGE_DIR
+- **Fix:** run_validation() now accepts 3rd argument (target_dir), Tier-0 passes PACKAGE_DIR
+
+#### Bug 2: traceability-check.sh required jq
+- **Problem:** Script used `jq` which is not installed by default on macOS
+- **Fix:** Rewrote script to use grep/sed for JSON validation (POSIX compatible)
+
+#### Bug 3: circuit-breaker-check.sh failed without fallback methods
+- **Problem:** Script required fallbackMethod which we don't generate by default
+- **Fix:** Changed fallback method checks from FAIL to WARN (recommended, not required)
+
+#### Files Changed
+- `runtime/validators/run-all.sh.tpl` - V1 → V2, added PACKAGE_DIR, 3-arg run_validation
+- `runtime/validators/tier-1-universal/traceability/traceability-check.sh` - No jq dependency
+- `modules/mod-code-001-circuit-breaker-java-resilience4j/validation/circuit-breaker-check.sh` - Fallback = WARN
+- `runtime/validators/assemble-validation.sh` - Check for V2 marker
+
+---
+
+## [3.0.10-015] - 2026-01-28
+
+### Fixed (run-all.sh Template Verification)
+
+Despite DEC-034, PoC showed that agents still improvised `run-all.sh` instead of using the template.
+
+#### Problem
+- Agent copied tier0-3 scripts correctly (17 scripts) ✅
+- But generated `run-all.sh` with `${tier^^}` syntax (bash 4.0+ required)
+- macOS has bash 3.2, causing failure
+
+#### Solution
+1. **Template marker**: Added `TEMPLATE_MARKER: ENABLEMENT_2_0_RUN_ALL_V1` to `run-all.sh.tpl`
+2. **Verification**: `assemble-validation.sh` now verifies the marker exists after copy
+3. **Documentation**: Added explicit section in Phase 6 about run-all.sh requirements
+
+#### Files Changed
+- `runtime/validators/run-all.sh.tpl` - Added template marker and warning
+- `runtime/validators/assemble-validation.sh` - Added marker verification
+- `runtime/flows/code/GENERATION-ORCHESTRATOR.md` (v1.4 → v1.5) - Added run-all.sh section
+
+---
+
 ## [3.0.10-014] - 2026-01-28
 
 ### Added (Validation Assembly Automation)

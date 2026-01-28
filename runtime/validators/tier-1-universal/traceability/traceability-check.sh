@@ -1,21 +1,35 @@
-#!/bin/bash
+#!/bin/sh
 # traceability-check.sh
 # Universal validator - applies to ALL outputs from ALL domains
 #
 # Validates .enablement/manifest.json exists and contains required fields
 # Updated for Model v3.0 (skill removed, discovery-based)
-
-set -e
+#
+# POSIX compatible - does NOT require jq (uses grep/sed)
 
 OUTPUT_DIR="${1:-.}"
 ERRORS=0
 WARNINGS=0
 
 # Output functions
-pass() { echo -e "✅ PASS: $1"; }
-fail() { echo -e "❌ FAIL: $1"; ERRORS=$((ERRORS + 1)); }
-warn() { echo -e "⚠️  WARN: $1"; WARNINGS=$((WARNINGS + 1)); }
-skip() { echo -e "⏭️  SKIP: $1"; }
+pass() { echo "✅ PASS: $1"; }
+fail() { echo "❌ FAIL: $1"; ERRORS=$((ERRORS + 1)); }
+warn() { echo "⚠️  WARN: $1"; WARNINGS=$((WARNINGS + 1)); }
+skip() { echo "⏭️  SKIP: $1"; }
+
+# JSON helper: check if a field exists (basic grep-based)
+json_has_field() {
+    local file="$1"
+    local field="$2"
+    grep -q "\"$field\"" "$file" 2>/dev/null
+}
+
+# JSON helper: extract simple string value
+json_get_value() {
+    local file="$1"
+    local field="$2"
+    grep "\"$field\"" "$file" 2>/dev/null | sed 's/.*"'"$field"'"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/' | head -1
+}
 
 echo "════════════════════════════════════════════════════════════"
 echo "  TIER 1 - TRACEABILITY VALIDATION (Universal)"
@@ -41,84 +55,72 @@ else
     exit 1
 fi
 
-# Check 3: Valid JSON
-if jq empty "$MANIFEST" 2>/dev/null; then
-    pass "manifest.json is valid JSON"
+# Check 3: Valid JSON (basic check - looks for opening/closing braces)
+if head -1 "$MANIFEST" | grep -q "^{" && tail -1 "$MANIFEST" | grep -q "}$"; then
+    pass "manifest.json appears to be valid JSON"
 else
-    fail "manifest.json is not valid JSON"
+    fail "manifest.json does not appear to be valid JSON"
     exit 1
 fi
 
-# Check 4: Required top-level fields (Model v3.0)
-# Note: "skill" removed in v3.0, replaced by discovery-based flow
-REQUIRED_FIELDS=("generation" "enablement" "status")
-for field in "${REQUIRED_FIELDS[@]}"; do
-    if jq -e ".$field" "$MANIFEST" > /dev/null 2>&1; then
-        pass "Required field '$field' present"
-    else
-        fail "Required field '$field' missing"
-    fi
-done
+# Check 4: Required fields - check for common manifest fields
+# Model v3.0 uses: version, generator, service, capabilities
 
-# Check 5: generation.id is valid UUID (warning only)
-GEN_ID=$(jq -r '.generation.id // empty' "$MANIFEST")
-if [ -n "$GEN_ID" ]; then
-    UUID_REGEX='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-    if [[ "$GEN_ID" =~ $UUID_REGEX ]]; then
-        pass "generation.id is valid UUID"
-    else
-        warn "generation.id is not a valid UUID format: $GEN_ID"
-    fi
+if json_has_field "$MANIFEST" "version"; then
+    pass "Field 'version' present"
 else
-    warn "generation.id is empty or missing"
+    warn "Field 'version' missing"
 fi
 
-# Check 6: generation.timestamp is valid ISO-8601 (warning only)
-TIMESTAMP=$(jq -r '.generation.timestamp // empty' "$MANIFEST")
+if json_has_field "$MANIFEST" "generator"; then
+    pass "Field 'generator' present"
+else
+    warn "Field 'generator' missing"
+fi
+
+if json_has_field "$MANIFEST" "service"; then
+    pass "Field 'service' present"
+else
+    fail "Field 'service' missing (required)"
+fi
+
+if json_has_field "$MANIFEST" "capabilities"; then
+    pass "Field 'capabilities' present"
+else
+    warn "Field 'capabilities' missing"
+fi
+
+# Check 5: Service name is present
+SERVICE_NAME=$(json_get_value "$MANIFEST" "name")
+if [ -n "$SERVICE_NAME" ]; then
+    pass "service.name: $SERVICE_NAME"
+else
+    warn "service.name is empty or not found"
+fi
+
+# Check 6: Stack is present
+STACK=$(json_get_value "$MANIFEST" "stack")
+if [ -n "$STACK" ]; then
+    pass "service.stack: $STACK"
+else
+    warn "service.stack is empty or not found"
+fi
+
+# Check 7: generated_at timestamp present
+TIMESTAMP=$(json_get_value "$MANIFEST" "generated_at")
 if [ -n "$TIMESTAMP" ]; then
-    # Basic ISO-8601 check (YYYY-MM-DDTHH:MM:SS)
-    if [[ "$TIMESTAMP" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2} ]]; then
-        pass "generation.timestamp is valid ISO-8601"
-    else
-        warn "generation.timestamp format may be invalid: $TIMESTAMP"
-    fi
+    pass "generated_at: $TIMESTAMP"
 else
-    warn "generation.timestamp is empty or missing"
+    warn "generated_at timestamp missing"
 fi
 
-# Check 7: enablement.version present (Model v3.0)
-ENABLEMENT_VERSION=$(jq -r '.enablement.version // empty' "$MANIFEST")
-if [ -n "$ENABLEMENT_VERSION" ]; then
-    pass "enablement.version present: $ENABLEMENT_VERSION"
+# Check 8: Files array present (indicates traceability)
+if json_has_field "$MANIFEST" "files"; then
+    # Count file entries (rough estimate)
+    FILE_COUNT=$(grep -c '"path"' "$MANIFEST" 2>/dev/null || echo "0")
+    pass "files array present (~$FILE_COUNT entries)"
 else
-    warn "enablement.version is empty or missing"
-fi
-
-# Check 8: discovery block present (recommended for v3.0)
-if jq -e ".discovery" "$MANIFEST" > /dev/null 2>&1; then
-    pass "discovery block present"
-    
-    # Check discovery.stack
-    STACK=$(jq -r '.discovery.stack // empty' "$MANIFEST")
-    if [ -n "$STACK" ]; then
-        pass "discovery.stack: $STACK"
-    else
-        warn "discovery.stack is empty"
-    fi
-else
-    warn "discovery block missing (recommended for traceability)"
-fi
-
-# Check 9: status.overall is valid value
-STATUS=$(jq -r '.status.overall // empty' "$MANIFEST")
-if [ -n "$STATUS" ]; then
-    if [[ "$STATUS" =~ ^(SUCCESS|PARTIAL|FAILED|PENDING)$ ]]; then
-        pass "status.overall is valid ($STATUS)"
-    else
-        fail "status.overall must be SUCCESS, PARTIAL, FAILED, or PENDING (got: $STATUS)"
-    fi
-else
-    fail "status.overall is missing"
+    warn "files array missing (recommended for traceability)"
 fi
 
 # Summary

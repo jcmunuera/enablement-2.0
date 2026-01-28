@@ -1,6 +1,6 @@
 # Generation Orchestrator
 
-## Version: 1.4
+## Version: 1.5
 ## Last Updated: 2026-01-28
 
 ---
@@ -1188,7 +1188,18 @@ Execute the KB's assembly script instead:
 6. Generates `run-all.sh` from template with variable substitution
 7. Sets executable permissions on all scripts
 
-**If you cannot execute the script**, follow the manual process below but DO NOT improvise script content.
+### ⚠️ CRITICAL: run-all.sh MUST come from template
+
+**DO NOT generate or write run-all.sh manually.**
+
+The `run-all.sh` file MUST:
+- Come from `runtime/validators/run-all.sh.tpl`
+- Contain the marker: `TEMPLATE_MARKER: ENABLEMENT_2_0_RUN_ALL_V1`
+- Be created by `assemble-validation.sh`, not manually
+
+If you generate run-all.sh yourself, it will likely have bash 4.0+ syntax (like `${var^^}`) that fails on macOS.
+
+**If you cannot execute assemble-validation.sh**, follow the manual process below but DO NOT improvise script content.
 
 ### Objective
 Assemble the `validation/` directory with all applicable scripts from each tier, then execute validations.
