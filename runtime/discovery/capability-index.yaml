@@ -5,10 +5,10 @@
 # Single source of truth for capability → feature → implementation → module
 # 
 # Changes from v2.7:
-#   - DEC-040: Added publishes_flags.http_client to persistence.systemapi
-#     Default: restclient (Spring 6.1+ RestClient)
-#     Options: restclient, feign, resttemplate
-#     Templates with // Variant: header are filtered by this flag
+#   - DEC-041: Removed publishes_flags.http_client (was DEC-040, reverted)
+#     http_client is now a Module Variant in mod-017/MODULE.md, not a config flag
+#     Discovery detects variant keywords; Context resolves selection or default
+#   - DEC-042: Stack-specific style files injected into CodeGen prompt
 #
 # Changes from v2.6:
 #   - DEC-016: persistence.default_feature = jpa (unqualified "persistencia" → jpa)

@@ -40,6 +40,7 @@ variants:
         description: "Spring 6.1+ RestClient (recommended for Spring Boot 3.2+)"
         templates:
           - client/restclient.java.tpl
+          - config/restclient-config.java.tpl
         keywords:
           - restclient
           - rest client

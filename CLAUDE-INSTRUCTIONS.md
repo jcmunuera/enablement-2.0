@@ -39,6 +39,7 @@ Si falta alguno, pedirlo antes de continuar.
 - Cambios en el modelo (tipos, atributos, estructura)
 - Cambios en comportamiento del discovery
 - Elección entre opciones de diseño
+- Cambios en el pipeline de orquestación (agentes, scripts, flujo)
 - Cualquier "¿hacemos A o B?" que se resuelva
 
 **Cuándo NO registrar:**
@@ -46,10 +47,21 @@ Si falta alguno, pedirlo antes de continuar.
 - Añadir items a listas existentes
 - Cambios triviales de formato
 
+**⚠️ IMPORTANTE — Dos repos, dos DECISION-LOGs:**
+
+El proyecto tiene dos repositorios con DECISION-LOGs independientes:
+
+| Repo | DECISION-LOG | Prefijo IDs | Ámbito |
+|------|-------------|-------------|--------|
+| `enablement-2.0-kb` | `DECISION-LOG.md` (raíz) | DEC-NNN | Modelo, capabilities, modules, templates, KB |
+| `enablement-2.0-orchestration` | `docs/DECISION-LOG.md` | ODEC-NNN | Pipeline, agentes, scripts, ejecución |
+
+**Regla:** Registrar SIEMPRE en el DECISION-LOG del repo correcto según el ámbito de la decisión. Si una decisión afecta a ambos repos, registrar en el principal (KB) y referenciar desde Orchestration.
+
 **Cómo registrar:**
-1. Después de tomar la decisión, añadir entrada a `DECISION-LOG.md`
-2. Usar el siguiente ID secuencial (DEC-XXX)
-3. Informar al usuario: "Decisión registrada como DEC-XXX"
+1. Determinar en qué repo impacta la decisión
+2. Añadir entrada al DECISION-LOG correspondiente con el siguiente ID secuencial
+3. Informar al usuario: "Decisión registrada como DEC-XXX" o "ODEC-XXX"
 
 **Trigger phrases del usuario:**
 - "Esto es una decisión importante"
@@ -58,6 +70,55 @@ Si falta alguno, pedirlo antes de continuar.
 
 **Proactivamente preguntar:**
 - "¿Quieres que registre esta decisión en el DECISION-LOG?"
+
+### ⚠️ Cascada Obligatoria: DECISION-LOG → AUTHORING Guides
+
+**REGLA CRÍTICA:** Cada vez que se registra una decisión (DEC-NNN) en el KB, evaluar INMEDIATAMENTE si impacta alguna guía de AUTHORING en `model/standards/authoring/`.
+
+**Flujo obligatorio tras registrar una decisión en KB:**
+
+```
+1. Registrar DEC-NNN en DECISION-LOG.md
+         │
+         ▼
+2. ¿Impacta cómo se CREAN o ESTRUCTURAN assets del KB?
+   │                                                    
+   ├─ SÍ → Identificar qué guía(s) AUTHORING afecta:   
+   │    ├─ CAPABILITY.md  (config flags, types, features, requires, implies)
+   │    ├─ MODULE.md      (variants, templates, dependencies, structure)
+   │    ├─ TEMPLATE.md    (headers, output paths, variant markers, anti-patterns)
+   │    ├─ FLOW.md        (execution phases, traceability, flow types)
+   │    ├─ VALIDATOR.md   (validation tiers, conformance rules)
+   │    ├─ ERI.md         (implementation options, derivation rules)
+   │    ├─ ADR.md         (decision format, relationships)
+   │    └─ README.md      (index table of decisions → guides)
+   │    │
+   │    ▼
+   │  3. Actualizar la(s) guía(s) con la nueva regla/patrón
+   │  4. Actualizar README.md index si se añade nueva DEC a una guía
+   │  5. Informar: "AUTHORING actualizado: [guía] con DEC-NNN"
+   │                                                    
+   └─ NO → Decisión operacional, no requiere AUTHORING  
+        Ejemplos: cambios en discovery-guidance, ajustes de keywords,
+        correcciones de validación, fixes de PoC
+```
+
+**Criterio de impacto en AUTHORING:**
+
+| Si la decisión afecta... | Actualizar guía... |
+|--------------------------|-------------------|
+| Cómo definir capabilities/features | CAPABILITY.md |
+| Cómo crear o estructurar módulos | MODULE.md |
+| Cómo escribir templates .tpl | TEMPLATE.md |
+| Cómo definir flows de ejecución | FLOW.md |
+| Cómo crear validadores | VALIDATOR.md |
+| Cómo documentar ERIs | ERI.md |
+| Config flags, pub/sub entre módulos | CAPABILITY.md + MODULE.md |
+| Variants de implementación | MODULE.md + TEMPLATE.md |
+| Reglas de determinismo/estilo | TEMPLATE.md |
+| Traceability/manifest | FLOW.md |
+
+**Anti-pattern:** Registrar una decisión en DECISION-LOG y NO propagar a AUTHORING. Esto causa drift entre las reglas documentadas y las reglas reales, resultando en KB inconsistente y agentes que no siguen las decisiones.
 
 ### Gestión de Checkpoints
 
@@ -70,8 +131,8 @@ Si falta alguno, pedirlo antes de continuar.
 
 **Naming convention:**
 ```
-enablement-2_0-checkpoint-YYYYMMDD-HHMM.tar
-enablement-2_0-vX.X.X-FINAL-YYYYMMDD.tar  (solo al final)
+enablement-2_0-kb-YYYYMMDD-NN.tar              (KB checkpoints, NN secuencial)
+enablement-2_0-orchestration-YYYYMMDD-NN.tar    (Orchestration checkpoints)
 ```
 
 **Informar al usuario:**
@@ -93,23 +154,31 @@ enablement-2_0-vX.X.X-FINAL-YYYYMMDD.tar  (solo al final)
 
 ### Checklist de Cierre
 
-1. **DECISION-LOG.md actualizado**
+1. **DECISION-LOG.md actualizado (ambos repos si aplica)**
    - Verificar que todas las decisiones están registradas
+   - Verificar repo correcto (DEC en KB, ODEC en Orchestration)
    - Preguntar: "¿Hay alguna decisión que no hayamos registrado?"
 
-2. **TAR final creado**
-   - Nombre: `enablement-2_0-vX.X.X-FINAL-YYYYMMDD.tar`
-   - Incluye DECISION-LOG.md actualizado
+2. **AUTHORING guides sincronizadas**
+   - Para cada DEC nueva: ¿se propagó a AUTHORING si aplica?
+   - Verificar README.md index actualizado con nuevas referencias
+   - Preguntar: "¿Las AUTHORING guides reflejan todas las decisiones de hoy?"
 
-3. **Session summary generado**
-   - Archivo: `session-summary-YYYY-MM-DD.md`
+3. **TAR final creado (uno por repo modificado)**
+   - KB: `enablement-2_0-kb-YYYYMMDD-NN.tar`
+   - Orchestration: `enablement-2_0-orchestration-YYYYMMDD-NN.tar`
+   - Incluye DECISION-LOGs y AUTHORING actualizados
+
+4. **Session summary generado**
+   - Archivo: `SESSION-YYYY-MM-DD.md`
    - Contenido:
      - Actividad principal del día
      - Decisiones tomadas (referencias a DECISION-LOG)
      - Cambios implementados
+     - AUTHORING guides actualizadas (si aplica)
      - Próximos pasos
 
-4. **Project context actualizado (si procede)**
+5. **Project context actualizado (si procede)**
    - Solo si hubo cambios estructurales al modelo
    - No actualizar por cambios menores
 
@@ -117,9 +186,10 @@ enablement-2_0-vX.X.X-FINAL-YYYYMMDD.tar  (solo al final)
 
 ```
 /mnt/user-data/outputs/
-├── enablement-2_0-vX.X.X-FINAL-YYYYMMDD.tar
-├── session-summary-YYYY-MM-DD.md
-└── enablement-project-context-vX.X.X.md  (si actualizado)
+├── enablement-2_0-kb-YYYYMMDD-NN.tar           (si KB modificado)
+├── enablement-2_0-orchestration-YYYYMMDD-NN.tar (si Orchestration modificado)
+├── SESSION-YYYY-MM-DD.md
+└── PROJECT-CONTEXT.md                           (si actualizado)
 ```
 
 ---
@@ -142,17 +212,39 @@ Priorizar el TAR (código) sobre los documentos (descripción).
 ## 5. Estructura del Workspace
 
 ```
-/home/claude/workspace/enablement-2.0/
-├── DECISION-LOG.md          # Actualizar durante sesión
-├── CHANGELOG.md
-├── README.md
-├── knowledge/
-├── model/
-├── modules/
-└── runtime/
-    └── discovery/
-        ├── capability-index.yaml  # Fuente de verdad
-        └── discovery-guidance.md
+/home/claude/workspace/
+├── enablement-2.0-kb/               # Repo: Knowledge Base
+│   ├── DECISION-LOG.md              # DEC-NNN - Actualizar durante sesión
+│   ├── CHANGELOG.md
+│   ├── README.md
+│   ├── knowledge/                   # ADRs, ERIs
+│   ├── model/
+│   │   └── standards/
+│   │       └── authoring/           # ⚠️ AUTHORING GUIDES - sincronizar con DECs
+│   │           ├── README.md        # Índice de decisiones → guías
+│   │           ├── CAPABILITY.md
+│   │           ├── MODULE.md
+│   │           ├── TEMPLATE.md
+│   │           ├── FLOW.md
+│   │           ├── VALIDATOR.md
+│   │           ├── ERI.md
+│   │           └── ADR.md
+│   ├── modules/
+│   └── runtime/
+│       ├── discovery/
+│       │   ├── capability-index.yaml  # Fuente de verdad
+│       │   └── discovery-guidance.md
+│       └── codegen/
+│           └── styles/                # Stack-specific style files
+│
+└── enablement-2.0-orchestration/    # Repo: Pipeline de orquestación
+    ├── docs/
+    │   ├── DECISION-LOG.md          # ODEC-NNN - Decisiones de pipeline
+    │   ├── ARCHITECTURE.md
+    │   └── CHANGELOG.md
+    ├── agents/                      # Agent prompt definitions
+    ├── scripts/                     # Pipeline shell scripts
+    └── README.md
 ```
 
 ---
@@ -196,22 +288,24 @@ Priorizar el TAR (código) sobre los documentos (descripción).
 ```
 INICIO SESIÓN:
   → Confirmar contexto cargado
-  → Verificar versiones
+  → Verificar versiones (KB + Orchestration)
   → Identificar pendientes
 
 DURANTE SESIÓN:
-  → Decisión importante → DECISION-LOG.md
-  → Cada 1-2h o bloque completo → Checkpoint TAR
+  → Decisión importante → DECISION-LOG.md del repo correcto (DEC / ODEC)
+  → Tras registrar DEC → ¿Impacta AUTHORING? → Actualizar guía(s)
+  → Cada 1-2h o bloque completo → Checkpoint TAR (por repo modificado)
   → Chat lento → Checkpoint urgente + aviso
 
 FIN SESIÓN:
-  → DECISION-LOG completo
-  → TAR final
+  → DECISION-LOGs completos (ambos repos)
+  → AUTHORING guides sincronizadas con DECs del día
+  → TARs finales (por repo modificado)
   → Session summary
   → (Opcional) Project context
 ```
 
 ---
 
-**Versión:** 1.0  
-**Última actualización:** 2026-01-21
+**Versión:** 2.0  
+**Última actualización:** 2026-02-05

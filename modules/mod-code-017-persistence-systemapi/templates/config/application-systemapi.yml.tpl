@@ -7,62 +7,22 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // REQUIRED VARIABLES: {{Entity}} {{basePackage}} {{serviceName}} {{{SERVICE_NAME}} 
 // ═══════════════════════════════════════════════════════════════════════════════
+// NOTE (DEC-043): Resilience4j configuration (circuitbreaker, retry, timelimiter)
+//       is NOT included here. It is generated exclusively in Phase 3 by the
+//       corresponding cross-cutting modules (mod-001, mod-002, mod-003).
+//       This template only contains connectivity and logging configuration.
+// ═══════════════════════════════════════════════════════════════════════════════
 
 # Template: application-systemapi.yml.tpl
-# Output: src/main/resources/application.yml (merge)
-# Purpose: System API configuration with resilience settings
+# Output: src/main/resources/application-systemapi.yml
+# Purpose: System API connectivity configuration
 
 # System API Configuration
 system-api:
   {{serviceName}}:
     base-url: ${{{SERVICE_NAME}}_SYSTEM_API_URL:http://localhost:8081}
 
-# Feign Configuration (if using Feign)
-{{#feign}}
-feign:
-  client:
-    config:
-      default:
-        connectTimeout: 5000
-        readTimeout: 5000
-        loggerLevel: BASIC
-{{/feign}}
-
-# Resilience4j Configuration (MANDATORY for System API)
-resilience4j:
-  circuitbreaker:
-    instances:
-      {{serviceName}}:
-        slidingWindowSize: 100
-        failureRateThreshold: 50
-        waitDurationInOpenState: 30s
-        permittedNumberOfCallsInHalfOpenState: 10
-        slidingWindowType: COUNT_BASED
-        
-  retry:
-    instances:
-      {{serviceName}}:
-        maxAttempts: 3
-        waitDuration: 1s
-        enableExponentialBackoff: true
-        exponentialBackoffMultiplier: 2
-        retryExceptions:
-          - java.io.IOException
-          - java.net.SocketTimeoutException
-          - org.springframework.web.client.ResourceAccessException
-        ignoreExceptions:
-          - {{basePackage}}.domain.exception.{{Entity}}NotFoundException
-
-  timelimiter:
-    instances:
-      {{serviceName}}:
-        timeoutDuration: 10s
-        cancelRunningFuture: true
-
 # Logging
 logging:
   level:
     {{basePackage}}.adapter.systemapi: DEBUG
-    {{#feign}}
-    feign: DEBUG
-    {{/feign}}

@@ -294,39 +294,6 @@ domain-api:
 
 ---
 
-## Plantilla para Nuevas Decisiones
-
-```markdown
-### DEC-XXX: [Título descriptivo] {#dec-xxx}
-
-**Fecha:** YYYY-MM-DD  
-**Estado:** 🔄 En discusión | ✅ Implementado | ❌ Descartado
-
-**Contexto:**  
-[Descripción del problema o situación que requiere decisión]
-
-**Opciones:**
-- A) [Opción 1]
-- B) [Opción 2]
-- C) [Opción 3]
-
-**Decisión:** Opción X - [Descripción corta]
-
-**Justificación:**
-- [Razón 1]
-- [Razón 2]
-
-**Implicación:**
-- [Cambio necesario 1]
-- [Cambio necesario 2]
-```
-
----
-
-**Última actualización:** 2026-01-21
-
----
-
 ## 2026-01-21 (Sesión: Actualización Authoring Guides)
 
 ### DEC-010: Actualizar Authoring Guides a v3.0.1 {#dec-010}
@@ -2612,3 +2579,176 @@ content.replace('{{STYLE_RULES}}', style_content)
 Las reglas pueden duplicarse, pero el style file es la fuente autoritativa para el LLM.
 
 **Modelo version:** 3.0.16
+
+---
+
+## DEC-043: Phase 3 Timeout Coherence Fixes {#dec-043}
+
+**Fecha:** 2026-02-05  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Tras la primera ejecución E2E exitosa con Phase 3 (Transform Agent, ODEC-022), se detectaron 3 incoherencias entre el modelo de dos capas de timeout (DEC-028) y la implementación real.
+
+### Problemas Detectados
+
+#### Issue 1: RestClientConfig.java no se genera
+
+**Síntoma:** mod-003 transform descriptor apunta a `**/infrastructure/config/RestClientConfig.java`, pero este archivo no existe en el output generado.
+
+**Causa:** mod-018 tiene el template `config/restclient-config.java.tpl` (con `RestClientConfig` y timeouts 30s/60s), pero el CodeGen no lo genera. Probablemente filtrado por variant o no incluido en el scope de Phase 2.
+
+**Impacto:** El descriptor de mod-003 no encuentra su target → no puede modificar los timeouts de infraestructura a valores de resiliencia.
+
+**Fix:** Verificar que `restclient-config.java.tpl` de mod-018 se incluye en la generación de Phase 2 cuando la variante es `restclient`. Si se genera correctamente, mod-003 podrá transformar los valores de 30s/60s → 5s/5s.
+
+#### Issue 2: application-systemapi.yml incluye sección timelimiter
+
+**Síntoma:** `application-systemapi.yml` generado en Phase 2 contiene:
+```yaml
+resilience4j:
+  timelimiter:
+    instances:
+      customer-api:
+        timeoutDuration: 10s
+        cancelRunningFuture: true
+```
+
+**Causa:** El template `application-systemapi.yml.tpl` de mod-017 incluye incondicionalmente la sección `timelimiter`. Esta configuración es de la variante `annotation-async` de mod-003, no de `client-timeout`.
+
+**Impacto:** Configuración de resiliencia innecesaria/confusa. `timelimiter` no tiene efecto sin `@TimeLimiter` annotations, pero genera ruido y puede confundir.
+
+**Fix:** Condicionar la sección `timelimiter` en el template de mod-017 a un flag, o eliminarla del template de Phase 2 y que sea mod-003 quien la añada en Phase 3 solo si la variante es `annotation-async`.
+
+#### Issue 3: application-systemapi.yml incluye resilience4j completo
+
+**Síntoma:** El mismo template incluye circuitbreaker y retry config que Phase 3 (mod-001, mod-002) también genera vía transform → posible duplicación/conflicto.
+
+**Causa:** `application-systemapi.yml.tpl` fue creado antes del modelo de fases (DEC-028). Asume que toda la config de resiliencia va junto con la config de System API.
+
+**Impacto:** Duplicación de configuración entre Phase 2 (`application-systemapi.yml`) y Phase 3 (`application.yml`). En el output actual hay dos definiciones de circuitbreaker y retry.
+
+**Fix:** Limpiar `application-systemapi.yml.tpl` de mod-017 para que solo contenga:
+- Configuración de conectividad (`system-api.{serviceName}.base-url`)
+- Logging
+- (Opcional) Config de Feign si aplica
+
+La configuración de `resilience4j.*` debe generarse exclusivamente en Phase 3 por los módulos de resiliencia correspondientes.
+
+### Plan de Implementación
+
+| # | Fix | Módulo | Impacto |
+|---|-----|--------|---------|
+| 1 | Asegurar generación de RestClientConfig.java | mod-018 | CodeGen Phase 2 |
+| 2 | Limpiar application-systemapi.yml.tpl | mod-017 | Eliminar resilience4j.* |
+| 3 | Validar mod-003 descriptor funciona con target real | mod-003 | Transform Phase 3 |
+
+### Modelo de Timeout Correcto (DEC-028 recordatorio)
+
+```
+Phase 2 (mod-018):
+  RestClientConfig.java → connect: 30s, read: 60s (protección infraestructura)
+  application-systemapi.yml → SOLO config de conectividad, NO resilience
+
+Phase 3 (mod-003, variante client-timeout):
+  TRANSFORMA RestClientConfig.java → connect: 5s, read: 5s (resiliencia)
+  MERGE application.yml → integration.timeout.connect: 5s, read: 5s
+
+Phase 3 (mod-003, variante annotation-async, SI se selecciona):
+  AÑADE @TimeLimiter a métodos async
+  MERGE application.yml → resilience4j.timelimiter config
+```
+
+**Modelo version:** 3.0.17
+
+---
+
+## DEC-044: Template Stack Version Compatibility {#dec-044}
+
+**Fecha:** 2026-02-05  
+**Estado:** 🟡 Decisión pendiente (documentada para futuro)
+
+**Contexto:**  
+Los templates (.tpl) de los modules están escritos para un stack tecnológico concreto (actualmente Java 17 + Spring Boot 3.2.x). Contienen imports, annotations y patrones que son específicos de esa versión. Ejemplos:
+
+- `@MockBean` de `org.springframework.boot.test.mock.mockito` → deprecated en Spring Boot 3.4, reemplazado por `@MockitoBean` de `org.springframework.test.context.bean.override.mockito`
+- `RestClient` (Spring 6.1+) vs `RestTemplate` (legacy) vs `FeignClient`
+- Annotation patterns que cambian entre versiones mayores
+
+**Problema:**  
+No existe un mecanismo formal para:
+1. Declarar qué versión de stack soporta un module/template
+2. Que el Discovery valide compatibilidad entre el stack solicitado en el prompt y los templates disponibles
+3. Mantener múltiples versiones de templates para diferentes stacks
+
+**Impacto actual:** Bajo — toda la PoC asume Spring Boot 3.2.x y funciona. Pero es deuda técnica que crecerá al soportar nuevos stacks o versiones.
+
+**Dirección futura (no implementar ahora):**
+
+```
+capability-index.yaml:
+  persistence:
+    features:
+      systemapi:
+        implementations:
+          - id: java-spring-3.2
+            module: mod-code-017-persistence-systemapi
+            stack: java-spring
+            stack_version: ">=3.0 <3.4"
+          - id: java-spring-3.4
+            module: mod-code-017-persistence-systemapi-v34
+            stack: java-spring
+            stack_version: ">=3.4"
+```
+
+```
+Discovery flow:
+  1. Prompt: "Spring Boot 3.4"
+  2. Discovery: stack=java-spring, version=3.4
+  3. Module selection: filtrar implementations por stack_version compatible
+  4. Si no hay compatible → ERROR con mensaje claro
+```
+
+**Decisión:** Documentar como deuda técnica. No implementar hasta que se necesite soportar un segundo stack o versión mayor. Mientras tanto, asumir Spring Boot 3.2.x en todos los templates.
+
+**Modelo version:** 3.0.18
+
+---
+
+## DEC-045: Test Generation Strategy — Templates vs LLM {#dec-045}
+
+**Fecha:** 2026-02-05  
+**Estado:** 🟡 Decisión pendiente (evaluar en futuro)
+
+**Contexto:**  
+Análisis de reproducibilidad sobre 6 runs E2E muestra que los archivos de test tienen la mayor varianza (6/6 versiones diferentes en algunos casos), mientras que el código de producción es más estable.
+
+**Evidencia (6 runs):**
+
+| Categoría | Archivos | Estabilidad |
+|-----------|----------|-------------|
+| Infrastructure/Config | 12 | 100% idénticos |
+| Domain/Application | 11 | 2-3 versiones |
+| **Tests** | 9 | 4-6 versiones |
+
+**Archivos de test con alta varianza:**
+- `CustomerControllerTest.java` — 6 versiones
+- `CustomerControllerHateoasTest.java` — 6 versiones  
+- `CustomerSystemApiAdapterTest.java` — 6 versiones
+- `CustomerIdTest.java` — 5 versiones
+- `CustomerTest.java` — 5 versiones
+
+**Observación:** Aunque hay varianza, todos los runs compilan y pasan tests. La varianza es cosmética (nombres de métodos, orden de setup, estilo de assertions), no funcional.
+
+**Opciones futuras:**
+
+1. **Mantener LLM generation** (actual) — Acepta varianza cosmética, tests funcionalmente equivalentes
+2. **Templates para tests** — Mayor determinismo pero más rigidez y mantenimiento
+3. **Híbrido** — Templates para estructura base, LLM para assertions específicas
+
+**Decisión:** No actuar ahora. La varianza en tests no impacta funcionalidad ni cobertura. Reevaluar si:
+- La varianza causa problemas en CI/CD (flaky tests)
+- Se necesita comparar outputs entre runs para auditoría
+- El equipo reporta confusión por tests diferentes
+
+**Modelo version:** 3.0.19
