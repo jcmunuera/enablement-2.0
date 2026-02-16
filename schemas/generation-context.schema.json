@@ -1,0 +1,284 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "enablement/schemas/generation-context.schema.json",
+  "title": "Generation Context",
+  "description": "Schema for generation-context.json - contains ALL resolved variables for deterministic code generation (DEC-024)",
+  "version": "1.1",
+  "type": "object",
+  "required": ["version", "timestamp", "run_id", "service", "entities", "templates"],
+  "additionalProperties": false,
+  
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this schema"
+    },
+    
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+$",
+      "description": "Schema version"
+    },
+    
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When context was resolved"
+    },
+    
+    "run_id": {
+      "type": "string",
+      "pattern": "^\\d{8}_\\d{6}$",
+      "description": "Generation run identifier (YYYYMMDD_HHMMSS)"
+    },
+    
+    "config_flags": {
+      "type": "object",
+      "description": "Config flags collected from active features (DEC-035 Pub/Sub pattern). Templates use {{#config.flagName}} conditionals.",
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "examples": [
+        {
+          "hateoas": true,
+          "pagination": true,
+          "jpa": false,
+          "systemapi": true
+        }
+      ]
+    },
+    
+    "service": {
+      "type": "object",
+      "description": "Service-level variables",
+      "required": ["serviceName", "basePackage", "basePackagePath"],
+      "properties": {
+        "serviceName": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "Service name in kebab-case",
+          "examples": ["customer-api", "order-service"]
+        },
+        "basePackage": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)*$",
+          "description": "Java base package",
+          "examples": ["com.bank.customer", "com.company.orders"]
+        },
+        "basePackagePath": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(/[a-z][a-z0-9]*)*$",
+          "description": "Base package as path (for directory creation)",
+          "examples": ["com/bank/customer"]
+        },
+        "javaVersion": {
+          "type": "string",
+          "default": "17",
+          "description": "Java version"
+        },
+        "springBootVersion": {
+          "type": "string",
+          "default": "3.2.1",
+          "description": "Spring Boot version"
+        }
+      }
+    },
+    
+    "entities": {
+      "type": "array",
+      "description": "Domain entities extracted from OpenAPI spec",
+      "items": {
+        "type": "object",
+        "required": ["name", "nameLower", "namePlural", "fields"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Z][a-zA-Z0-9]*$",
+            "description": "Entity name in PascalCase",
+            "examples": ["Customer", "Order", "Product"]
+          },
+          "nameLower": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9]*$",
+            "description": "Entity name in camelCase",
+            "examples": ["customer", "order"]
+          },
+          "namePlural": {
+            "type": "string",
+            "description": "Plural form (lowercase)",
+            "examples": ["customers", "orders"]
+          },
+          "fields": {
+            "type": "array",
+            "description": "Entity fields from OpenAPI schema",
+            "items": {
+              "type": "object",
+              "required": ["name", "type"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Field name"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Java type"
+                },
+                "required": {
+                  "type": "boolean",
+                  "default": false
+                },
+                "description": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    
+    "integrations": {
+      "type": "array",
+      "description": "External API integrations (System APIs)",
+      "items": {
+        "type": "object",
+        "required": ["name", "nameLower", "baseUrlProperty", "resourcePath", "operations"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Z][a-zA-Z0-9]*$",
+            "description": "API name in PascalCase",
+            "examples": ["Parties", "Accounts"]
+          },
+          "nameLower": {
+            "type": "string",
+            "description": "API name in camelCase"
+          },
+          "baseUrlProperty": {
+            "type": "string",
+            "description": "Property name for base URL in application.yml",
+            "examples": ["integration.parties-api.base-url"]
+          },
+          "resourcePath": {
+            "type": "string",
+            "pattern": "^/[a-z][a-z0-9-/]*$",
+            "description": "Base resource path",
+            "examples": ["/parties", "/accounts"]
+          },
+          "operations": {
+            "type": "array",
+            "description": "Available API operations",
+            "items": {
+              "type": "object",
+              "required": ["name", "method", "path"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Operation name",
+                  "examples": ["getById", "create", "getAll"]
+                },
+                "method": {
+                  "type": "string",
+                  "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+                },
+                "path": {
+                  "type": "string",
+                  "description": "Full path with parameters",
+                  "examples": ["/parties/{id}", "/parties"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    
+    "mappings": {
+      "type": "object",
+      "description": "Field mappings between domain and system entities",
+      "additionalProperties": {
+        "type": "object",
+        "description": "Mapping configuration (key is Source_to_Target)",
+        "required": ["fields"],
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["domain", "system"],
+              "properties": {
+                "domain": {
+                  "type": "string",
+                  "description": "Domain entity field name"
+                },
+                "system": {
+                  "type": "string",
+                  "description": "System API field name"
+                },
+                "toDomain": {
+                  "type": "string",
+                  "description": "Java expression to convert system→domain",
+                  "examples": ["CustomerId.fromString(value)", "value"]
+                },
+                "toSystem": {
+                  "type": "string",
+                  "description": "Java expression to convert domain→system",
+                  "examples": ["value.toString()", "value"]
+                }
+              }
+            }
+          },
+          "statusMapping": {
+            "type": "object",
+            "description": "Enum/status code mappings",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    
+    "templates": {
+      "type": "object",
+      "description": "Template configurations per module",
+      "additionalProperties": {
+        "type": "object",
+        "description": "Module template configuration (key is module ID)",
+        "required": ["files"],
+        "properties": {
+          "variant": {
+            "type": ["string", "null"],
+            "description": "Selected variant (null if module has no variants)"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["template", "output"],
+              "properties": {
+                "template": {
+                  "type": "string",
+                  "description": "Path to template file relative to module",
+                  "examples": ["client/restclient.java.tpl"]
+                },
+                "output": {
+                  "type": "string",
+                  "description": "Output path relative to project root",
+                  "examples": ["adapter/out/systemapi/PartiesSystemApiClient.java"]
+                },
+                "variables": {
+                  "type": "array",
+                  "description": "Variables required by this template",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

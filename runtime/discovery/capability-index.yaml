@@ -1,0 +1,1007 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# CAPABILITY INDEX v2.8
+# ═══════════════════════════════════════════════════════════════════════════════
+# 
+# Single source of truth for capability → feature → implementation → module
+# 
+# Changes from v2.7:
+#   - DEC-041: Removed publishes_flags.http_client (was DEC-040, reverted)
+#     http_client is now a Module Variant in mod-017/MODULE.md, not a config flag
+#     Discovery detects variant keywords; Context resolves selection or default
+#   - DEC-042: Stack-specific style files injected into CodeGen prompt
+#
+# Changes from v2.6:
+#   - DEC-016: persistence.default_feature = jpa (unqualified "persistencia" → jpa)
+#   - DEC-017: Added "transaccional" keyword to domain-api (not distributed-transactions)
+#     Semantic: "API transaccional" = Domain API, "API con SAGA" = Domain API + saga-compensation
+#
+# Changes from v2.5:
+#   - Split supports_distributed_transactions into two roles:
+#     - distributed_transactions.participant (can implement Compensation)
+#     - distributed_transactions.manager (can orchestrate transactions)
+#   - Updated Composable API: manager=true (can orchestrate SAGA)
+#   - New API type: custom-api (configurable escape hatch)
+#   - Updated saga-compensation.requires_config to check participant role
+#
+# Changes from v2.4:
+#   - Renamed: compensation_available → supports_distributed_transactions
+#     (more accurate: Domain API supports ANY distributed transaction pattern)
+#   - Removed static flags from domain-api.config: transactional, idempotent
+#     (these are now CALCULATED by config_rules based on selected capabilities)
+#   - Semantic clarification: capacity flags are STATIC, action flags are CALCULATED
+#
+# Changes from v2.3:
+#   - New capability: idempotency (cross-cutting, independent of transactions)
+#   - New attribute: implies (automatic dependencies between capabilities)
+#   - New section: config_rules (flag activation by capability, not feature)
+#   - Added Rule 8: Resolve Implications
+#   - Added Rule 9: Calculate Config Flags
+#
+# Changes from v2.2:
+#   - Removed incompatible_with between persistence.jpa and persistence.systemapi
+#     (hybrid scenarios are valid: some entities via JPA, others via System API)
+#   - Added requires_config to saga-compensation
+#   - Added Rule 7: Config Prerequisite Validation
+#
+# Changes from v2.1:
+#   - New capability types: foundational, layered, cross-cutting
+#   - Added phase_group for automatic phase assignment
+#   - Added cardinality (exactly-one, multiple)
+#   - Added default_feature for capability-level matches
+#   - Feature requires now points to capability (not specific feature)
+#   - New feature: api-architecture.standard as default
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# CAPABILITY TYPES
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# type: foundational | layered | cross-cutting
+#
+#   FOUNDATIONAL:
+#     - Defines base architecture (exactly one required for flow-generate)
+#     - Cannot be transformed (must be set at project creation)
+#     - Example: architecture
+#
+#   LAYERED:
+#     - Adds architectural layers on top of foundational
+#     - Requires foundational to exist
+#     - Can be added via transformation
+#     - Examples: api-architecture, persistence, integration
+#
+#   CROSS-CUTTING:
+#     - Decorators that apply to existing code
+#     - Does NOT require foundational (can apply to existing projects)
+#     - Examples: resilience, distributed-transactions
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# PHASE GROUPS
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# phase_group determines execution phase:
+#
+#   structural     → Phase 1 (project structure, adapters IN)
+#   implementation → Phase 2 (connect to external systems, adapters OUT)
+#   cross-cutting  → Phase 3+ (decorators, annotations)
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# DISCOVERY RULES
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Rule 1: Keyword matching priority
+#   feature.keywords > capability.keywords
+#
+# Rule 2: Default feature resolution
+#   If capability matched but no feature → use default_feature
+#   If no default_feature → ask user to choose
+#
+# Rule 3: Dependency resolution
+#   requires: [capability] → auto-add capability.default_feature if not present
+#
+# Rule 4: Foundational guarantee (flow-generate only)
+#   Exactly ONE foundational required
+#   If missing → auto-add architecture.hexagonal-light
+#
+# Rule 5: Incompatibility check
+#   Check incompatible_with before finalizing
+#
+# Rule 6: Phase assignment
+#   Group features by phase_group attribute
+#
+# Rule 7: Config prerequisite validation
+#   Check requires_config constraints
+#   Example: saga-compensation requires distributed_transactions.participant=true
+#
+# Rule 8: Resolve implications
+#   Check implies at capability level
+#   Example: distributed-transactions implies idempotency
+#
+# Rule 9: Calculate config flags
+#   Apply config_rules based on selected capabilities
+#   Example: distributed-transactions → transactional=true, idempotent=true
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+version: "2.6"
+domain: code
+last_updated: "2026-01-22"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ORGANIZATIONAL DEFAULTS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+defaults:
+  # Default technology stack when not specified or detected
+  stack: java-spring
+  
+  # Default patterns when alternatives exist
+  patterns:
+    timeout: annotation  # vs client-config
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SUPPORTED STACKS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+stacks:
+  java-spring:
+    description: "Java 17+ with Spring Boot 3.x"
+    detection:
+      - file: pom.xml
+        contains: "spring-boot-starter"
+    keywords:
+      - java
+      - spring
+      - spring boot
+      - springboot
+    
+  java-quarkus:
+    description: "Java 17+ with Quarkus"
+    detection:
+      - file: pom.xml
+        contains: "quarkus"
+    keywords:
+      - java
+      - quarkus
+    
+  nodejs:
+    description: "Node.js with Express/Fastify"
+    detection:
+      - file: package.json
+    keywords:
+      - node
+      - nodejs
+      - javascript
+      - typescript
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CAPABILITIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+capabilities:
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # ARCHITECTURE (foundational)
+  # Base architecture - exactly one required for flow-generate
+  # ─────────────────────────────────────────────────────────────────────────────
+  architecture:
+    description: "Foundational architectural patterns that define code structure"
+    type: foundational
+    phase_group: structural
+    cardinality: exactly-one
+    transformable: false
+    documentation: "model/domains/code/capabilities/architecture.md"
+    
+    keywords:
+      - microservicio
+      - microservice
+      - servicio
+      - service
+      - aplicación
+      - application
+      - backend
+      - proyecto
+      - project
+    
+    default_feature: hexagonal-light
+    
+    features:
+      hexagonal-light:
+        description: "Hexagonal Light architecture with domain, application, infrastructure layers"
+        is_default: true
+        keywords:
+          - hexagonal
+          - hexagonal architecture
+          - clean architecture
+          - ports and adapters
+          - DDD
+          - domain driven design
+          - arquitectura hexagonal
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-015-hexagonal-base-java-spring
+            stack: java-spring
+        
+        default: java-spring
+
+      # Future feature:
+      # hexagonal-full:
+      #   description: "Full Hexagonal architecture with CQRS/ES"
+      #   is_default: false
+      #   keywords: [hexagonal full, CQRS, event sourcing]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # API-ARCHITECTURE (layered)
+  # Defines how the service exposes its capabilities
+  # ─────────────────────────────────────────────────────────────────────────────
+  api-architecture:
+    description: "API types according to Fusion 4-layer model"
+    type: layered
+    phase_group: structural
+    cardinality: multiple
+    transformable: true
+    documentation: "model/domains/code/capabilities/api_architecture.md"
+    
+    keywords:
+      - API
+      - REST
+      - REST API
+      - Fusion
+      - endpoint
+      - exponer
+      - expose
+    
+    # Default when user says just "API" without specifying type
+    default_feature: standard
+    
+    features:
+      # Standard API (default) - when user doesn't specify type from Fusion model
+      standard:
+        description: "Standard REST API - default when no specific Fusion type requested"
+        is_default: true
+        keywords:
+          - API estándar
+          - standard API
+          - REST básico
+          - basic REST
+        
+        requires:
+          - architecture  # Points to capability, resolver uses default_feature
+        
+        config:
+          hateoas: false
+          distributed_transactions:
+            participant: false    # Cannot implement Compensation
+            manager: false        # Cannot orchestrate transactions
+        
+        input_spec:
+          serviceName:
+            type: string
+            required: true
+            pattern: "^[a-z][a-z0-9-]*$"
+            description: "Service name in kebab-case"
+            example: "product-api"
+          basePackage:
+            type: string
+            required: true
+            pattern: "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)*$"
+            description: "Java base package"
+            example: "com.company.product"
+          entities:
+            type: array
+            required: true
+            description: "Domain entities to generate"
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-019-api-public-exposure-java-spring
+            stack: java-spring
+        
+        default: java-spring
+
+      # Fusion Domain API - exposes business capabilities as product
+      domain-api:
+        description: "Domain API - exposes business capabilities (Fusion model)"
+        is_default: false
+        keywords:
+          - Domain API
+          - API de dominio
+          - Fusion Domain
+          - business API
+          - capacidades de negocio
+          - API de negocio
+          - producto API
+          - transaccional        # DEC-017: "API transaccional" → Domain API (not SAGA)
+          - transactional API
+        
+        requires:
+          - architecture  # Points to capability
+        
+        # DEC-035: Config flags published when this feature is active
+        # These flags propagate to generation-context.json and affect templates
+        # in subscriber modules (e.g., mod-015's Response.java.tpl)
+        publishes_flags:
+          hateoas: true
+          pagination: true
+        
+        config:
+          hateoas: true
+          distributed_transactions:
+            participant: true     # CAN implement Compensation interface
+            manager: false        # Cannot orchestrate (Composable does that)
+          # NOTE: transactional and idempotent are CALCULATED by config_rules
+          # based on selected features, not static values here
+        
+        constraints:
+          - "Must not call other Domain APIs directly"
+          - "Should call System APIs for backend integration"
+        
+        input_spec:
+          serviceName:
+            type: string
+            required: true
+            pattern: "^[a-z][a-z0-9-]*$"
+            description: "Service name in kebab-case"
+            example: "customer-api"
+          basePackage:
+            type: string
+            required: true
+            pattern: "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)*$"
+            description: "Java base package"
+            example: "com.company.customer"
+          entities:
+            type: array
+            required: true
+            description: "Domain entities to generate"
+            items:
+              type: object
+              properties:
+                name: { type: string }
+                fields: { type: array }
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-019-api-public-exposure-java-spring
+            stack: java-spring
+        
+        default: java-spring
+
+      system-api:
+        description: "System API - wrapper over legacy systems"
+        is_default: false
+        keywords:
+          - System API
+          - API de sistema
+          - Fusion System
+          - wrapper
+          - mainframe
+          - legacy
+          - CICS
+        
+        requires:
+          - architecture  # Points to capability
+        
+        config:
+          hateoas: false
+          distributed_transactions:
+            participant: false    # Backend handles its own consistency
+            manager: false        # Cannot orchestrate transactions
+        
+        input_spec:
+          serviceName:
+            type: string
+            required: true
+          basePackage:
+            type: string
+            required: true
+          backendSpec:
+            type: object
+            required: true
+            description: "OpenAPI spec of backend system"
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-019-api-public-exposure-java-spring
+            stack: java-spring
+        
+        default: java-spring
+
+      experience-api:
+        description: "Experience API - BFF for UI channels"
+        is_default: false
+        keywords:
+          - Experience API
+          - Fusion Experience
+          - BFF
+          - Backend for Frontend
+          - mobile
+          - web
+          - canal
+        
+        requires:
+          - architecture  # Points to capability
+        
+        config:
+          hateoas: true
+          distributed_transactions:
+            participant: false    # BFF transforms data, delegates transactions
+            manager: false        # Cannot orchestrate (Composable does that)
+        
+        input_spec:
+          serviceName:
+            type: string
+            required: true
+          basePackage:
+            type: string
+            required: true
+          channel:
+            type: string
+            enum: [mobile, web, all]
+            default: all
+          downstreamApis:
+            type: array
+            description: "Downstream APIs to orchestrate"
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-019-api-public-exposure-java-spring
+            stack: java-spring
+        
+        default: java-spring
+
+      composable-api:
+        description: "Composable API - multi-domain orchestration"
+        is_default: false
+        keywords:
+          - Composable API
+          - Fusion Composable
+          - orchestration
+          - orquestación
+          - multi-domain
+        
+        requires:
+          - architecture  # Points to capability
+        
+        config:
+          hateoas: false
+          distributed_transactions:
+            participant: false    # Does NOT implement Compensation
+            manager: true         # CAN orchestrate SAGA (transaction manager)
+        
+        input_spec:
+          serviceName:
+            type: string
+            required: true
+          basePackage:
+            type: string
+            required: true
+          orchestration:
+            type: object
+            description: "Orchestration definition"
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-019-api-public-exposure-java-spring
+            stack: java-spring
+        
+        default: java-spring
+
+      # Custom API - escape hatch for non-Fusion scenarios
+      custom-api:
+        description: "Custom API - configurable escape hatch (bypasses Fusion guardrails)"
+        is_default: false
+        keywords:
+          - Custom API
+          - API personalizada
+          - API a medida
+          - custom
+        
+        requires:
+          - architecture  # Points to capability
+        
+        config:
+          # Defaults - can be overridden via input_spec
+          hateoas: false
+          distributed_transactions:
+            participant: false    # Default: no, but configurable
+            manager: false        # Default: no, but configurable
+        
+        # WARNING displayed to user
+        warnings:
+          - "Custom API bypasses Fusion architectural guardrails"
+          - "Consider using a Fusion API type (Domain, System, Experience, Composable) if possible"
+        
+        input_spec:
+          serviceName:
+            type: string
+            required: true
+            pattern: "^[a-z][a-z0-9-]*$"
+          basePackage:
+            type: string
+            required: true
+          # Configurable capabilities
+          hateoas:
+            type: boolean
+            required: false
+            default: false
+            description: "Enable HATEOAS links in responses"
+          distributed_transactions_participant:
+            type: boolean
+            required: false
+            default: false
+            description: "Enable if this API participates in distributed transactions (implements Compensation)"
+          distributed_transactions_manager:
+            type: boolean
+            required: false
+            default: false
+            description: "Enable if this API orchestrates distributed transactions (SAGA manager)"
+        
+        # Config is computed from input_spec at runtime
+        config_from_input:
+          distributed_transactions.participant: distributed_transactions_participant
+          distributed_transactions.manager: distributed_transactions_manager
+          hateoas: hateoas
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-019-api-public-exposure-java-spring
+            stack: java-spring
+        
+        default: java-spring
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # INTEGRATION (layered)
+  # Patterns for integrating with external systems (adapters OUT)
+  # ─────────────────────────────────────────────────────────────────────────────
+  integration:
+    description: "Patterns for integrating with external systems"
+    type: layered
+    phase_group: implementation
+    cardinality: multiple
+    transformable: true
+    documentation: "model/domains/code/capabilities/integration.md"
+    
+    keywords:
+      - integration
+      - integración
+      - external API
+      - API externa
+      - consumir API
+    
+    default_feature: api-rest
+    
+    features:
+      api-rest:
+        description: "Synchronous REST integration with external/third-party APIs (NOT for persistence)"
+        is_default: true
+        keywords:
+          - REST client
+          - HTTP client
+          - RestClient
+          - integración REST
+          - API client
+          - consumir API
+          - external API
+          - third-party
+          - partner API
+        
+        # IMPORTANT: This capability is for integration with EXTERNAL APIs that are
+        # NOT the persistence layer. Examples:
+        #   - Payment gateway (Stripe, PayPal)
+        #   - Notification service (SendGrid, Twilio)
+        #   - Identity verification (Equifax)
+        #   - Partner/third-party APIs
+        #
+        # For persistence via System API (mainframe, legacy backend), use:
+        #   persistence.systemapi → mod-017 (includes its own HTTP client)
+        
+        requires:
+          - architecture  # Points to capability
+        
+        implementations:
+          - id: java-spring-restclient
+            module: mod-code-018-api-integration-rest-java-spring
+            stack: java-spring
+            description: "Spring RestClient (synchronous)"
+        
+        default: java-spring-restclient
+
+      # Future features:
+      # api-grpc:
+      #   description: "gRPC integration"
+      #   keywords: [gRPC, protobuf, RPC]
+      # event-kafka:
+      #   description: "Kafka event integration"
+      #   keywords: [Kafka, events, event-driven]
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # PERSISTENCE (layered)
+  # Data persistence strategies (adapters OUT)
+  # ─────────────────────────────────────────────────────────────────────────────
+  persistence:
+    description: "Data persistence strategies"
+    type: layered
+    phase_group: implementation
+    cardinality: multiple
+    transformable: true
+    documentation: "model/domains/code/capabilities/persistence.md"
+    
+    keywords:
+      - persistence
+      - persistencia
+      - data
+      - datos
+      - storage
+      - database
+      - base de datos
+    
+    # DEC-016: Default to JPA for unqualified "persistencia"
+    # User says "via System API" explicitly for backend integration
+    default_feature: jpa
+    
+    features:
+      jpa:
+        description: "JPA/Hibernate persistence with relational database"
+        is_default: true
+        keywords:
+          - JPA
+          - Hibernate
+          - database
+          - SQL
+          - relational
+          - ORM
+          - entity
+          - repository
+        
+        requires:
+          - architecture  # Points to capability
+        
+        # NOTE: NOT incompatible with systemapi - hybrid scenarios are valid
+        # Example: Customer (JPA local) + Account (System API mainframe)
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-016-persistence-jpa-spring
+            stack: java-spring
+        
+        default: java-spring
+
+      systemapi:
+        description: "Persistence delegated to System API (legacy backend)"
+        is_default: false
+        keywords:
+          - System API
+          - backend
+          - legacy
+          - mainframe
+          - CICS
+          - host
+        
+        requires:
+          - architecture  # Points to capability
+          # NOTE: mod-017 includes its own HTTP client implementation
+          # No need to activate mod-018 (integration.api-rest) separately
+        
+        # NOTE: NOT incompatible with jpa - hybrid scenarios are valid
+        
+        # DEC-041: Variant selection (http_client) moved to MODULE.md of mod-017
+        # Variants are module-owned, not capability-published
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-017-persistence-systemapi
+            stack: java-spring
+        
+        default: java-spring
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # RESILIENCE (cross-cutting)
+  # Decorators for fault tolerance - apply to existing code
+  # ─────────────────────────────────────────────────────────────────────────────
+  resilience:
+    description: "Fault tolerance and resilience patterns"
+    type: cross-cutting
+    phase_group: cross-cutting
+    cardinality: multiple
+    transformable: true
+    documentation: "model/domains/code/capabilities/resilience.md"
+    
+    keywords:
+      - resilience
+      - resiliencia
+      - fault tolerance
+      - tolerancia a fallos
+      - stability patterns
+      - patrones de estabilidad
+    
+    # NO default_feature - user must specify which patterns
+    # NO requires foundational - can apply to existing code (flow-transform)
+    
+    features:
+      circuit-breaker:
+        description: "Circuit Breaker to prevent cascade failures"
+        is_default: false
+        keywords:
+          - circuit breaker
+          - cortocircuito
+          - breaker
+          - fail fast
+        
+        # NO requires - can apply to any existing adapter
+        
+        implementations:
+          - id: java-spring-resilience4j
+            module: mod-code-001-circuit-breaker-java-resilience4j
+            stack: java-spring
+            pattern: annotation
+        
+        default: java-spring-resilience4j
+
+      retry:
+        description: "Retry with exponential backoff"
+        is_default: false
+        keywords:
+          - retry
+          - reintento
+          - backoff
+          - exponential backoff
+        
+        implementations:
+          - id: java-spring-resilience4j
+            module: mod-code-002-retry-java-resilience4j
+            stack: java-spring
+            pattern: annotation
+        
+        default: java-spring-resilience4j
+
+      timeout:
+        description: "Timeout to limit wait times"
+        is_default: false
+        keywords:
+          - timeout
+          - tiempo límite
+          - time limit
+          - deadline
+        
+        implementations:
+          - id: java-spring-annotation
+            module: mod-code-003-timeout-java-resilience4j
+            stack: java-spring
+            pattern: annotation
+            description: "@TimeLimiter from Resilience4j"
+        
+        default: java-spring-annotation
+
+      rate-limiter:
+        description: "Rate Limiter to control request throughput"
+        is_default: false
+        keywords:
+          - rate limit
+          - rate limiter
+          - throttling
+          - límite de tasa
+          - control de tráfico
+        
+        implementations:
+          - id: java-spring-resilience4j
+            module: mod-code-004-rate-limiter-java-resilience4j
+            stack: java-spring
+            pattern: annotation
+        
+        default: java-spring-resilience4j
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # DISTRIBUTED-TRANSACTIONS (cross-cutting)
+  # Patterns for handling distributed transactions
+  # ─────────────────────────────────────────────────────────────────────────────
+  distributed-transactions:
+    description: "Patterns for handling distributed transactions"
+    type: cross-cutting
+    phase_group: cross-cutting
+    cardinality: multiple
+    transformable: true
+    documentation: "model/domains/code/capabilities/distributed_transactions.md"
+    
+    keywords:
+      - saga
+      - distributed transaction
+      - transacción distribuida
+      - eventual consistency
+      - consistencia eventual
+    
+    # NO default_feature - user must specify
+    # NO requires foundational - can apply to existing code
+    
+    # Implication: transactional operations require idempotency
+    implies:
+      - capability: idempotency
+        default_feature: idempotency-key
+        reason: "Transactional operations require idempotency for safe retries"
+    
+    features:
+      saga-compensation:
+        description: "SAGA pattern with compensation for rollback"
+        is_default: false
+        keywords:
+          - compensation
+          - compensación
+          - saga
+          - rollback
+          - undo
+        
+        # Config prerequisite: only APIs that can PARTICIPATE in distributed transactions
+        requires_config:
+          - capability: api-architecture
+            config_key: distributed_transactions.participant
+            value: true
+            error_message: "SAGA compensation requires an API that can participate in distributed transactions (e.g., domain-api, or custom-api with participant=true)"
+        
+        implementations:
+          - id: java-spring
+            module: mod-code-020-compensation-java-spring
+            stack: java-spring
+        
+        default: java-spring
+
+      # Future features:
+      # two-phase-commit:
+      #   description: "2PC for strict consistency"
+      #   keywords: [2PC, two-phase, XA]
+      #   requires_config:
+      #     - config_key: distributed_transactions.participant
+      #       value: true
+      #
+      # saga-orchestration:
+      #   description: "SAGA orchestrator/manager role"
+      #   keywords: [saga orchestrator, saga manager, transaction coordinator]
+      #   requires_config:
+      #     - config_key: distributed_transactions.manager
+      #       value: true
+      #   NOTE: For Composable APIs that coordinate SAGA transactions
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # IDEMPOTENCY (cross-cutting) - PLANNED
+  # Patterns for ensuring operations are safely retryable
+  # ─────────────────────────────────────────────────────────────────────────────
+  idempotency:
+    description: "Patterns for ensuring operations are safely retryable"
+    status: planned  # ADR, ERI, and modules pending
+    type: cross-cutting
+    phase_group: cross-cutting
+    cardinality: multiple
+    transformable: true
+    documentation: "model/domains/code/capabilities/idempotency.md"  # TODO: create
+    
+    keywords:
+      - idempotent
+      - idempotencia
+      - idempotency
+      - retry safe
+      - duplicate prevention
+      - prevención de duplicados
+    
+    # Default feature when capability matched
+    default_feature: idempotency-key
+    
+    # NO requires foundational - can apply to existing code
+    
+    features:
+      idempotency-key:
+        description: "Idempotency via client-provided key (X-Idempotency-Key header)"
+        is_default: true
+        keywords:
+          - idempotency key
+          - clave de idempotencia
+          - X-Idempotency-Key
+          - client key
+        
+        # PLANNED: No implementations yet
+        # Pending: ADR-014-idempotency, ERI-016-idempotency, mod-code-021
+        implementations: []
+        
+        # default: java-spring  # Uncomment when implemented
+
+      # Future features:
+      # natural-idempotency:
+      #   description: "Idempotency via natural keys (PUT, DELETE)"
+      #   keywords: [natural key, PUT idempotent]
+      # conditional-update:
+      #   description: "Idempotency via ETags/versioning"
+      #   keywords: [ETag, conditional, optimistic locking]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONFIG RULES
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Rules for calculating config flags based on selected capabilities.
+# Flags are activated by CAPABILITY (not specific feature) for future-proofing.
+#
+# Example: If we add two-phase-commit to distributed-transactions,
+#          it automatically activates transactional=true without code changes.
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+config_rules:
+  # Transactional flag: activated when any distributed-transactions feature is selected
+  transactional:
+    activated_by:
+      - capability: distributed-transactions
+    description: "API implements transactional patterns (SAGA, 2PC, etc.)"
+  
+  # Idempotent flag: activated by idempotency OR as dependency of transactional
+  idempotent:
+    activated_by:
+      - capability: idempotency
+      - capability: distributed-transactions  # Dependency: transactional → idempotent
+    description: "API operations are idempotent (safe to retry)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FUTURE CAPABILITIES (Placeholders)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+  # caching:
+  #   description: "Caching strategies"
+  #   type: compositional
+  #   features:
+  #     redis:
+  #       keywords: [Redis, distributed cache]
+  #     local:
+  #       keywords: [local cache, Caffeine, in-memory]
+
+  # security:
+  #   description: "Security patterns"
+  #   type: compositional
+  #   features:
+  #     oauth2:
+  #       keywords: [OAuth2, JWT, authentication]
+  #     api-key:
+  #       keywords: [API key, authentication]
+
+  # observability:
+  #   description: "Observability and monitoring"
+  #   type: compositional
+  #   features:
+  #     metrics:
+  #       keywords: [metrics, Prometheus, Micrometer]
+  #     tracing:
+  #       keywords: [tracing, OpenTelemetry, Jaeger]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODULE SUMMARY
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Current modules (java-spring) - ALL IMPLEMENTED:
+#   mod-code-001-circuit-breaker-java-resilience4j
+#   mod-code-002-retry-java-resilience4j
+#   mod-code-003-timeout-java-resilience4j
+#   mod-code-004-rate-limiter-java-resilience4j
+#   mod-code-015-hexagonal-base-java-spring
+#   mod-code-016-persistence-jpa-spring
+#   mod-code-017-persistence-systemapi
+#   mod-code-018-api-integration-rest-java-spring
+#   mod-code-019-api-public-exposure-java-spring
+#   mod-code-020-compensation-java-spring
+#
+# PLANNED modules (pending ADR/ERI/implementation):
+#   mod-code-021-idempotency-key-java-spring  # idempotency capability
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# PLANNED CAPABILITIES & FEATURES
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# CAPABILITIES (status: planned):
+#   - idempotency                    # ADR-014, ERI-016, mod-021 pending
+#
+# FEATURES (commented as Future):
+#   - architecture.hexagonal-full    # CQRS/ES variant
+#   - integration.api-grpc           # gRPC integration
+#   - integration.event-kafka        # Kafka events
+#   - distributed-transactions.two-phase-commit  # 2PC pattern
+#   - idempotency.natural-idempotency           # PUT/DELETE natural keys
+#   - idempotency.conditional-update            # ETag/versioning
+#
+# CAPABILITIES (commented, not yet defined):
+#   - caching (redis, local)
+#   - security (oauth2, api-key)
+#   - observability (metrics, tracing)
+#
+# ═══════════════════════════════════════════════════════════════════════════════
