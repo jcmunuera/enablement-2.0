@@ -1,0 +1,108 @@
+# Bounded Context Map — Customer Reference Example
+# Module: mod-design-001-strategic-ddd
+# Source: eri-design-001-strategic-ddd
+#
+# This is a complete worked example of the bounded-context-map.yaml output.
+# Domain: Retail Banking — Customer Management area
+# Demonstrates: core subdomain, supporting subdomain, generic subdomain,
+#               ACL relationship, customer-supplier relationship, async-event pattern.
+
+version: "1.0"
+domain: "retail-banking-customer"
+description: "Customer management area within Retail Banking division"
+analysis_date: "2026-02-16"
+source_requirements:
+  - "Retail Banking Customer Management — Functional Requirements v2.1"
+
+subdomains:
+  - id: "customer-management"
+    name: "Customer Management"
+    type: core
+    description: "Core business capability for managing customer lifecycle, data ownership, and status transitions. Competitive differentiator through customer experience."
+    investment_strategy: build
+
+    bounded_contexts:
+      - id: "customer-core"
+        name: "Customer Core"
+        description: "Owns customer identity, personal data, and lifecycle. Single source of truth for customer state. Manages status transitions with business rule enforcement."
+        owner: "Customer Squad"
+        ubiquitous_language:
+          - term: "Customer"
+            definition: "An individual or entity with an active or historical banking relationship"
+          - term: "Onboarding"
+            definition: "The process of registering a new customer, including data capture and KYC validation"
+          - term: "Status"
+            definition: "The current lifecycle state of a customer: ACTIVE, DORMANT, SUSPENDED, or CLOSED"
+          - term: "KYC"
+            definition: "Know Your Customer — regulatory compliance verification of customer identity"
+          - term: "Dormancy"
+            definition: "Automatic status transition when a customer has no activity for 12+ months"
+        capabilities:
+          - "Customer registration and onboarding"
+          - "Customer data maintenance (CRUD)"
+          - "Customer status lifecycle management"
+          - "Customer search and retrieval"
+
+  - id: "customer-notifications"
+    name: "Customer Notifications"
+    type: supporting
+    description: "Handles notification delivery for customer-related events. Not a differentiator but necessary for operations."
+    investment_strategy: build
+
+    bounded_contexts:
+      - id: "notification-dispatch"
+        name: "Notification Dispatch"
+        description: "Receives notification requests from domain events and dispatches via appropriate channel (email, SMS, push). Manages templates and delivery preferences."
+        owner: "Platform Squad"
+        ubiquitous_language:
+          - term: "Notification"
+            definition: "A message sent to a customer through a specific channel"
+          - term: "Channel"
+            definition: "The delivery medium: email, SMS, or push notification"
+          - term: "Template"
+            definition: "A predefined notification format with variable placeholders"
+        capabilities:
+          - "Multi-channel notification dispatch"
+          - "Notification template management"
+          - "Delivery status tracking"
+
+  - id: "identity-verification"
+    name: "Identity Verification"
+    type: generic
+    description: "Third-party identity verification. Industry-standard capability with no competitive value."
+    investment_strategy: buy
+
+    bounded_contexts:
+      - id: "kyc-verification"
+        name: "KYC Verification"
+        description: "Wraps the external identity verification provider (Jumio). Abstracts provider-specific details behind a standard interface."
+        owner: "Platform Squad"
+        ubiquitous_language:
+          - term: "Verification"
+            definition: "The process of validating a person's identity against official documents"
+          - term: "Verification Result"
+            definition: "The outcome: VERIFIED, REJECTED, or PENDING_REVIEW"
+          - term: "Document"
+            definition: "An identity document submitted for verification (passport, ID card, etc.)"
+        capabilities:
+          - "Identity document verification"
+          - "Verification result retrieval"
+
+context_relationships:
+  - id: "rel-customer-to-kyc"
+    upstream: "kyc-verification"
+    downstream: "customer-core"
+    type: acl
+    description: "Customer Core consumes KYC results but translates them to its own domain model. The ACL protects Customer Core from changes in the external verification provider."
+
+  - id: "rel-customer-to-notifications"
+    upstream: "customer-core"
+    downstream: "notification-dispatch"
+    type: customer-supplier
+    description: "Customer Core publishes domain events (CustomerCreated, StatusChanged) that Notification Dispatch consumes to trigger notifications."
+
+  - id: "rel-customer-to-parties"
+    upstream: "customer-core"
+    downstream: "customer-core"
+    type: acl
+    description: "Customer Core reads/writes to the Parties mainframe system via System API. The ACL translates between the domain model and the legacy data format."

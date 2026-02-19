@@ -1,0 +1,337 @@
+# Normalized Requirements — Customer Onboarding
+# Module: mod-design-000-requirements-normalization
+# Generated from: Interactive enrichment session
+# All integration, state, and criticality decisions provided by user
+
+version: "1.0"
+domain: "customer-onboarding"
+title: "Customer Onboarding Application"
+description: "Digital customer onboarding process for opening new accounts, verifying identity, and managing onboarding requests"
+source: "User-provided functional requirements + interactive enrichment"
+analysis_date: "2026-02-19"
+input_language: "English"
+
+actors:
+  - id: "prospect"
+    name: "Prospect"
+    description: "Individual requesting to become a customer through digital onboarding"
+  - id: "back-office-agent"
+    name: "Back Office Agent"
+    description: "Internal agent reviewing and approving onboarding requests"
+
+feature_groups:
+
+  - id: "onboarding-request"
+    name: "Onboarding Request"
+    description: "Submission and tracking of new customer onboarding requests"
+    actor: "prospect"
+    order: 1
+    features:
+      - id: "submit-onboarding-request"
+        name: "Submit Onboarding Request"
+        description: "Prospect submits personal information and selects desired account type to start the onboarding process"
+        type: command
+        criticality: essential
+        data_in:
+          - name: "fullName"
+            type: "String"
+            required: true
+          - name: "nationalId"
+            type: "String"
+            required: true
+          - name: "dateOfBirth"
+            type: "LocalDate"
+            required: true
+          - name: "email"
+            type: "Email"
+            required: true
+          - name: "phoneNumber"
+            type: "String"
+            required: true
+          - name: "accountType"
+            type: "AccountType"
+            required: true
+            description: "Enum: SAVINGS, CHECKING, BUSINESS"
+          - name: "address"
+            type: "Address"
+            required: true
+        data_out:
+          - name: "requestId"
+            type: "UUID"
+            description: "Unique identifier for tracking the onboarding request"
+        data_entities:
+          - entity: "Onboarding Request"
+            classification: master
+            role: "Created by this operation"
+            identity:
+              generation: auto
+        business_rules:
+          - id: "minimum-age"
+            description: "Prospect must be at least 18 years old"
+            severity: mandatory
+          - id: "unique-national-id"
+            description: "National ID must not already exist in the customer base"
+            severity: mandatory
+          - id: "valid-email-format"
+            description: "Email must be a valid format"
+            severity: mandatory
+        error_scenarios:
+          - trigger: "Prospect under 18"
+            expected_behavior: "Submission rejected with age requirement message"
+          - trigger: "National ID already registered"
+            expected_behavior: "Submission rejected with duplicate notification"
+          - trigger: "Required fields missing"
+            expected_behavior: "Validation error returned"
+
+      - id: "check-request-status"
+        name: "Check Request Status"
+        description: "Prospect checks the current status of their onboarding request"
+        type: query
+        criticality: essential
+        data_in:
+          - name: "requestId"
+            type: "UUID"
+            required: true
+        data_out:
+          - name: "request"
+            type: "OnboardingRequest"
+            description: "Full request details including current status"
+        data_entities:
+          - entity: "Onboarding Request"
+            classification: master
+            role: "Status queried"
+
+  - id: "identity-verification"
+    name: "Identity Verification"
+    description: "Verification of prospect identity documents and data"
+    actor: "prospect"
+    order: 2
+    features:
+      - id: "upload-identity-document"
+        name: "Upload Identity Document"
+        description: "Prospect uploads a scan of their identity document (passport, national ID card, or driver license) for verification"
+        type: command
+        criticality: essential
+        data_in:
+          - name: "requestId"
+            type: "UUID"
+            required: true
+          - name: "documentType"
+            type: "DocumentType"
+            required: true
+            description: "Enum: PASSPORT, NATIONAL_ID, DRIVER_LICENSE"
+          - name: "documentImage"
+            type: "Binary"
+            required: true
+        data_entities:
+          - entity: "Identity Document"
+            classification: master
+            role: "Uploaded and stored for verification"
+            identity:
+              generation: auto
+          - entity: "Onboarding Request"
+            classification: master
+            role: "Status updated to DOCUMENTS_SUBMITTED"
+        business_rules:
+          - id: "request-must-be-pending"
+            description: "Documents can only be uploaded for requests in PENDING_DOCUMENTS status"
+            severity: mandatory
+          - id: "document-not-expired"
+            description: "Document expiry date (extracted via OCR) must be in the future"
+            severity: mandatory
+        error_scenarios:
+          - trigger: "Request not in PENDING_DOCUMENTS status"
+            expected_behavior: "Upload rejected"
+          - trigger: "Document expired"
+            expected_behavior: "Upload rejected with expiry notification"
+          - trigger: "Request not found"
+            expected_behavior: "Error returned"
+
+  - id: "request-review"
+    name: "Request Review"
+    description: "Back-office review and decision on onboarding requests"
+    actor: "back-office-agent"
+    order: 3
+    features:
+      - id: "list-pending-reviews"
+        name: "List Pending Reviews"
+        description: "Display all onboarding requests awaiting back-office review, sorted by submission date"
+        type: query
+        criticality: essential
+        data_out:
+          - name: "pendingRequests"
+            type: "List<OnboardingRequestSummary>"
+            description: "Requests in PENDING_REVIEW status with prospect name, date, account type"
+        data_entities:
+          - entity: "Onboarding Request"
+            classification: master
+            role: "Filtered by PENDING_REVIEW status"
+        pagination:
+          default_page_size: 25
+          max_page_size: 50
+
+      - id: "get-review-details"
+        name: "Get Review Details"
+        description: "Retrieve full details of an onboarding request for review including uploaded documents and verification results"
+        type: query
+        criticality: essential
+        data_in:
+          - name: "requestId"
+            type: "UUID"
+            required: true
+        data_out:
+          - name: "request"
+            type: "OnboardingRequestFull"
+            description: "Complete request with personal data, documents, verification status"
+        data_entities:
+          - entity: "Onboarding Request"
+            classification: master
+            role: "Full details retrieved"
+          - entity: "Identity Document"
+            classification: master
+            role: "Associated documents"
+
+      - id: "approve-request"
+        name: "Approve Request"
+        description: "Back-office agent approves an onboarding request. Triggers account creation in core banking."
+        type: command
+        criticality: essential
+        data_in:
+          - name: "requestId"
+            type: "UUID"
+            required: true
+          - name: "agentNotes"
+            type: "String"
+            required: false
+        data_entities:
+          - entity: "Onboarding Request"
+            classification: master
+            role: "Status changed to APPROVED"
+        business_rules:
+          - id: "approve-only-pending-review"
+            description: "Only requests in PENDING_REVIEW status can be approved"
+            severity: mandatory
+          - id: "documents-verified"
+            description: "All uploaded documents must have passed verification before approval"
+            severity: mandatory
+        error_scenarios:
+          - trigger: "Request not in PENDING_REVIEW"
+            expected_behavior: "Approval rejected"
+          - trigger: "Documents not verified"
+            expected_behavior: "Approval rejected with verification requirement"
+          - trigger: "Request not found"
+            expected_behavior: "Error returned"
+
+      - id: "reject-request"
+        name: "Reject Request"
+        description: "Back-office agent rejects an onboarding request with a reason"
+        type: command
+        criticality: essential
+        data_in:
+          - name: "requestId"
+            type: "UUID"
+            required: true
+          - name: "rejectionReason"
+            type: "String"
+            required: true
+        data_entities:
+          - entity: "Onboarding Request"
+            classification: master
+            role: "Status changed to REJECTED"
+        business_rules:
+          - id: "reject-only-pending-review"
+            description: "Only requests in PENDING_REVIEW status can be rejected"
+            severity: mandatory
+          - id: "rejection-reason-required"
+            description: "A rejection reason must be provided"
+            severity: mandatory
+        error_scenarios:
+          - trigger: "Request not in PENDING_REVIEW"
+            expected_behavior: "Rejection rejected"
+          - trigger: "Missing reason"
+            expected_behavior: "Validation error"
+          - trigger: "Request not found"
+            expected_behavior: "Error returned"
+
+      - id: "view-request-history"
+        name: "View Request History"
+        description: "List all historical onboarding requests with filtering by status and date range"
+        type: query
+        criticality: important
+        data_in:
+          - name: "statusFilter"
+            type: "RequestStatus"
+            required: false
+          - name: "fromDate"
+            type: "LocalDate"
+            required: false
+          - name: "toDate"
+            type: "LocalDate"
+            required: false
+        data_out:
+          - name: "requests"
+            type: "List<OnboardingRequestSummary>"
+        data_entities:
+          - entity: "Onboarding Request"
+            classification: master
+            role: "Historical records"
+        business_rules:
+          - id: "history-date-range-max"
+            description: "Date range filter cannot exceed 6 months"
+            severity: mandatory
+          - id: "history-date-range-valid"
+            description: "From-date must be before or equal to to-date"
+            severity: mandatory
+        pagination:
+          default_page_size: 25
+          max_page_size: 100
+          max_history: "6 months"
+
+integrations:
+  - id: "core-banking"
+    name: "Core Banking System"
+    type: system-of-record
+    description: "SoR for customer records and account creation. Exposes System APIs for customer lookup and account provisioning."
+    data_entities:
+      - "Customer"
+      - "Account"
+
+  - id: "identity-verification-provider"
+    name: "External Identity Verification Service"
+    type: external-provider
+    description: "Third-party KYC/AML verification service (Onfido). REST API for document verification and identity checks."
+    data_entities:
+      - "Identity Document"
+
+  - id: "notification-system"
+    name: "Internal Notification Platform"
+    type: internal-platform
+    description: "Internal notification platform exposing API for email and push notification dispatch"
+    data_entities:
+      - "Notification"
+
+assumptions:
+  - id: "onboarding-request-states"
+    description: "Onboarding request states: PENDING_DOCUMENTS, DOCUMENTS_SUBMITTED, PENDING_REVIEW, APPROVED, REJECTED. Transitions: PENDING_DOCUMENTS->DOCUMENTS_SUBMITTED->PENDING_REVIEW->APPROVED|REJECTED. APPROVED and REJECTED are terminal."
+    confidence: high
+    rationale: "Confirmed by user"
+  - id: "all-features-supporting"
+    description: "Customer onboarding is a standard process, not competitively differentiating"
+    confidence: high
+    rationale: "Confirmed by user"
+  - id: "verification-async"
+    description: "Document verification is initiated via API call and result arrives asynchronously via webhook"
+    confidence: high
+    rationale: "Confirmed by user"
+  - id: "account-creation-on-approval"
+    description: "Account creation in core banking is triggered automatically upon request approval"
+    confidence: high
+    rationale: "Confirmed by user"
+  - id: "notification-on-status-change"
+    description: "Prospect is notified via email on each status change of their onboarding request"
+    confidence: high
+    rationale: "Confirmed by user"
+  - id: "onfido-kyc-provider"
+    description: "Onfido is used for KYC/AML identity verification via REST API"
+    confidence: high
+    rationale: "Confirmed by user"

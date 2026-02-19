@@ -1,0 +1,95 @@
+# Normalized Requirements — Output Schema
+# Module: mod-design-000-requirements-normalization
+# Version: 1.0
+
+version: "1.0"                                    # REQUIRED
+domain: "{domain-name}"                           # REQUIRED — kebab-case
+title: "{Human-readable title}"                   # REQUIRED
+description: "{What this application/system does}" # REQUIRED
+source: "{Where the requirements came from}"      # REQUIRED
+analysis_date: "YYYY-MM-DD"                       # REQUIRED
+input_language: "{Language of original input}"     # REQUIRED
+
+actors:                                            # REQUIRED — At least one
+  - id: "{actor-id}"                              # REQUIRED — kebab-case
+    name: "{Actor Name}"                          # REQUIRED
+    description: "{Who this actor is}"            # REQUIRED
+
+feature_groups:                                    # REQUIRED — At least one
+  - id: "{group-id}"                              # REQUIRED — kebab-case
+    name: "{Feature Group Name}"                  # REQUIRED — Business language
+    description: "{What this group covers}"       # REQUIRED
+    actor: "{actor-id}"                           # REQUIRED — References actor
+    order: 1                                      # REQUIRED — User journey order
+
+    features:                                     # REQUIRED — At least one per group
+      - id: "{feature-id}"                        # REQUIRED — kebab-case, unique globally
+        name: "{Feature Name}"                    # REQUIRED — Business language
+        description: "{What the user can do}"     # REQUIRED
+        type: "query|command|composite"           # REQUIRED
+        criticality: "essential|important|optional" # REQUIRED
+
+        data_in:                                  # REQUIRED for command/composite, OPTIONAL for query
+          - name: "{fieldName}"                   # REQUIRED
+            type: "{Business type}"               # REQUIRED
+            required: true                        # REQUIRED
+            description: "{What this is}"         # OPTIONAL
+
+        data_out:                                 # REQUIRED for query/composite, OPTIONAL for command
+          - name: "{fieldName}"                   # REQUIRED
+            type: "{Business type}"               # REQUIRED
+            description: "{What this is}"         # OPTIONAL
+
+        data_entities:                            # REQUIRED — At least one
+          - entity: "{Entity Name}"               # REQUIRED
+            classification: "master|reference|derived" # REQUIRED
+            role: "{How this entity participates}" # REQUIRED
+
+        business_rules:                           # REQUIRED for commands (≥1), OPTIONAL for queries
+          - id: "{rule-id}"                       # REQUIRED — kebab-case
+            description: "{The rule}"             # REQUIRED
+            severity: "mandatory|recommended"     # REQUIRED
+
+        error_scenarios:                          # REQUIRED for commands (≥1)
+          - trigger: "{What causes the error}"    # REQUIRED
+            expected_behavior: "{What happens}"   # REQUIRED
+
+        pagination:                               # REQUIRED when feature lists items
+          default_page_size: 20                   # REQUIRED
+          max_page_size: 100                      # REQUIRED
+          max_history: "{e.g., 1 year}"           # OPTIONAL
+
+integrations:                                     # OPTIONAL
+  - id: "{integration-id}"                        # REQUIRED — kebab-case
+    name: "{System Name}"                         # REQUIRED
+    type: "system-of-record|external-provider|internal-platform" # REQUIRED
+    description: "{What it provides}"             # REQUIRED
+    data_entities:                                # REQUIRED — What entities it masters/provides
+      - "{Entity Name}"
+
+assumptions:                                      # REQUIRED — At least one (always something implicit)
+  - id: "{assumption-id}"                         # REQUIRED — kebab-case
+    description: "{What is assumed}"              # REQUIRED
+    confidence: "high|medium|low"                 # REQUIRED
+    rationale: "{Why this is assumed}"            # REQUIRED
+
+# ═══════════════════════════════════════════════════════════════
+# VALIDATION RULES
+# ═══════════════════════════════════════════════════════════════
+#
+# | Field                    | Rule                                              | Severity |
+# |--------------------------|----------------------------------------------------|----------|
+# | All IDs                  | Kebab-case, unique within scope                    | ERROR    |
+# | feature_groups           | At least 1                                         | ERROR    |
+# | features per group       | At least 1                                         | ERROR    |
+# | feature.type             | One of: query, command, composite                  | ERROR    |
+# | feature.criticality      | One of: essential, important, optional             | ERROR    |
+# | command features         | At least 1 business_rule                           | ERROR    |
+# | command features         | At least 1 error_scenario                          | ERROR    |
+# | list features            | pagination block present                           | WARNING  |
+# | data_entities            | At least 1 per feature                             | ERROR    |
+# | entity classification    | One of: master, reference, derived                 | ERROR    |
+# | integration type         | One of: system-of-record, external-provider, internal-platform | ERROR |
+# | assumptions              | At least 1                                         | WARNING  |
+# | actor refs               | All actor refs in feature_groups must exist         | ERROR    |
+# | feature_groups.order     | Sequential, no gaps                                | WARNING  |

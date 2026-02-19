@@ -1,0 +1,124 @@
+# Blueprint: Fusion SOI Platform
+# Version: 1.0 (incremental — only active building blocks defined)
+#
+# A blueprint is an opinionated, authoritative guide for building applications
+# of a specific type within an organization. It defines building blocks
+# (types of deployable artifacts), their relationships, and supported
+# technology stacks.
+#
+# Building blocks are added incrementally as the organization matures.
+# Only ACTIVE blocks have bindings and tech-stacks defined.
+
+id: fusion-soi-platform
+name: "Fusion SOI Platform"
+description: >
+  Opinionated blueprint for building integration-layer (SOI) applications
+  based on the Fusion API Model. Hexagonal architecture, domain-driven
+  design, REST APIs with tiered model (Domain, System, Experience,
+  Composable), and event-driven integration patterns. Industry-agnostic.
+version: "1.0"
+status: active
+
+# ─────────────────────────────────────────────────────────
+# Building Blocks
+# ─────────────────────────────────────────────────────────
+# Each block is a type of deployable artifact that this blueprint
+# knows how to produce. Blocks are defined incrementally.
+# status: active = bindings + tech-stack defined, ready to use
+#         planned = registered, not yet implemented
+#         evaluate = under consideration
+
+building_blocks:
+
+  - id: fusion-api-rest
+    name: "Fusion API Service (REST)"
+    description: >
+      Integration-layer microservice based on the Fusion API Model.
+      Hexagonal architecture. Supports Domain, System, Experience,
+      and Composable API tiers.
+    enterprise_layer: soi
+    status: active
+    inherent_capabilities:
+      - architecture.hexagonal-light
+      - api-architecture.domain-api       # Default tier; overridable per context
+    contract_types: [openapi]
+    bindings: [fusion-api-rest.ddd-bdd]   # References to binding files
+    tech_stacks: [java-spring-boot-3]     # References to tech-stack files
+
+  - id: event-processor
+    name: "Event Processor Service"
+    description: >
+      Reactive service consuming domain events from an event broker.
+      Stateless processing with at-least-once delivery guarantees.
+    enterprise_layer: soi
+    status: planned
+    inherent_capabilities:
+      - architecture.hexagonal-light
+    contract_types: [asyncapi]
+    bindings: []
+    tech_stacks: []
+
+  - id: batch-job
+    name: "Batch Processing Job"
+    description: >
+      Scheduled job for periodic data processing, synchronization,
+      or report generation.
+    enterprise_layer: soi
+    status: planned
+    inherent_capabilities: []
+    contract_types: []
+    bindings: []
+    tech_stacks: []
+
+  - id: microfrontend
+    name: "Micro-Frontend Module"
+    description: >
+      UI module based on web components, consumed via BFF pattern.
+    enterprise_layer: soe
+    status: planned
+    inherent_capabilities: []
+    contract_types: [component-manifest]
+    bindings: []
+    tech_stacks: []
+
+# ─────────────────────────────────────────────────────────
+# Relationships between building blocks
+# ─────────────────────────────────────────────────────────
+# How the blocks connect in a typical deployment topology.
+
+block_relationships:
+  - from: microfrontend
+    to: fusion-api-rest
+    pattern: "BFF calls Experience API tier"
+    status: planned
+
+  - from: fusion-api-rest
+    to: fusion-api-rest
+    pattern: "Domain API calls System API tier (ACL)"
+    status: active
+
+  - from: fusion-api-rest
+    to: event-processor
+    pattern: "Domain event published, processor consumes"
+    status: planned
+
+# ─────────────────────────────────────────────────────────
+# Discovery rules
+# ─────────────────────────────────────────────────────────
+# How the bridge determines which building block to assign
+# to each bounded context from DESIGN output.
+
+block_assignment_rules:
+  - condition: "context has commands AND queries, relationship_acl to SoR"
+    assigns: fusion-api-rest
+    confidence: high
+
+  - condition: "context only reacts to domain events, no API surface"
+    assigns: event-processor
+    confidence: medium
+
+  - condition: "context is UI-facing, serves rendered components"
+    assigns: microfrontend
+    confidence: medium
+
+default_block: fusion-api-rest

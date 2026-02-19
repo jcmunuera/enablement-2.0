@@ -1,0 +1,39 @@
+# API Mapping — Output Schema
+# Module: mod-design-003-api-mapping
+# Source: eri-design-003-api-mapping
+# Version: 1.0
+
+version: "1.0"                                   # REQUIRED
+source_context: "{context-id}"                   # REQUIRED — From bounded-context-map.yaml
+source_aggregate: "{aggregate-id}"               # REQUIRED — From aggregate-definitions.yaml
+analysis_date: "YYYY-MM-DD"                      # REQUIRED
+api_type: "rest|grpc|async|graphql"              # REQUIRED — Selected API type variant
+
+# Tier assignment
+api_tier: "domain|system|composable|experience"  # REQUIRED — Per ADR-DESIGN-003 tier rules
+api_name: "{service-name}-api"                   # REQUIRED — kebab-case
+api_version: "v1"                                # REQUIRED
+base_path: "/api/v1/{resources}"                 # REQUIRED for REST
+
+# Resource mapping
+resources:                                        # REQUIRED — At least one
+  - name: "{ResourceName}"                       # REQUIRED — PascalCase
+    path: "/{resources}"                         # REQUIRED — URL path
+    aggregate: "{aggregate-id}"                  # REQUIRED — Maps to aggregate
+    operations:                                  # REQUIRED — At least one
+      - method: "{HTTP method}"                  # REQUIRED — GET/POST/PUT/DELETE
+        path: "{endpoint path}"                  # REQUIRED — Full path
+        command_or_query: "{cmd-or-qry-id}"      # REQUIRED — DDD element ID
+        description: "{What this does}"          # REQUIRED
+        pagination: false                        # REQUIRED — boolean
+        idempotent: true                         # REQUIRED — boolean
+
+# Dependencies
+system_api_dependencies:                         # OPTIONAL — Empty array if none
+  - system_api: "{system-api-name}"              # REQUIRED
+    purpose: "{What backend system}"             # REQUIRED
+    field_mapping_ref: "{filename.json}"         # REQUIRED — Ref to field-mapping file
+
+composable_api_participants:                     # OPTIONAL — Empty array if none
+  - composable_api: "{api-name}"                 # REQUIRED
+    role: "{What role in workflow}"              # REQUIRED

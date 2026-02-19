@@ -1,0 +1,33 @@
+{
+  "$comment": "Field Mapping — Output Schema. Module: mod-design-003-api-mapping. Source: eri-design-003-api-mapping",
+  "version": "1.0",
+  "domain_api": "{domain-api-name}",
+  "system_api": "{system-api-name}",
+  "system_description": "{What the backend system is}",
+  "entity_mappings": [
+    {
+      "domain_entity": "{EntityName}",
+      "system_entity": "{BackendEntityName}",
+      "field_mappings": [
+        {
+          "domain_field": "{fieldName}",
+          "domain_type": "{DomainType}",
+          "system_field": "{BACKEND_FIELD}",
+          "system_type": "{BackendType}",
+          "transformation": "direct|uuid-to-string|enum-to-code|date-format|composite|lookup|constant",
+          "direction": "bidirectional|domain-to-system|system-to-domain",
+          "notes": "{Optional clarification}"
+        }
+      ]
+    }
+  ],
+  "transformation_types": {
+    "direct": "Same value, possibly different field name",
+    "uuid-to-string": "UUID to string representation",
+    "enum-to-code": "Enum value to legacy code mapping",
+    "date-format": "Date format conversion (e.g., ISO to YYYYMMDD)",
+    "composite": "Multiple domain fields combine into one system field",
+    "lookup": "Value requires external lookup or enrichment",
+    "constant": "Fixed value always sent to system"
+  }
+}

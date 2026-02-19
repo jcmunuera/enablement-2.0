@@ -1,0 +1,310 @@
+# Aggregate Definitions — Customer Core Reference Example
+# Module: mod-design-002-tactical-design
+# Source: eri-design-002-tactical-design
+#
+# Complete worked example for the "customer-core" bounded context.
+# Demonstrates: 1 aggregate, 1 root entity, 4 value objects,
+#               4 invariants, 3 commands, 3 events, 3 queries.
+
+version: "1.0"
+bounded_context: "customer-core"
+context_name: "Customer Core"
+analysis_date: "2026-02-16"
+
+aggregates:
+  - id: "customer"
+    name: "Customer"
+    root_entity: "customer-entity"
+    description: "Represents a banking customer with their personal data, contact information, and lifecycle status. Owns the customer identity and enforces status transition rules."
+
+    entities:
+      - id: "customer-entity"
+        name: "Customer"
+        is_root: true
+        description: "The aggregate root. Represents an individual or entity with a banking relationship."
+        identity:
+          field: "id"
+          type: "UUID"
+          generation: "auto"
+        attributes:
+          - name: "firstName"
+            type: "String"
+            required: true
+            description: "Customer's legal first name"
+            constraints: "1-100 characters"
+          - name: "lastName"
+            type: "String"
+            required: true
+            description: "Customer's legal last name"
+            constraints: "1-100 characters"
+          - name: "email"
+            type: "Email"
+            required: true
+            description: "Customer's primary email address, used for notifications and as unique identifier"
+          - name: "dateOfBirth"
+            type: "LocalDate"
+            required: true
+            description: "Customer's date of birth for age verification and regulatory compliance"
+          - name: "status"
+            type: "CustomerStatus"
+            required: true
+            description: "Current lifecycle state of the customer"
+          - name: "kycStatus"
+            type: "KycStatus"
+            required: true
+            description: "Current KYC verification status"
+          - name: "createdAt"
+            type: "Instant"
+            required: true
+            description: "Timestamp of customer creation"
+          - name: "updatedAt"
+            type: "Instant"
+            required: true
+            description: "Timestamp of last modification"
+
+    value_objects:
+      - id: "customer-status"
+        name: "CustomerStatus"
+        description: "Enumeration of valid customer lifecycle states"
+        attributes:
+          - name: "value"
+            type: "Enum"
+            constraints: "ACTIVE, DORMANT, SUSPENDED, CLOSED"
+        used_by:
+          - "customer-entity"
+
+      - id: "kyc-status"
+        name: "KycStatus"
+        description: "Enumeration of KYC verification states"
+        attributes:
+          - name: "value"
+            type: "Enum"
+            constraints: "PENDING, VERIFIED, REJECTED, EXPIRED"
+        used_by:
+          - "customer-entity"
+
+      - id: "address"
+        name: "Address"
+        description: "A postal address associated with the customer"
+        attributes:
+          - name: "street"
+            type: "String"
+            constraints: "1-200 characters"
+          - name: "city"
+            type: "String"
+            constraints: "1-100 characters"
+          - name: "postalCode"
+            type: "String"
+            constraints: "Pattern depends on country"
+          - name: "country"
+            type: "String"
+            constraints: "ISO 3166-1 alpha-2"
+        used_by:
+          - "customer-entity"
+
+      - id: "phone-number"
+        name: "PhoneNumber"
+        description: "A phone number in E.164 format"
+        attributes:
+          - name: "number"
+            type: "String"
+            constraints: "E.164 format (+XXXXXXXXXXX)"
+          - name: "type"
+            type: "Enum"
+            constraints: "MOBILE, HOME, WORK"
+        used_by:
+          - "customer-entity"
+
+    invariants:
+      - id: "unique-email"
+        rule: "A customer's email address must be unique across all customers"
+        scope: "aggregate"
+        enforced_by: "aggregate-root"
+        error: "A customer with this email already exists"
+
+      - id: "valid-status-transition"
+        rule: "Customer status transitions must follow the allowed state machine: ACTIVE→DORMANT, ACTIVE→SUSPENDED, ACTIVE→CLOSED, DORMANT→ACTIVE, DORMANT→CLOSED, SUSPENDED→ACTIVE, SUSPENDED→CLOSED"
+        scope: "aggregate"
+        enforced_by: "aggregate-root"
+        error: "Invalid status transition from {current} to {target}"
+
+      - id: "kyc-required-for-active"
+        rule: "A customer cannot transition to ACTIVE status unless KYC is VERIFIED"
+        scope: "aggregate"
+        enforced_by: "aggregate-root"
+        error: "Customer cannot be activated without verified KYC"
+
+      - id: "minimum-age"
+        rule: "A customer must be at least 18 years old at the time of registration"
+        scope: "entity"
+        enforced_by: "aggregate-root"
+        error: "Customer must be at least 18 years old"
+
+    commands:
+      - id: "create-customer"
+        name: "CreateCustomer"
+        description: "Register a new customer in the system with initial ACTIVE status (if KYC verified) or PENDING status"
+        input:
+          - name: "firstName"
+            type: "String"
+            required: true
+          - name: "lastName"
+            type: "String"
+            required: true
+          - name: "email"
+            type: "Email"
+            required: true
+          - name: "dateOfBirth"
+            type: "LocalDate"
+            required: true
+          - name: "address"
+            type: "Address"
+            required: false
+          - name: "phone"
+            type: "PhoneNumber"
+            required: false
+        produces_event: "customer-created"
+        error_cases:
+          - code: "DUPLICATE_EMAIL"
+            description: "A customer with this email already exists"
+            invariant: "unique-email"
+          - code: "UNDERAGE"
+            description: "Customer is under 18 years old"
+            invariant: "minimum-age"
+          - code: "INVALID_INPUT"
+            description: "Required fields missing or malformed"
+
+      - id: "update-customer"
+        name: "UpdateCustomer"
+        description: "Update customer personal data (name, address, phone)"
+        input:
+          - name: "customerId"
+            type: "UUID"
+            required: true
+          - name: "firstName"
+            type: "String"
+            required: false
+          - name: "lastName"
+            type: "String"
+            required: false
+          - name: "address"
+            type: "Address"
+            required: false
+          - name: "phone"
+            type: "PhoneNumber"
+            required: false
+        produces_event: "customer-updated"
+        error_cases:
+          - code: "CUSTOMER_NOT_FOUND"
+            description: "No customer exists with the given ID"
+
+      - id: "change-status"
+        name: "ChangeCustomerStatus"
+        description: "Transition customer to a new lifecycle status"
+        input:
+          - name: "customerId"
+            type: "UUID"
+            required: true
+          - name: "newStatus"
+            type: "CustomerStatus"
+            required: true
+          - name: "reason"
+            type: "String"
+            required: true
+        produces_event: "customer-status-changed"
+        error_cases:
+          - code: "CUSTOMER_NOT_FOUND"
+            description: "No customer exists with the given ID"
+          - code: "INVALID_TRANSITION"
+            description: "The requested status transition is not allowed"
+            invariant: "valid-status-transition"
+          - code: "KYC_NOT_VERIFIED"
+            description: "Cannot activate customer without verified KYC"
+            invariant: "kyc-required-for-active"
+
+    domain_events:
+      - id: "customer-created"
+        name: "CustomerCreated"
+        description: "A new customer has been registered in the system"
+        payload:
+          - name: "customerId"
+            type: "UUID"
+          - name: "email"
+            type: "Email"
+          - name: "firstName"
+            type: "String"
+          - name: "lastName"
+            type: "String"
+          - name: "status"
+            type: "CustomerStatus"
+          - name: "createdAt"
+            type: "Instant"
+        triggered_by: "create-customer"
+        visibility: cross-context
+
+      - id: "customer-updated"
+        name: "CustomerUpdated"
+        description: "Customer personal data has been modified"
+        payload:
+          - name: "customerId"
+            type: "UUID"
+          - name: "updatedFields"
+            type: "List<String>"
+          - name: "updatedAt"
+            type: "Instant"
+        triggered_by: "update-customer"
+        visibility: internal
+
+      - id: "customer-status-changed"
+        name: "CustomerStatusChanged"
+        description: "Customer lifecycle status has transitioned"
+        payload:
+          - name: "customerId"
+            type: "UUID"
+          - name: "previousStatus"
+            type: "CustomerStatus"
+          - name: "newStatus"
+            type: "CustomerStatus"
+          - name: "reason"
+            type: "String"
+          - name: "changedAt"
+            type: "Instant"
+        triggered_by: "change-status"
+        visibility: cross-context
+
+    queries:
+      - id: "get-customer"
+        name: "GetCustomer"
+        description: "Retrieve a customer by their unique identifier"
+        returns: "customer-entity"
+        filters:
+          - name: "customerId"
+            type: "UUID"
+            required: true
+        pagination: false
+
+      - id: "list-customers"
+        name: "ListCustomers"
+        description: "Retrieve a paginated list of customers with optional filters"
+        returns: "customer-entity"
+        filters:
+          - name: "status"
+            type: "CustomerStatus"
+            required: false
+          - name: "email"
+            type: "String"
+            required: false
+          - name: "lastName"
+            type: "String"
+            required: false
+        pagination: true
+
+      - id: "search-customer-by-email"
+        name: "SearchCustomerByEmail"
+        description: "Find a customer by their unique email address"
+        returns: "customer-entity"
+        filters:
+          - name: "email"
+            type: "Email"
+            required: true
+        pagination: false

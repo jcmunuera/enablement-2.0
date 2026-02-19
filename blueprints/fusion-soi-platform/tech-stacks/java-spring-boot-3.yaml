@@ -1,0 +1,68 @@
+# Tech Stack: Java Spring Boot 3
+#
+# Defines the concrete technology choices for implementing building blocks
+# within the fusion-soi-platform blueprint.
+#
+# A tech stack is NOT a blueprint — it's one layer of a blueprint.
+# The same blueprint can support multiple tech stacks for different
+# building block types.
+
+id: java-spring-boot-3
+name: "Java Spring Boot 3"
+description: "Standard Java 17+ microservice with Spring Boot 3, Maven"
+version: "1.0"
+status: active
+
+# Which building blocks this stack applies to
+compatible_blocks:
+  - fusion-api-rest
+  - event-processor        # Future
+  - batch-job              # Future
+
+# Maps to CODE pipeline stack detection
+code_stack: java-spring
+
+# ─────────────────────────────────────────────────────────
+# Technology defaults
+# ─────────────────────────────────────────────────────────
+
+defaults:
+  build_tool: maven
+  java_version: 17
+  spring_boot_version: "3.2"
+  
+  # Implementation variant preferences
+  patterns:
+    timeout: annotation
+    circuit_breaker: annotation
+    http_client: feign               # Feign over RestTemplate
+    retry: annotation
+
+# ─────────────────────────────────────────────────────────
+# Default capabilities (always-on for this stack)
+# ─────────────────────────────────────────────────────────
+# These are NFR baseline capabilities that every service on this
+# stack gets, regardless of what DESIGN artifacts say.
+
+default_capabilities:
+  - resilience.circuit-breaker
+  - resilience.timeout
+
+# ─────────────────────────────────────────────────────────
+# CODE module catalog
+# ─────────────────────────────────────────────────────────
+# Reference to which CODE modules implement features for this stack.
+# This is informational — CODE discovery resolves modules dynamically.
+# Listed here for documentation and validation purposes.
+
+module_catalog:
+  structural:
+    - mod-001    # Project structure
+    - mod-019    # API REST Domain
+  implementation:
+    - mod-005    # Persistence SystemAPI
+    - mod-017    # Integration API REST
+  cross_cutting:
+    - mod-006    # Resilience Circuit Breaker
+    - mod-007    # Resilience Retry
+    - mod-008    # Resilience Timeout

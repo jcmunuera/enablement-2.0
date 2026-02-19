@@ -1,0 +1,56 @@
+# Bounded Context Map — Output Schema
+# Module: mod-design-001-strategic-ddd
+# Source: eri-design-001-strategic-ddd
+# Version: 1.0
+#
+# This schema defines the structure of bounded-context-map.yaml.
+# The LLM output MUST conform to this structure.
+# Validation script: ../validation/context-map-check.sh
+
+version: "1.0"                              # REQUIRED — Always "1.0"
+domain: "{domain-name}"                     # REQUIRED — kebab-case domain identifier
+description: "{High-level domain description}" # REQUIRED — What this domain covers
+analysis_date: "YYYY-MM-DD"                 # REQUIRED — Date of analysis
+source_requirements:                        # REQUIRED — At least one entry
+  - "{Reference to functional requirements document or description}"
+
+subdomains:                                 # REQUIRED — At least one subdomain
+  - id: "{subdomain-id}"                    # REQUIRED — kebab-case, unique within domain
+    name: "{Subdomain Name}"                # REQUIRED — Human-readable
+    type: "core|supporting|generic"         # REQUIRED — Per ADR-DESIGN-001 classification
+    description: "{What this subdomain does}" # REQUIRED
+    investment_strategy: "{build|buy|reuse}" # REQUIRED — Derived from type
+
+    bounded_contexts:                       # REQUIRED — At least one context per subdomain
+      - id: "{context-id}"                  # REQUIRED — kebab-case, globally unique
+        name: "{Context Name}"              # REQUIRED — Human-readable
+        description: "{What this context owns and does}" # REQUIRED
+        owner: "{Team or squad}"            # REQUIRED — Who owns this context
+        ubiquitous_language:                # REQUIRED — At least 3 terms (full-strategic)
+          - term: "{Term}"                  # REQUIRED
+            definition: "{What it means in THIS context}" # REQUIRED
+        capabilities:                       # REQUIRED — At least 1 capability
+          - "{Business capability description}"
+
+context_relationships:                      # OPTIONAL — Empty if no cross-context interaction
+  - id: "{relationship-id}"                 # REQUIRED — kebab-case, descriptive
+    upstream: "{context-id}"                # REQUIRED — Must reference valid context ID
+    downstream: "{context-id}"              # REQUIRED — Must reference valid context ID
+    type: "customer-supplier|conformist|acl|partnership|shared-kernel|open-host|published-language"
+                                            # REQUIRED — From approved set
+    description: "{Why this relationship exists and what flows between contexts}"
+                                            # REQUIRED
+
+# ═══════════════════════════════════════════════════════════════
+# FIELD VALIDATION RULES
+# ═══════════════════════════════════════════════════════════════
+#
+# | Field                       | Rule                                           | Severity |
+# |-----------------------------|------------------------------------------------|----------|
+# | subdomain.id                | Kebab-case, unique within domain               | ERROR    |
+# | subdomain.type              | One of: core, supporting, generic              | ERROR    |
+# | bounded_context.id          | Kebab-case, globally unique across all domains  | ERROR    |
+# | ubiquitous_language         | At least 3 terms per context (full-strategic)   | ERROR    |
+# | capabilities                | At least 1 per context                          | ERROR    |
+# | context_relationships.type  | One of the 7 approved types                     | ERROR    |
+# | context_relationships refs  | upstream/downstream must exist as context IDs    | ERROR    |

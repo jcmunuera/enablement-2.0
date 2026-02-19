@@ -1,0 +1,36 @@
+# Scenario Tracing — Output Schema
+# Module: mod-design-004-bdd-scenarios
+# Source: eri-design-004-bdd-scenarios
+# Version: 1.0
+#
+# This schema defines the structure of scenario-tracing.yaml.
+# One file per bounded context (covers all aggregates).
+# Validation script: ../validation/tracing-check.sh
+
+version: "1.0"                                      # REQUIRED — Always "1.0"
+bounded_context: "{context-id}"                     # REQUIRED — From bounded-context-map.yaml
+aggregate: "{aggregate-id}"                         # REQUIRED — From aggregate-definitions.yaml
+
+scenarios:                                           # REQUIRED — One entry per scenario in .feature
+  - id: "{scenario-kebab-id}"                       # REQUIRED — Unique, kebab-case
+    scenario: "{Exact scenario name from .feature}" # REQUIRED — Must match .feature exactly
+    category: "happy-path|validation|invariant|not-found|integration|pagination"
+                                                    # REQUIRED — From defined set
+    validates_requirement: "{Capability text}"       # REQUIRED — From bounded-context-map capabilities
+    exercises: "{command-id|query-id}"              # REQUIRED — DDD element being tested
+    tests_invariant: "{invariant-id}"               # CONDITIONAL — Required when category=invariant
+    expected_error: "{ERROR_CODE}"                  # CONDITIONAL — Required for error scenarios
+
+# ═══════════════════════════════════════════════════════════════
+# FIELD RULES
+# ═══════════════════════════════════════════════════════════════
+#
+# | Field                | Rule                                                    | Severity |
+# |----------------------|---------------------------------------------------------|----------|
+# | id                   | Kebab-case, unique within file                          | ERROR    |
+# | scenario             | Must match a Scenario: line in the .feature file         | ERROR    |
+# | category             | One of: happy-path, validation, invariant, not-found, integration, pagination | ERROR |
+# | validates_requirement| Must match a capability from bounded-context-map.yaml    | WARNING  |
+# | exercises            | Must match a command or query ID from aggregate-definitions.yaml | ERROR |
+# | tests_invariant      | Required when category=invariant; must match invariant ID | ERROR   |
+# | expected_error       | Required for validation/invariant/not-found; must match error code | ERROR |

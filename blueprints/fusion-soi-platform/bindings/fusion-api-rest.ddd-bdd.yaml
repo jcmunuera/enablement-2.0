@@ -1,0 +1,131 @@
+# Binding: fusion-api-rest × ddd-bdd
+# 
+# Defines how DDD/BDD design methodology output maps to implementation
+# patterns for the Fusion API REST building block.
+#
+# This binding is consumed by the bridge module (mod-bridge-001) to:
+# 1. Generate OpenAPI contracts from aggregate definitions
+# 2. Infer CODE capabilities from design relationships
+# 3. Map BDD scenarios to test specifications
+
+id: fusion-api-rest.ddd-bdd
+building_block: fusion-api-rest
+methodology: ddd-bdd
+version: "1.0"
+status: active
+
+# ─────────────────────────────────────────────────────────
+# Strategic DDD → Architecture
+# ─────────────────────────────────────────────────────────
+
+strategic_bindings:
+  bounded_context: "one deployable service per context"
+  
+  relationships:
+    acl:
+      pattern: "System API tier + ACL adapter in infrastructure layer"
+      infers_capabilities:
+        - persistence.systemapi
+        - integration.api-rest
+        - resilience.circuit-breaker
+    
+    customer_supplier:
+      pattern: "Domain API call (REST) from downstream to upstream"
+      infers_capabilities:
+        - integration.api-rest
+    
+    async_event:
+      pattern: "Domain event published to event broker, consumed by downstream"
+      infers_capabilities: []   # Future: eventing capability
+
+# ─────────────────────────────────────────────────────────
+# Tactical DDD → REST API Surface
+# ─────────────────────────────────────────────────────────
+
+tactical_bindings:
+  aggregate_root:
+    pattern: "Primary REST resource"
+    path: "/{kebab-case-plural-of-aggregate}"
+  
+  commands:
+    create:
+      method: POST
+      path: "/{resource}"
+      request_body: "from command input fields"
+      response: "201 + created entity ID"
+      response_schema: "id field + echo of input"
+    
+    state_change:
+      method: POST
+      path: "/{resource}/{id}/{action-verb}"
+      request_body: "from command input fields (minus entity ID)"
+      response: "200 + updated entity summary"
+      action_verb_rule: "lowercase command action (block, pause, cancel, etc.)"
+    
+    delete:
+      method: DELETE
+      path: "/{resource}/{id}"
+      response: "204 no content"
+  
+  queries:
+    get_by_id:
+      method: GET
+      path: "/{resource}/{id}"
+      response: "200 + full entity"
+    
+    list:
+      method: GET
+      path: "/{resource}"
+      query_params: "from query input fields (filters)"
+      response: "200 + array"
+    
+    list_paginated:
+      method: GET
+      path: "/{resource}?page={n}&size={m}"
+      pagination: "offset-based"
+      response: "200 + paginated wrapper {content, page, size, totalElements}"
+  
+  value_object:
+    pattern: "Embedded JSON object in request/response schema"
+  
+  domain_events:
+    cross_context:
+      pattern: "Publish to event broker (topic per event type)"
+      schema: "event envelope: {eventId, eventType, timestamp, payload}"
+    
+    internal:
+      pattern: "In-process Spring ApplicationEvent"
+  
+  error_handling:
+    invariant_violation:
+      http_status: 400
+      schema: "{code: UPPER_SNAKE_CASE, message: human-readable}"
+      code_derivation: "invariant.id → UPPER_SNAKE_CASE"
+    
+    entity_not_found:
+      http_status: 404
+      schema: "{code: ENTITY_NOT_FOUND, message: ...}"
+    
+    validation_error:
+      http_status: 400
+      schema: "{code: VALIDATION_ERROR, message: ..., details: [field errors]}"
+
+# ─────────────────────────────────────────────────────────
+# BDD → Testing (how scenarios map to tests)
+# ─────────────────────────────────────────────────────────
+
+bdd_bindings:
+  feature_file: "one test class per .feature file"
+  scenario: "one test method per scenario"
+  
+  category_mapping:
+    happy-path: "test with valid input, assert success response"
+    validation: "test with invalid input, assert 400"
+    invariant: "test with state violation, assert 400 + error code"
+    not-found: "test with nonexistent ID, assert 404"
+    pagination: "test list endpoint with page params"
+  
+  tracing_usage: >
+    scenario-tracing.yaml provides: which command/query the scenario exercises,
+    what requirement it validates, and what error code to expect.
+    Use this to generate targeted assertions.

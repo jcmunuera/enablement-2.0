@@ -1,0 +1,3846 @@
+# Decision Log - Enablement 2.0
+
+Este documento registra las decisiones de diseño importantes tomadas durante el desarrollo del proyecto. Cada decisión incluye contexto, opciones consideradas, decisión final y justificación.
+
+**Convención de IDs:** DEC-XXX (secuencial)
+
+---
+
+## Índice
+
+- [DEC-001](#dec-001) - Eliminar Skills del modelo
+- [DEC-002](#dec-002) - Single discovery path
+- [DEC-003](#dec-003) - Phase-based execution
+- [DEC-004](#dec-004) - Stack en module frontmatter
+- [DEC-005](#dec-005) - Flows genéricos (generate/transform)
+- [DEC-006](#dec-006) - Nueva taxonomía de capability types
+- [DEC-007](#dec-007) - Feature `standard` como default en api-architecture
+- [DEC-008](#dec-008) - `requires` apunta a capability, no a feature
+- [DEC-009](#dec-009) - `phase_group` como atributo explícito
+- [DEC-010](#dec-010) - Actualizar Authoring Guides a v3.0.1
+- [DEC-011](#dec-011) - Completar actualización de Authoring Guides
+- [DEC-012](#dec-012) - Refinamientos capability-index v2.3
+- [DEC-013](#dec-013) - Idempotencia como capability, implies y config_rules
+- [DEC-014](#dec-014) - Renombrar compensation_available → supports_distributed_transactions
+- [DEC-015](#dec-015) - Roles de transacción distribuida y custom-api
+- [DEC-016](#dec-016) - Resolución de ambigüedad persistence → jpa
+- [DEC-017](#dec-017) - Semántica "transaccional" → domain-api
+- [DEC-018](#dec-018) - Output Specification por Flow
+- [DEC-019](#dec-019) - Formato manifest.json v3.0 (sin skills)
+- [DEC-020](#dec-020) - Schemas de Trazabilidad
+- [DEC-021](#dec-021) - Templates de Test en Módulos
+- [DEC-022](#dec-022) - Eliminar validación 'skill' en traceability-check
+- [DEC-023](#dec-023) - Selección de variante default en módulos
+- [DEC-024](#dec-024) - CONTEXT_RESOLUTION: Resolución de variables antes de generación
+- [DEC-025](#dec-025) - No Improvisation Rule
+- [DEC-026](#dec-026) - Template Headers Estandarizados
+- [DEC-027](#dec-027) - Tier-0 Conformance Validation
+- [DEC-028](#dec-028) - Phase 3 Cross-Cutting Model
+- [DEC-029](#dec-029) - Package Delivery Validation
+- [DEC-030](#dec-030) - Transform Descriptors Implementation
+- [DEC-031](#dec-031) - PoC Validation Fixes (Golden Master)
+- [DEC-032](#dec-032) - Human Approval Checkpoint Pattern
+- [DEC-033](#dec-033) - Validation Script Management (No Improvisation)
+- [DEC-034](#dec-034) - Validation Assembly Script (Automation)
+- [DEC-046](#dec-046) - DESIGN KB: Domain Prefix Naming Convention
+- [DEC-047](#dec-047) - DESIGN KB: ADRs Define Decisions, ERIs Define Formats
+- [DEC-048](#dec-048) - DESIGN KB: API Mapping — API-Type Agnostic with Variants
+- [DEC-049](#dec-049) - DESIGN KB: Strategic DDD + Tactical DDD + BDD as Design Methodology
+- [DEC-050](#dec-050) - Solution Targets — Golden Paths for Design-to-Code
+- [DEC-051](#dec-051) - DESIGN Flow: Fixed Analysis + Discoverable Target Mapping
+- [DEC-052](#dec-052) - Module Types: Template-Driven vs Policy-Driven
+- [DEC-053](#dec-053) - DESIGN Capability Index + Modules
+- [DEC-054](#dec-054) - Capability Index Naming Convention
+- [DEC-055](#dec-055) - mod-design-000 — Requirements Normalization as Phase 0
+- [DEC-056](#dec-056) - Policies as Organizational Constraints, not DDD Teaching
+- [DEC-057](#dec-057) - Interactive Enrichment Protocol — Ask, Don't Guess
+- [DEC-058](#dec-058) - Gap Detection Rules (G1-G6) — Validation Gate
+- [DEC-059](#dec-059) - DESIGN Output is Solution-Target Agnostic
+- [DEC-060](#dec-060) - Solution Target vs Golden Path — Complementary Concepts
+- [DEC-061](#dec-061) - G5 (Sync/Async) Deferred to Solution Target
+- [DEC-062](#dec-062) - Bash Arithmetic Fix Across All Validators
+- [DEC-063](#dec-063) - Event Suffix 'Executed' Added to Approved List
+- [DEC-064](#dec-064) - Query-Level Invariants — enforced_by: query-validation
+- [DEC-065](#dec-065) - DESIGN Domain ≠ DDD/BDD — Capability-Based Model
+- [DEC-066](#dec-066) - GENERIC Contexts Excluded from Tactical Design
+- [DEC-067](#dec-067) - Notification as Event Payload, Not Separate Command
+- [DEC-068](#dec-068) - Account Overview vs Global Position — Separate Contexts
+- [DEC-069](#dec-069) - DESIGN Flow Definition — Implementation Design Pipeline
+- [DEC-070](#dec-070) - Query-Validation Invariants Excluded from BDD Coverage Check
+- [DEC-071](#dec-071) - BDD Minimum Coverage for Query-Only Contexts
+- [DEC-072](#dec-072) - Pause/Resume as Separate Commands with Distinct Names
+- [DEC-073](#dec-073) - Expanded Command/Event Naming Vocabulary
+- [DEC-074](#dec-074) - Tracing-Check Argument Order Fix + Execute Prefix Added
+- [DEC-075](#dec-075) - mod-000 Example Replaced to Eliminate Test Bias
+- [DEC-076](#dec-076) - Gap Rules G7 (Implicit Lifecycle) and G8 (Incomplete State Operations)
+- [DEC-077](#dec-077) - Solution Target Structure — Deferred Refactoring to Directory+YAML
+- [DEC-078](#dec-078) - Blueprints as Core Model Entity
+- [DEC-079](#dec-079) - Solution Target → Blueprint Building Block (Terminology)
+- [DEC-080](#dec-080) - Bridge Module and Blueprint Binding Flow
+- [DEC-083](#dec-083) - Unified DESIGN Flow (Phases 0→4)
+- [DEC-084](#dec-084) - Tactical Design Policy Refinements (P1 + P2)
+- [DEC-085](#dec-085) - CODE Discovery Mode A/B (Standalone vs DESIGN-seeded)
+- [DEC-086](#dec-086) - DESIGN→CODE Handoff Package Definition
+- [DEC-087](#dec-087) - Blueprint Naming Convention
+
+---
+
+## 2026-01-20 (Sesión: Migración v2.x → v3.0)
+
+### DEC-001: Eliminar Skills del modelo {#dec-001}
+
+**Fecha:** 2026-01-20  
+**Estado:** ✅ Implementado (v3.0.0)
+
+**Contexto:**  
+El modelo v2.x tenía Skills como entidades ejecutables separadas de Capabilities. Esto causaba:
+- Redundancia (skills duplicaban lógica de capabilities)
+- Dual discovery path (skill-index + capability-index)
+- Mantenimiento doble
+
+**Opciones:**
+- A) Mantener skills y capabilities separados
+- B) Fusionar skills en capabilities como features enriquecidas
+- C) Eliminar capabilities y mantener solo skills
+
+**Decisión:** Opción B - Eliminar skills, enriquecer features
+
+**Justificación:**
+- Una sola fuente de verdad (capability-index.yaml)
+- Features pueden tener config, input_spec, implementations
+- Menos archivos que mantener
+- Discovery más simple
+
+**Implicación:**
+- Eliminado directorio `skills/`
+- Eliminado `skill-index.yaml`
+- Features enriquecidas en capability-index.yaml
+
+---
+
+### DEC-002: Single discovery path {#dec-002}
+
+**Fecha:** 2026-01-20  
+**Estado:** ✅ Implementado (v3.0.0)
+
+**Contexto:**  
+En v2.x existían dos paths de discovery:
+- Path 1: prompt → skill-index → skill → capabilities
+- Path 2: prompt → capability-index → capability
+
+**Decisión:** Un solo path a través de capability-index.yaml
+
+**Justificación:**
+- Elimina ambigüedad sobre qué path usar
+- Una sola fuente de verdad
+- Simplifica implementación de Discovery Agent
+
+---
+
+### DEC-003: Phase-based execution {#dec-003}
+
+**Fecha:** 2026-01-20  
+**Estado:** ✅ Diseñado, pendiente implementación en agentes
+
+**Contexto:**  
+El Generator Agent v2.x cargaba todos los módulos simultáneamente (~197KB de contexto), resultando en menor calidad de generación comparado con chat directo.
+
+**Opciones:**
+- A) Optimizar módulos para reducir tamaño
+- B) Dividir generación en fases con contexto reducido
+- C) Usar modelo con mayor context window
+
+**Decisión:** Opción B - Generación por fases
+
+**Justificación:**
+- Cada fase tiene ~50KB de contexto (manejable)
+- Permite enfoque en un aspecto a la vez
+- Compatible con cualquier modelo
+- Más determinista
+
+**Implicación:**
+- Definidas 3 fases: STRUCTURAL, IMPLEMENTATION, CROSS-CUTTING
+- flow-generate.md documenta el proceso
+- Generator Agent debe implementar phase planning
+
+---
+
+### DEC-004: Stack en module frontmatter {#dec-004}
+
+**Fecha:** 2026-01-20  
+**Estado:** ✅ Implementado (v3.0.0)
+
+**Contexto:**  
+Los módulos no declaraban explícitamente para qué stack eran.
+
+**Decisión:** Añadir `stack: java-spring` (u otro) en el frontmatter de cada MODULE.md
+
+**Justificación:**
+- Trazabilidad clara module → stack
+- Facilita filtrado en discovery
+- Preparación para multi-stack futuro
+
+---
+
+### DEC-005: Flows genéricos (generate/transform) {#dec-005}
+
+**Fecha:** 2026-01-20  
+**Estado:** ✅ Implementado (v3.0.0)
+
+**Contexto:**  
+v2.x tenía flujos específicos por skill (GENERATE.md, ADD.md para cada skill).
+
+**Decisión:** Dos flujos genéricos:
+- `flow-generate.md` - Crear proyecto nuevo
+- `flow-transform.md` - Modificar código existente
+
+**Justificación:**
+- Los flujos son los mismos independientemente de qué features se usen
+- Reduce duplicación
+- Más fácil de mantener
+
+---
+
+## 2026-01-21 (Sesión: capability-index v2.2)
+
+### DEC-006: Nueva taxonomía de capability types {#dec-006}
+
+**Fecha:** 2026-01-21  
+**Estado:** ✅ Implementado (v3.0.1)
+
+**Contexto:**  
+Los tipos `structural` y `compositional` de v2.1 no capturaban bien la semántica de las capabilities:
+- ¿`api-architecture` es structural o compositional?
+- ¿Qué capabilities pueden aplicarse sin proyecto base?
+
+**Opciones:**
+- A) Mantener structural/compositional
+- B) Nueva taxonomía: foundational/layered/cross-cutting
+
+**Decisión:** Opción B - Nueva taxonomía
+
+**Definiciones:**
+- **foundational:** Base architecture, exactly-one required, no transformable
+- **layered:** Adds layers on foundational, multiple allowed, transformable
+- **cross-cutting:** Decorators, no requiere foundational, transformable
+
+**Justificación:**
+- Semántica clara sobre comportamiento de cada tipo
+- `foundational` garantiza que siempre hay base
+- `cross-cutting` permite flow-transform sin proyecto nuevo
+- Mapeo directo a fases de ejecución
+
+**Implicación:**
+- architecture → foundational
+- api-architecture, persistence, integration → layered
+- resilience, distributed-transactions → cross-cutting
+
+---
+
+### DEC-007: Feature `standard` como default en api-architecture {#dec-007}
+
+**Fecha:** 2026-01-21  
+**Estado:** ✅ Implementado (v3.0.1)
+
+**Contexto:**  
+Cuando el usuario dice "Genera una API" sin especificar tipo (Domain, System, etc.), ¿qué feature usar?
+
+**Opciones:**
+- A) `domain-api` - Es el más común en la organización
+- B) `standard` - Nuevo feature, menos opinionado
+- C) Preguntar al usuario
+
+**Decisión:** Opción B - Nuevo feature `standard` como default
+
+**Justificación:**
+- `domain-api` tiene semántica muy específica:
+  - HATEOAS requerido
+  - Transaccional
+  - Idempotente
+  - No puede llamar otras Domain APIs
+- "Genera una API" no implica estas restricciones
+- `standard` es más genérico: REST básico sin restricciones Fusion
+- El usuario puede pedir "Domain API" explícitamente si lo necesita
+
+**Implicación:**
+- Nuevo feature `api-architecture.standard` con `is_default: true`
+- `domain-api` cambia a `is_default: false`
+- `standard` config: `hateoas: false, compensation_available: false`
+
+---
+
+### DEC-008: `requires` apunta a capability, no a feature {#dec-008}
+
+**Fecha:** 2026-01-21  
+**Estado:** ✅ Implementado (v3.0.1)
+
+**Contexto:**  
+¿Cómo expresar que un feature requiere otro?
+
+**Antes (v2.1):**
+```yaml
+domain-api:
+  requires:
+    - architecture.hexagonal-light  # Feature específico
+```
+
+**Opciones:**
+- A) Mantener referencia a feature específico
+- B) Referenciar capability y usar su default_feature
+
+**Decisión:** Opción B - Referenciar capability
+
+**Después (v2.2):**
+```yaml
+domain-api:
+  requires:
+    - architecture  # Capability - usa default_feature
+```
+
+**Justificación:**
+- Más flexible: si añadimos `hexagonal-full`, no hay que cambiar requires
+- El resolver usa `default_feature` automáticamente
+- Menos acoplamiento entre features
+- Si el usuario ya eligió un feature de esa capability, se respeta
+
+---
+
+### DEC-009: `phase_group` como atributo explícito {#dec-009}
+
+**Fecha:** 2026-01-21  
+**Estado:** ✅ Implementado (v3.0.1)
+
+**Contexto:**  
+¿Cómo determinar en qué fase se ejecuta cada capability?
+
+**Opciones:**
+- A) Inferir del `type` (foundational→1, layered→1-2, cross-cutting→3)
+- B) Atributo explícito `phase_group` en cada capability
+
+**Decisión:** Opción B - `phase_group` explícito
+
+**Valores:**
+- `structural` → Phase 1
+- `implementation` → Phase 2
+- `cross-cutting` → Phase 3+
+
+**Justificación:**
+- `type` describe QUÉ es la capability
+- `phase_group` describe CUÁNDO se ejecuta
+- Son conceptos diferentes:
+  - `api-architecture` es `layered` pero phase_group `structural`
+  - `persistence` es `layered` pero phase_group `implementation`
+- Asignación automática sin ambigüedad
+
+---
+
+## 2026-01-21 (Sesión: Actualización Authoring Guides)
+
+### DEC-010: Actualizar Authoring Guides a v3.0.1 {#dec-010}
+
+**Fecha:** 2026-01-21  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Las guías de authoring estaban desactualizadas:
+- CAPABILITY.md usaba tipos `structural/compositional` (obsoletos)
+- MODULE.md referenciaba Skills (eliminados)
+- TAGS.md hablaba de "Skill Tags" (ya no existen)
+
+**Decisión:** Actualizar todos los documentos de authoring para reflejar modelo v3.0.1
+
+**Cambios aplicados:**
+
+| Documento | Versión | Cambios |
+|-----------|---------|---------|
+| CAPABILITY.md | 3.0 → 3.1 | Nueva taxonomía, phase_group, cardinality, default_feature, is_default |
+| MODULE.md | 2.1 → 3.0 | Eliminar refs a Skills, actualizar diagrama, flow-based roles |
+| TAGS.md | 1.1 → 2.0 | Deprecation notice, redirect a keywords en capability-index |
+| README.md | 3.0 → 3.1 | Actualizar tabla de versiones, nueva taxonomía |
+
+**Implicación:**
+- Los autores ahora tienen guías coherentes con capability-index v2.2
+- Nuevas capabilities deben seguir taxonomía foundational/layered/cross-cutting
+
+---
+
+## 2026-01-22 (Sesión: Revisión Authoring Guides)
+
+### DEC-011: Completar actualización de Authoring Guides {#dec-011}
+
+**Fecha:** 2026-01-22  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Tras DEC-010 (ayer), quedaban por revisar: FLOW.md, ADR.md, ERI.md, VALIDATOR.md
+
+**Revisión realizada:**
+
+| Documento | Versión | Cambios |
+|-----------|---------|---------|
+| FLOW.md | 3.0 → 3.1 | Ya actualizado ayer (phase_group, cross-cutting independence) |
+| ADR.md | 1.0 | ✅ Sin cambios necesarios (agnóstico de Skills) |
+| ERI.md | 1.2 → 1.3 | Eliminar refs a Skills, actualizar automated_by → derived_modules, diagrama relationships |
+| VALIDATOR.md | 1.0 → 1.1 | Eliminar refs a Skills, actualizar a modules/flows |
+
+**Implicación:**
+- Todos los authoring guides ahora coherentes con modelo v3.0.1
+- No quedan referencias a Skills en ningún documento de authoring
+
+### DEC-012: Refinamientos capability-index v2.3 {#dec-012}
+
+**Fecha:** 2026-01-22  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Durante la validación de test cases se identificaron dos problemas:
+1. `compensation_available=true` en domain-api no indica CUÁNDO generar compensación
+2. `persistence.jpa` y `persistence.systemapi` marcados como incompatibles, pero escenarios híbridos son válidos
+
+**Decisiones:**
+
+**A) Semántica de `compensation_available`:**
+- Es un flag de **capacidad**, no de acción
+- `true` = Esta API admite implementar compensación si se solicita
+- Para GENERAR compensación → usuario debe pedir `saga-compensation`
+- Nueva validación: `saga-compensation.requires_config` verifica que API tenga `compensation_available=true`
+
+**B) Persistencia híbrida:**
+- Eliminar `incompatible_with` entre `jpa` y `systemapi`
+- Escenarios válidos: Customer (JPA local) + Account (System API mainframe)
+
+**C) Nueva Rule 7: Config Prerequisite Validation:**
+```yaml
+requires_config:
+  - capability: api-architecture
+    config_key: compensation_available
+    value: true
+    error_message: "Compensation requires API that supports it"
+```
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| capability-index.yaml | v2.2 → v2.3, eliminar incompatible_with, añadir requires_config |
+| discovery-guidance.md | Añadir Rule 7, actualizar test cases 6-8 |
+| CAPABILITY.md (authoring) | v3.1 → v3.2, documentar requires_config |
+
+**Implicación:**
+- Test Case 6 ("JPA y System API") ahora es válido (híbrido)
+- Test Case 7 ("Domain API con compensación") válido
+- Test Case 8 ("API REST con compensación") error (compensation_available=false)
+
+### DEC-013: Idempotencia como capability, implies y config_rules {#dec-013}
+
+**Fecha:** 2026-01-22  
+**Estado:** ✅ Implementado (modelo) / 🟡 Pendiente (ADR/ERI/Module)
+
+**Contexto:**  
+Análisis de config flags `transactional` e `idempotent` en domain-api reveló:
+1. Los flags eran fijos pero no está claro si se generaba código para ellos
+2. Vincular flags a features específicas (saga-compensation) no escala si añadimos más patterns (2PC)
+3. ¿Idempotencia es dependiente de transaccionalidad o puede existir independiente?
+
+**Decisiones AUTHOR:**
+
+**A) Idempotencia como capability independiente:**
+- Tiene sentido API idempotente sin transaccionalidad (pagos, reservas)
+- Transaccionalidad SÍ implica idempotencia (no se puede hacer retry sin idempotencia)
+- Nueva capability `idempotency` con feature `idempotency-key`
+- **Status: planned** - Pendiente ADR-014, ERI-016, mod-021
+
+**B) Nuevo atributo `implies` (nivel capability):**
+- Dependencias automáticas entre capabilities
+- `distributed-transactions` → implies → `idempotency`
+- Diferente de `requires`: implies auto-añade, requires valida
+
+**C) Nueva sección `config_rules` (nivel top):**
+- Flags calculados por **capability**, no por feature
+- Future-proof: si añadimos `two-phase-commit`, automáticamente activa `transactional=true`
+- Reglas definidas:
+  - `transactional`: activated_by distributed-transactions
+  - `idempotent`: activated_by idempotency OR distributed-transactions
+
+**D) Nuevas reglas de discovery:**
+- Rule 8: Resolve Implications
+- Rule 9: Calculate Config Flags
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| capability-index.yaml | v2.3 → v2.4, nueva capability idempotency (planned), implies, config_rules |
+| discovery-guidance.md | v3.1 → v3.2, Rule 8, Rule 9, algoritmo actualizado |
+| CAPABILITY.md (authoring) | v3.2 → v3.3, documentar implies y config_rules |
+| CAPABILITY-BACKLOG.md | Nuevo documento de tracking de pendientes |
+
+**Pendiente para completar:**
+- [ ] ADR-014-idempotency
+- [ ] ERI-016-idempotency-java-spring  
+- [ ] mod-code-021-idempotency-key-java-spring
+
+**Implicación:**
+- Caso 3 ("Domain API"): config_flags = {transactional: false, idempotent: false}
+- Caso 7 ("Domain API con compensación"): implies añade idempotency pero sin módulo aún
+- Caso 9 ("Domain API idempotente"): capability matched pero WARNING: no implementation
+- Model version: 3.0.3
+
+### DEC-014: Renombrar compensation_available → supports_distributed_transactions {#dec-014}
+
+**Fecha:** 2026-01-22  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Test Case 17 ("Domain API transaccional") reveló confusión semántica:
+- domain-api.config tenía `transactional: true` como valor **estático**
+- Pero `transactional` también es un flag **calculado** por config_rules
+- `compensation_available` es muy específico (solo SAGA), pero Domain API soporta CUALQUIER patrón de transacción distribuida
+
+**Análisis:**
+
+```
+Domain API
+  └── compensation_available: true  ← Muy específico (solo SAGA)
+  
+Lo correcto:
+  └── supports_distributed_transactions: true  ← Capacidad general
+      └── Puede implementarse con:
+          ├── SAGA + Compensación
+          ├── Two-Phase Commit (2PC)
+          ├── TCC (Try-Confirm-Cancel)
+          └── Otros patrones futuros
+```
+
+**Decisiones:**
+
+1. **Renombrar flag de capacidad:**
+   - `compensation_available` → `supports_distributed_transactions`
+   - Semántica: "Esta API PUEDE participar en transacciones distribuidas"
+
+2. **Eliminar flags estáticos de domain-api.config:**
+   - QUITAR: `transactional: true`
+   - QUITAR: `idempotent: true`
+   - Estos son CALCULADOS por config_rules cuando se seleccionan features
+
+3. **Actualizar requires_config de saga-compensation:**
+   - `config_key: supports_distributed_transactions`
+   - `error_message: "SAGA compensation requires an API type that supports distributed transactions"`
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| capability-index.yaml | v2.4 → v2.5, rename flag, eliminar transactional/idempotent de domain-api |
+| discovery-guidance.md | v3.2 → v3.3, actualizar referencias |
+| CAPABILITY.md | v3.3 → v3.4, documentar cambio |
+| FLOW.md | Actualizar referencia |
+
+**Tabla de API Types (actualizada):**
+
+| API Type | supports_distributed_transactions | Puede usar SAGA | Puede usar 2PC |
+|----------|:---------------------------------:|:---------------:|:--------------:|
+| standard | false | ❌ | ❌ |
+| domain-api | true | ✅ | ✅ (futuro) |
+| system-api | false | ❌ | ❌ |
+| experience-api | false | ❌ | ❌ |
+| composable-api | false | ❌ | ❌ |
+
+**Clarificación semántica:**
+
+| Tipo | Ejemplo | Naturaleza |
+|------|---------|------------|
+| CAPACIDAD (estática) | `supports_distributed_transactions` | Define QUÉ puede hacer el API type |
+| ACCIÓN (calculada) | `transactional`, `idempotent` | Define QUÉ se está generando |
+
+**Model version:** 3.0.4
+
+### DEC-015: Roles de transacción distribuida y custom-api {#dec-015}
+
+**Fecha:** 2026-01-22  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+TC22 ("API REST con SAGA") reveló que un flag único `supports_distributed_transactions` mezclaba dos conceptos:
+- PARTICIPAR en una transacción (implementar Compensation)
+- GESTIONAR/ORQUESTAR una transacción (ser el coordinator/manager)
+
+Además, la rigidez de los API types Fusion no permite casos edge donde el usuario necesita configuración custom.
+
+**Análisis:**
+
+```
+Antes (un flag):
+  supports_distributed_transactions: true/false
+  
+  Problema: Composable API orquesta SAGA pero no participa
+            ¿Qué valor debería tener?
+
+Después (dos roles):
+  distributed_transactions:
+    participant: true/false    # ¿Puede implementar Compensation?
+    manager: true/false        # ¿Puede orquestar transacciones?
+```
+
+**Decisiones:**
+
+1. **Separar en dos roles:**
+   - `participant`: Puede implementar Compensation interface
+   - `manager`: Puede orquestar transacciones (SAGA coordinator)
+
+2. **Actualizar API Types:**
+
+| API Type | participant | manager | Descripción |
+|----------|:-----------:|:-------:|-------------|
+| standard | false | false | API básica opinionada |
+| domain-api | **true** | false | Participa en transacciones |
+| system-api | false | false | Wrapper backend |
+| experience-api | false | false | BFF, delega |
+| composable-api | false | **true** | Orquesta transacciones |
+| **custom-api** | ⚙️ | ⚙️ | **Configurable** (nuevo) |
+
+3. **Añadir custom-api:**
+   - Escape hatch para casos que no encajan en Fusion
+   - Configurable via input_spec
+   - WARNING: "Bypasses Fusion architectural guardrails"
+
+4. **Actualizar requires_config de saga-compensation:**
+   - `config_key: distributed_transactions.participant`
+   - Ahora domain-api Y custom-api (si participant=true) pueden usar SAGA
+
+5. **Futuro saga-orchestration:**
+   - Requerirá `distributed_transactions.manager = true`
+   - Para Composable API o custom-api con manager=true
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| capability-index.yaml | v2.5 → v2.6, nuevos roles, custom-api, updated requires_config |
+| discovery-guidance.md | v3.3 → v3.4, nueva tabla de roles |
+| CAPABILITY.md | v3.4 → v3.5, documentar nueva estructura |
+| FLOW.md | Actualizar ejemplo |
+
+**Implicación semántica:**
+
+```
+"Genera una API REST con SAGA"
+  → Matchea standard (participant=false)
+  → ERROR R7: "Use Domain API or Custom API with participant=true"
+
+"Genera una Custom API con SAGA" + input { participant: true }
+  → Matchea custom-api
+  → participant=true (configurable) 
+  → R7 PASS ✅
+```
+
+**Model version:** 3.0.5
+
+### DEC-016: Resolución de ambigüedad persistence → jpa {#dec-016}
+
+**Fecha:** 2026-01-22  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+TC16 "Genera un microservicio con persistencia" era ambiguo:
+- `persistence` tiene dos features: `jpa` y `systemapi`
+- Sin `default_feature`, el Discovery Agent debía preguntar
+- Pero "persistencia" sin calificador típicamente implica base de datos local
+
+**Opciones:**
+- A) Mantener sin default (preguntar siempre)
+- B) `default_feature: jpa` (asumir local)
+- C) `default_feature: systemapi` (asumir backend)
+
+**Decisión:** Opción B - `default_feature: jpa`
+
+**Justificación:**
+- JPA (local database) es el caso más común
+- Si el usuario quiere System API, dice "via System API" o "backend"
+- Reduce fricción para el caso típico
+- `systemapi` tiene keywords específicos ("mainframe", "backend", "legacy")
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| capability-index.yaml | v2.6 → v2.7, persistence.default_feature = jpa, jpa.is_default = true |
+| discovery-guidance.md | v3.4 → v3.5, documentar resolución en Handling Ambiguity |
+
+**Implicación:**
+- TC16 ahora resuelve a `persistence.jpa` sin preguntar
+- "via System API" sigue funcionando por keyword match
+
+---
+
+### DEC-017: Semántica "transaccional" → domain-api {#dec-017}
+
+**Fecha:** 2026-01-22  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+TC17/TC20 "Genera una Domain API transaccional" resolvía a SAGA:
+- Discovery Agent infería "transaccional" → distributed-transactions
+- Pero "transaccional" es genérico (puede ser ACID local o distribuido)
+- Solo hay un feature en distributed-transactions (saga-compensation)
+- Resultado: "API transaccional" = "API con SAGA" (semánticamente incorrecto)
+
+**Análisis:**
+
+| Término | Significado Real | Interpretación Anterior |
+|---------|-----------------|------------------------|
+| "transaccional" | ACID local OR distribuido | → SAGA (forzado) |
+| "SAGA/compensación" | Transacciones distribuidas | → SAGA ✅ |
+
+**Decisión:** "transaccional" es keyword de `domain-api`, no de `distributed-transactions`
+
+**Justificación:**
+- Domain API tiene semántica transaccional inherente (diseño Fusion)
+- "API transaccional" → Domain API (sin SAGA implícito)
+- "API con SAGA" → Domain API + saga-compensation (explícito)
+- Separación semántica clara: tipo de API vs patrón de transacción
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| capability-index.yaml | v2.6 → v2.7, añadir "transaccional", "transactional API" a domain-api.keywords |
+| discovery-guidance.md | v3.4 → v3.5, documentar semántica en Handling Ambiguity |
+
+**Nueva semántica:**
+
+| Prompt | Resolución |
+|--------|------------|
+| "API transaccional" | domain-api (sin SAGA) |
+| "Domain API transaccional" | domain-api (sin SAGA) |
+| "API con SAGA" | domain-api + saga-compensation |
+| "Domain API con compensación" | domain-api + saga-compensation |
+
+**Implicación:**
+- TC17/TC20 ahora resuelven a `domain-api` SIN saga-compensation
+- Para SAGA, el usuario debe decir "SAGA", "compensación", o "transacción distribuida"
+- config_flags: {transactional: false, idempotent: false} para Domain API básico
+
+**Model version:** 3.0.6
+
+---
+
+## 2026-01-23 (Sesión: Reproducibilidad y Testing)
+
+### DEC-018: Output Specification por Flow {#dec-018}
+
+**Fecha:** 2026-01-23  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+El modelo v3.0 no especificaba completamente qué debe producir una generación. Esto impedía:
+- Reproducibilidad (diferentes sesiones producían estructuras diferentes)
+- Validación automática (no había contrato de output)
+- Testing determinístico
+
+**Análisis del gap:**
+
+| Elemento | Generado | Documentado |
+|----------|----------|-------------|
+| Estructura proyecto | ✅ | ✅ (flow-generate.md) |
+| Paquete completo | ✅ | ❌ |
+| Directorio /input | ✅ | ❌ |
+| Directorio /trace | ✅ | ❌ |
+| manifest.json | ✅ | ❌ |
+
+**Opciones:**
+- A) Documento único para todos los flows
+- B) Output spec por flow (flow-generate-output.md, flow-transform-output.md)
+
+**Decisión:** Opción B - Output specification por flow
+
+**Justificación:**
+- Cada flow produce output diferente:
+  - `flow-generate`: Proyecto nuevo completo + trazas
+  - `flow-transform`: Posiblemente solo diffs o proyecto modificado
+- Separación de concerns: proceso (flow) vs contrato (output-spec)
+- Permite evolución independiente
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `runtime/flows/code/flow-generate-output.md` | NUEVO - Especifica paquete completo |
+| `runtime/flows/code/flow-generate.md` | Añadida referencia a output-spec |
+| `runtime/flows/code/GENERATION-ORCHESTRATOR.md` | MOVIDO desde flows/ |
+
+**Estructura definida:**
+
+```
+gen_{service-name}_{YYYYMMDD_HHMMSS}/
+├── input/           # Inputs originales preservados
+├── output/          # Proyecto generado + .enablement/manifest.json
+├── trace/           # discovery-trace, generation-trace, modules-used
+└── validation/      # Scripts tier1/2/3 + reports/
+```
+
+---
+
+### DEC-019: Formato manifest.json v3.0 (sin skills) {#dec-019}
+
+**Fecha:** 2026-01-23  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+El manifest.json de paquetes generados aún usaba estructura de v2.x con `skill` object, inconsistente con el modelo v3.0 que eliminó skills (DEC-001).
+
+**Antes (v2.x):**
+```json
+{
+  "skill": {
+    "id": "skill-code-001-domain-api-java-spring",
+    "version": "3.0.6"
+  },
+  "modules": [...]
+}
+```
+
+**Después (v3.0):**
+```json
+{
+  "enablement": {
+    "version": "3.0.6",
+    "domain": "code",
+    "flow": "flow-generate"
+  },
+  "discovery": {
+    "stack": "java-spring",
+    "capabilities": ["architecture.hexagonal-light", ...],
+    "features": ["hexagonal-light", ...]
+  },
+  "modules": [...]
+}
+```
+
+**Decisión:** Reemplazar `skill` con `enablement` + `discovery`
+
+**Justificación:**
+- Alineación con modelo v3.0 (capability-driven)
+- `enablement` captura metadata de plataforma
+- `discovery` captura resultado del capability discovery
+- Cada módulo referencia su capability de origen
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `runtime/schemas/trace/manifest.schema.json` | Actualizado: skill → enablement + discovery |
+| `runtime/flows/code/flow-generate-output.md` | Ejemplo actualizado |
+| `runtime/flows/code/GENERATION-ORCHESTRATOR.md` | Código ejemplo actualizado |
+
+---
+
+### DEC-020: Schemas de Trazabilidad {#dec-020}
+
+**Fecha:** 2026-01-23  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Los archivos de traza (discovery-trace.json, generation-trace.json, etc.) no tenían schemas formales, lo que impedía:
+- Validación automática de trazas
+- Documentación clara de estructura esperada
+- Integración con herramientas de análisis
+
+**Decisión:** Crear JSON Schemas para todos los archivos de traza
+
+**Schemas creados:**
+
+| Schema | Propósito | Valida |
+|--------|-----------|--------|
+| `manifest.schema.json` | Metadata de generación | `.enablement/manifest.json` |
+| `discovery-trace.schema.json` | Traza de discovery | `trace/discovery-trace.json` |
+| `generation-trace.schema.json` | Traza de generación por fases | `trace/generation-trace.json` |
+| `modules-used.schema.json` | Contribución de cada módulo | `trace/modules-used.json` |
+| `validation-results.schema.json` | Resultados de validación | `validation/reports/validation-results.json` |
+
+**Justificación:**
+- Validación automática con `ajv` o `jsonschema`
+- Documentación ejecutable
+- Base para testing de determinismo
+- Facilita debugging de generaciones fallidas
+
+**Ubicación:** `runtime/schemas/trace/`
+
+---
+
+### DEC-021: Templates de Test en Módulos {#dec-021}
+
+**Fecha:** 2026-01-23  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Los módulos generaban código de producción pero los tests eran ad-hoc o incompletos. Esto causaba:
+- Tests inconsistentes entre generaciones
+- No todos los módulos contribuían tests
+- Difícil saber qué tests debería generar cada módulo
+
+**Decisión:** Cada módulo define explícitamente qué tests genera en `templates/test/`
+
+**Templates añadidos:**
+
+| Módulo | Templates de Test | Propósito |
+|--------|-------------------|-----------|
+| mod-015 | `EntityTest.java.tpl` | Factory methods, domain behavior |
+| mod-015 | `EntityIdTest.java.tpl` | Value object creation, equality |
+| mod-015 | `ControllerTest.java.tpl` | REST endpoints (@WebMvcTest) |
+| mod-019 | `AssemblerTest.java.tpl` | HATEOAS link generation |
+
+**Justificación:**
+- Cada módulo es responsable de sus propios tests
+- Tests consistentes entre generaciones
+- Sección "Tests Generated" en MODULE.md documenta expectativa
+- Patrones claros: Domain tests sin Spring, Controller tests con @WebMvcTest
+
+**Convención de patrones de test:**
+
+| Layer | Spring Context | Framework |
+|-------|---------------|-----------|
+| Domain (Entity, ValueObject) | None (pure POJO) | JUnit 5 + AssertJ |
+| Domain Service | None (Mockito only) | JUnit 5 + Mockito + AssertJ |
+| Adapter OUT (SystemApi) | None (Mockito only) | JUnit 5 + Mockito + AssertJ |
+| Adapter IN (Controller) | @WebMvcTest | Spring Test + MockMvc |
+
+**Model version:** 3.0.7
+
+---
+
+### DEC-022: Eliminar validación 'skill' en traceability-check {#dec-022}
+
+**Fecha:** 2026-01-23  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+El validador `traceability-check.sh` seguía requiriendo el campo `skill` en manifest.json, a pesar de que DEC-001 y DEC-019 eliminaron skills del modelo v3.0.
+
+**Error detectado:**
+```
+FAIL: traceability-check - Missing required field: skill
+```
+
+**Análisis:**
+- `traceability-check.sh` línea 52: `REQUIRED_FIELDS=("generation" "skill" "status")`
+- Inconsistente con manifest.schema.json que ya usa `enablement` + `discovery`
+
+**Decisión:** Actualizar validador para alinearse con modelo v3.0
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `runtime/validators/tier-1-universal/traceability/traceability-check.sh` | `skill` → `enablement`, añadir validación de `enablement.version` y `discovery` |
+
+**Validación actualizada:**
+- Campo `enablement` requerido (reemplaza `skill`)
+- Campo `enablement.version` debe existir
+- Campo `discovery` recomendado (warning si ausente)
+- Eliminada validación de `skill.id` naming convention
+
+**Model version:** 3.0.8
+
+---
+
+### DEC-023: Selección de variante default en módulos {#dec-023}
+
+**Fecha:** 2026-01-23  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+El módulo `mod-code-003-timeout-java-resilience4j` tiene dos variantes:
+- `client-timeout` (default): Configuración HTTP client, métodos síncronos
+- `annotation-async` (alternativa): `@TimeLimiter`, requiere `CompletableFuture<T>`
+
+**Error detectado:**
+```
+FAIL: timeout-check - @TimeLimiter on synchronous methods (requires CompletableFuture)
+```
+
+**Análisis:**
+- MODULE.md frontmatter declaraba `default: client-timeout`
+- MODULE.md body solo documentaba `@TimeLimiter` (la alternativa)
+- GENERATION-ORCHESTRATOR.md no tenía lógica de selección de variantes
+- Resultado: Código generado usaba variante incorrecta
+
+**Decisión:** 
+1. Reestructurar MODULE.md: Variante DEFAULT primero y prominente
+2. Añadir lógica explícita de selección de variantes en orquestador
+3. Documentar "qué NO hacer" con ejemplos de uso incorrecto
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `modules/mod-code-003-timeout-java-resilience4j/MODULE.md` | Reestructurar: client-timeout (DEFAULT) primero, tabla de decisión, ejemplos incorrectos |
+| `runtime/flows/code/GENERATION-ORCHESTRATOR.md` | Añadir `select_variant()` function y lógica en generation loop |
+
+**Regla de selección:**
+```python
+def select_variant(module, discovery):
+    # Check explicit config
+    requested = discovery.config.get(f"{module.feature}.variant")
+    if requested:
+        return requested
+    # ALWAYS return default when not specified
+    return module.default_variant.id
+```
+
+**Implicación para mod-003:**
+
+| Config | Variante Seleccionada | Genera |
+|--------|----------------------|--------|
+| (ninguno) | client-timeout | `RestClientConfig.java` con timeouts HTTP |
+| `resilience.timeout.variant: annotation-async` | annotation-async | `@TimeLimiter` + `CompletableFuture<T>` |
+
+**Model version:** 3.0.8
+
+---
+
+## DEC-024: Fase CONTEXT_RESOLUTION para Determinismo en Generación
+
+**Fecha:** 2026-01-26  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Durante la simulación del PoC Customer API, se detectó que el código generado no seguía los templates definidos en los módulos. El agente "improvisó" implementaciones en lugar de aplicar los templates mecánicamente.
+
+**Problema detectado:**
+- `CustomerResponseAssembler.java` generado con `implements RepresentationModelAssembler` cuando el template define `extends RepresentationModelAssemblerSupport`
+- `PartiesSystemApiClient.java` sin propagación de `X-Correlation-ID` cuando el template lo incluye explícitamente
+- Naming incorrecto: `CustomerResponseAssembler` en lugar de `CustomerModelAssembler`
+
+**Root cause:**
+El flujo de generación no obligaba a:
+1. Parsear los inputs (specs, mapping.json) para extraer variables
+2. Usar los templates como única fuente de código
+3. Sustituir variables mecánicamente sin interpretación
+
+**Decisión:**  
+Añadir fase **CONTEXT_RESOLUTION** entre DISCOVERY y GENERATION:
+
+```
+INIT → DISCOVERY → CONTEXT_RESOLUTION → GENERATION → TESTS → ...
+                         │
+                         ▼
+              generation-context.json
+              (TODAS las variables resueltas)
+```
+
+**Principios:**
+1. **Fail-fast:** Si una variable no puede resolverse de los inputs, FALLAR antes de generar
+2. **Trazabilidad:** `generation-context.json` documenta TODAS las variables usadas
+3. **Determinismo:** El agente solo sustituye, no interpreta
+4. **Validación:** Scripts tier-1 verifican que el código cumple con templates
+
+**Cambios aplicados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `GENERATION-ORCHESTRATOR.md` | Nueva fase CONTEXT_RESOLUTION (Phase 2.5) |
+| `schemas/generation-context.schema.json` | Schema del nuevo artefacto |
+| `templates/*.tpl` | Documentar variables requeridas en header |
+
+**Model version:** 3.0.9
+
+---
+
+## DEC-025: Regla Anti-Improvisación en Generación de Código
+
+**Fecha:** 2026-01-26  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Complemento a DEC-024. Define explícitamente qué está permitido y prohibido durante la fase de generación.
+
+**Decisión:**
+
+**🚫 PROHIBIDO durante GENERATION:**
+- Añadir código que no esté en el template
+- Modificar estructura del template (orden de métodos, imports extra)
+- "Mejorar" el código con conocimiento general del LLM
+- Rellenar "huecos" con implementaciones inventadas
+- Usar valores que no estén en `generation-context.json`
+
+**✅ PERMITIDO durante GENERATION:**
+- Sustituir `{{variables}}` con valores de `generation-context.json`
+- Reportar si falta información (pero NO inventarla)
+- Formateo básico (indentación consistente)
+
+**Regla de validación:**
+```python
+def validate_generated_code(file_path, template_path, context):
+    # 1. Verificar que tiene header @generated
+    assert has_generated_header(file_path)
+    
+    # 2. Verificar que la estructura coincide con template
+    template_structure = extract_structure(template_path)
+    generated_structure = extract_structure(file_path)
+    assert structures_match(template_structure, generated_structure)
+    
+    # 3. Verificar que no hay código extra
+    extra_code = find_extra_code(template_path, file_path, context)
+    assert len(extra_code) == 0, f"Código no autorizado: {extra_code}"
+```
+
+**Implicación:**
+Si un template tiene un "hueco" (comentario tipo `// TODO: add field mappings`), el agente debe:
+1. Buscar la información en `generation-context.json`
+2. Si existe → sustituir
+3. Si NO existe → FALLAR con mensaje claro, no improvisar
+
+**Model version:** 3.0.9
+
+---
+
+## DEC-026: Actualización de Headers en Templates Críticos para PoC
+
+**Fecha:** 2026-01-26  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Como parte de DEC-024 (CONTEXT_RESOLUTION), los templates deben documentar explícitamente sus variables requeridas para que la fase de resolución de contexto pueda validar que todas las variables están disponibles antes de generar código.
+
+**Decisión:**  
+Actualizar todos los templates críticos para el PoC Customer API con un header estandarizado que incluye:
+- Identificación del template y módulo
+- Path de output esperado
+- Propósito del template
+- Lista de variables requeridas
+
+**Formato de Header Estandarizado:**
+```
+// ═══════════════════════════════════════════════════════════════════════════════
+// Template: {filename}
+// Module: {module-id}
+// ═══════════════════════════════════════════════════════════════════════════════
+// Output: {{basePackagePath}}/path/to/Output.java
+// Purpose: Brief description
+// ═══════════════════════════════════════════════════════════════════════════════
+// REQUIRED VARIABLES: {{var1}} {{var2}} {{var3}}
+// ═══════════════════════════════════════════════════════════════════════════════
+```
+
+**Templates Actualizados (33 total):**
+
+| Módulo | Templates | Cobertura |
+|--------|-----------|-----------|
+| mod-015 (hexagonal-base) | Entity, EntityId, Repository, NotFoundException, Enum, ApplicationService, CreateRequest, Response, RestController, pom.xml, application.yml, GlobalExceptionHandler, CorrelationIdFilter, Application | 14/22 |
+| mod-017 (persistence-systemapi) | SystemApiAdapter, SystemApiMapper, SystemApiUnavailableException, application-systemapi.yml | 4/11 |
+| mod-018 (integration-rest) | restclient, restclient-config, IntegrationException, application-integration.yml | 4/9 |
+| mod-019 (public-exposure) | EntityModelAssembler, PageResponse, FilterRequest | 3/6 |
+| mod-001 (circuit-breaker) | basic-fallback, application-circuitbreaker.yml, pom-circuitbreaker.xml | 3/7 |
+| mod-002 (retry) | basic-retry, application-retry.yml, pom-retry.xml | 3/6 |
+| mod-003 (timeout) | timeout-config, application-client-timeout.yml | 2/8 |
+
+**Templates Pendientes (36 restantes):**
+- Tests templates (no críticos para generación)
+- Variantes alternativas (feign, resttemplate)
+- Templates de casos no cubiertos por el PoC
+
+**Beneficios:**
+1. **Trazabilidad:** Cada archivo generado es rastreable a su template y módulo
+2. **Validación:** CONTEXT_RESOLUTION puede verificar que todas las variables están resueltas
+3. **Documentación:** Los templates son auto-documentados
+4. **Determinismo:** Elimina ambigüedad sobre qué variables necesita cada template
+
+**Model version:** 3.0.10
+---
+
+## DEC-027: Tier-0 Conformance Validation
+
+**Fecha:** 2026-01-26  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Las reglas DEC-024 (CONTEXT_RESOLUTION) y DEC-025 (No Improvisation) definen cómo debe comportarse el generador, pero no existía un mecanismo de validación post-generación que verificara que el código generado realmente sigue los templates.
+
+En pruebas con v3.0.8, se detectó que Claude "improvisaba" código en lugar de seguir estrictamente los templates:
+- `CorrelationIdFilter`: usaba `private static final` en lugar de `public static final`, faltaba método `getCurrentCorrelationId()`
+- `CustomerModelAssembler`: usaba `implements RepresentationModelAssembler` en lugar de `extends RepresentationModelAssemblerSupport`
+
+Esto impedía alcanzar el determinismo necesario para pruebas reproducibles.
+
+**Decisión:**  
+Crear un nuevo tier de validación (Tier-0) que se ejecuta ANTES de las validaciones de código:
+
+```
+runtime/validators/
+├── tier-0-conformance/           ← NUEVO: Valida proceso de generación
+│   └── template-conformance-check.sh
+├── tier-1-universal/             ← Valida estructura, naming
+├── tier-2-technology/            ← Valida compilación, sintaxis
+└── (tier-3 en modules/*/validation/)  ← Valida requisitos de módulo
+```
+
+**Orden de Ejecución:**
+```
+tier-0 (conformidad generación) → tier-1 (universal) → tier-2 (tecnología) → tier-3 (módulo)
+```
+
+**Mecanismo de Validación:**
+
+El script `template-conformance-check.sh` usa "fingerprints" - patrones únicos que DEBEN aparecer si el template fue seguido correctamente:
+
+```bash
+# Ejemplo de fingerprints para mod-015
+MODULE_FINGERPRINTS["mod-code-015:CorrelationIdFilter.java"]="public static final String CORRELATION_ID_HEADER|public static String getCurrentCorrelationId|extractOrGenerate"
+
+# Ejemplo de fingerprints para mod-019
+MODULE_FINGERPRINTS["mod-code-019:*ModelAssembler.java"]="extends RepresentationModelAssemblerSupport|super(.*Controller.class.*Response.class)"
+```
+
+**Validaciones Incluidas:**
+1. **Fingerprints por módulo:** Patrones obligatorios de cada template
+2. **Anti-improvisación:** Detecta patrones incorrectos conocidos (ej: `implements RepresentationModelAssembler` en lugar de `extends`)
+3. **Naming conventions:** Verifica nombres correctos (ej: `*ModelAssembler` no `*ResponseAssembler`)
+
+**Justificación de Tier-0:**
+- Tier-0 valida el **proceso de generación**, no el código en sí
+- Debe ejecutarse primero porque si la generación fue incorrecta, las demás validaciones son irrelevantes
+- Mantiene coherencia con el modelo de tiers existente donde tier-3 es específico de módulo
+
+**Resultado esperado:**
+- Código v3.0.8 (improvisado): FAIL con errores específicos
+- Código v3.0.10 (template-driven): PASS
+
+**Archivos Añadidos:**
+- `runtime/validators/tier-0-conformance/template-conformance-check.sh`
+
+**Model version:** 3.0.10-003
+
+---
+
+## DEC-028: Phase 3 Cross-Cutting Model Clarification
+
+**Fecha:** 2026-01-26  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Durante la validación del PoC Customer API, se detectó que el template de mod-017 (SystemApiAdapter) tenía anotaciones de resiliencia (@CircuitBreaker, @Retry) y métodos fallback hardcodeados. Esto violaba el modelo de fases donde:
+
+- **Phase 1-2:** GENERAN archivos nuevos (structural, implementation)
+- **Phase 3+:** TRANSFORMAN archivos existentes (cross-cutting)
+
+El hardcoding de resiliencia en Phase 2 hacía que los módulos de Phase 3 (mod-001, mod-002, mod-003) fueran redundantes, y el código generado no seguía la arquitectura definida.
+
+**Investigación:**  
+Revisando la documentación del modelo:
+
+1. `flow-transform.md` define claramente que cross-cutting modules son transformadores
+2. `ENABLEMENT-MODEL-v3.0.md` especifica phase_group: cross-cutting para resilience
+3. `mod-001/MODULE.md` describe templates como "fragments for transformation"
+4. El orchestrator tracking distingue `files_generated` vs `files_modified`
+
+El modelo estaba correctamente diseñado, pero alguien había "solucionado" un problema de implementación hardcodeando resiliencia en mod-017.
+
+**Decisión:**  
+Restaurar la separación correcta entre phases:
+
+1. **mod-017:** Template genera adapter SIN resiliencia
+2. **mod-018:** RestClientConfig con timeouts ALTOS (30s/60s) como protección de infraestructura
+3. **mod-003 (client-timeout):** Cambia de GENERAR a MODIFICAR - ajusta timeouts para resiliencia
+4. **GENERATION-ORCHESTRATOR:** Nueva sección documentando comportamiento de Phase 3+
+5. **discovery-guidance:** Nueva Rule 10 para target resolution de resiliencia
+
+**Modelo de Timeout:**
+
+| Capa | Responsabilidad | Valores | Módulo |
+|------|-----------------|---------|--------|
+| Infraestructura | Protección contra cuelgues infinitos | 30s/60s | mod-018 |
+| Resiliencia | Control fino de fault tolerance | 5s/10s | mod-003 |
+
+**Modelo de Target Resolution:**
+
+| Modo | Trigger | Resultado |
+|------|---------|-----------|
+| Explicit | "apply X to CustomerAdapter" | Target específico |
+| Implicit | "con circuit-breaker" (sin target) | Todos los adapter OUT |
+
+**Archivos Modificados:**
+
+```
+modules/mod-code-017-persistence-systemapi/
+  templates/adapter/SystemApiAdapter.java.tpl    # Removida resiliencia
+
+modules/mod-code-018-api-integration-rest-java-spring/
+  templates/config/restclient-config.java.tpl    # Timeouts 30s/60s
+
+modules/mod-code-003-timeout-java-resilience4j/
+  MODULE.md                                       # Frontmatter v1.2
+  templates/client/timeout-config-transform.yaml  # NUEVO: descriptor de transformación
+
+runtime/flows/code/
+  GENERATION-ORCHESTRATOR.md                      # Sección Cross-Cutting
+
+runtime/discovery/
+  discovery-guidance.md                           # Rule 10 Target Resolution
+```
+
+**Model version:** 3.0.10-008
+
+---
+
+## DEC-029: Package Delivery Validation
+
+**Date:** 2026-01-26  
+**Status:** Approved  
+**Category:** Validation  
+**Model Version:** 3.0.10-009
+
+**Context:**  
+Durante la validación E2E del PoC Customer API, se detectaron dos fallos:
+
+1. **TAR incompleto:** Faltaban directorios `/input` y `/validation`
+2. **Error de compilación:** Import incorrecto de `RepresentationModelAssemblerSupport`
+   - Incorrecto: `org.springframework.hateoas.server.RepresentationModelAssemblerSupport`
+   - Correcto: `org.springframework.hateoas.server.mvc.RepresentationModelAssemblerSupport`
+
+**Root Cause Analysis:**
+
+| Fallo | Causa | Template existe? |
+|-------|-------|------------------|
+| TAR incompleto | Error de ejecución, no de KB | N/A |
+| Import incorrecto | Código improvisado, violación DEC-025 | ✅ Template correcto |
+
+El template `EntityModelAssembler.java.tpl` tenía el import correcto. El error ocurrió porque el código fue improvisado en lugar de usar el template (violación de DEC-025 No Improvisation Rule).
+
+El fingerprint Tier-0 existente (`extends RepresentationModelAssemblerSupport`) no detectó el error porque solo validaba la herencia, no el import.
+
+**Decisión:**  
+Añadir validaciones preventivas para evitar estos errores:
+
+1. **Script `package-structure-check.sh`** en `runtime/validation/scripts/tier-0/`
+   - Valida estructura obligatoria: input/, output/, trace/, validation/
+   - Se ejecuta antes de entregar el package
+
+2. **Mejora de `hateoas-check.sh`** en `mod-019/validation/`
+   - Añadida validación específica de import path
+   - Detecta import incorrecto (`server.RMAS` vs `server.mvc.RMAS`)
+
+3. **Package Delivery Checklist** en `GENERATION-ORCHESTRATOR.md`
+   - Checklist obligatorio antes de entregar
+   - Incluye comandos de validación automatizada
+
+**Archivos Modificados:**
+
+```
+runtime/validation/scripts/tier-0/
+  package-structure-check.sh                    # NUEVO
+
+modules/mod-code-019-api-public-exposure-java-spring/validation/
+  hateoas-check.sh                              # Import validation añadida
+
+runtime/flows/code/
+  GENERATION-ORCHESTRATOR.md                    # Package Delivery Checklist
+```
+
+**Validation Commands:**
+
+```bash
+# Antes de entregar:
+./validation/scripts/tier-0/package-structure-check.sh .
+./validation/run-all.sh
+cd output/{project} && mvn compile
+```
+
+**Lessons Learned:**
+
+1. **DEC-025 es crítico:** Nunca improvisar código, siempre usar templates
+2. **Fingerprints deben ser específicos:** Validar imports, no solo estructuras
+3. **Validación automatizada:** Scripts deben ejecutarse antes de entregar
+
+**Model version:** 3.0.10-009
+
+---
+
+## DEC-030: Transform Descriptors Implementation {#dec-030}
+
+**Date:** 2026-01-27  
+**Status:** ✅ Implemented  
+**Category:** Architecture  
+**Model Version:** 3.0.10-010
+
+**Context:**  
+DEC-028 established the conceptual model for Phase 3 cross-cutting transformations, but the actual implementation artifacts (transform descriptors, snippets, execution order metadata) were missing from the KB. This prevented automated Golden Master generation because:
+
+1. **mod-001 (circuit-breaker):** No transform descriptor existed
+2. **mod-002 (retry):** No transform descriptor existed  
+3. **mod-003 (timeout):** Transform descriptor existed but was in wrong location
+4. **MODULE.md files:** Missing `phase_group` and `execution_order` metadata
+5. **GENERATION-ORCHESTRATOR.md:** Phase 6 (Validation Assembly) was incomplete
+
+**Decision:**  
+Implement complete transform descriptor infrastructure:
+
+### 1. Transform Descriptors Created
+
+| Module | File | Type |
+|--------|------|------|
+| mod-001 | `transform/circuit-breaker-transform.yaml` | annotation |
+| mod-002 | `transform/retry-transform.yaml` | annotation |
+| mod-003 | `transform/timeout-config-transform.yaml` | modification |
+
+### 2. Code Snippets for mod-001
+
+```
+modules/mod-code-001-.../transform/snippets/
+├── service-name-constant.java    # SERVICE_NAME constant
+└── fallback-method.java          # Fallback method template
+```
+
+### 3. MODULE.md Metadata
+
+Each cross-cutting module now includes:
+
+```yaml
+phase_group: cross-cutting
+execution_order: N  # 1=circuit-breaker, 2=retry, 3=timeout
+
+transformation:
+  type: annotation | modification
+  descriptor: transform/{name}.yaml
+```
+
+### 4. Execution Order Enforcement
+
+```java
+// Order in generated code:
+@CircuitBreaker(name = SERVICE_NAME, fallbackMethod = "findByIdFallback")  // Order 1
+@Retry(name = SERVICE_NAME)                                                  // Order 2
+public Optional<Customer> findById(CustomerId id) { ... }
+```
+
+### 5. Phase 6 Documentation Complete
+
+GENERATION-ORCHESTRATOR.md now includes:
+- Complete validation directory structure
+- Script collection from all tiers (0-3)
+- Dynamic Tier-0 script generation based on modules used
+- Module validation scripts reference table
+- Shell compatibility notes (POSIX vs bash)
+
+**Additional Fixes:**
+
+| File | Change | Reason |
+|------|--------|--------|
+| `pom-circuitbreaker.xml.tpl` | Added `spring-boot-starter-aop` | Required for @CircuitBreaker annotations |
+| `syntax-check.sh` | `head -10` → `head -20` | Templates have longer headers |
+
+**Files Created:**
+
+```
+decisions/
+└── DEC-028-phase3-cross-cutting-model.md
+
+modules/mod-code-001-circuit-breaker-java-resilience4j/transform/
+├── circuit-breaker-transform.yaml
+└── snippets/
+    ├── service-name-constant.java
+    └── fallback-method.java
+
+modules/mod-code-002-retry-java-resilience4j/transform/
+└── retry-transform.yaml
+
+modules/mod-code-003-timeout-java-resilience4j/transform/
+└── timeout-config-transform.yaml (reorganized)
+```
+
+**Files Modified:**
+
+```
+modules/mod-code-001-.../MODULE.md
+modules/mod-code-001-.../templates/config/pom-circuitbreaker.xml.tpl
+modules/mod-code-002-.../MODULE.md
+modules/mod-code-003-.../MODULE.md
+runtime/flows/code/GENERATION-ORCHESTRATOR.md
+runtime/validators/tier-2-technology/.../syntax-check.sh
+```
+
+**Justification:**
+
+1. **Completeness:** KB now has all artifacts needed for automated generation
+2. **Traceability:** Each transformation step is documented and auditable
+3. **Determinism:** Execution order is explicit, not implicit
+4. **Validation:** Transform descriptors include fingerprints for Tier-0 checks
+
+**Model version:** 3.0.10-010
+
+---
+
+## DEC-031: PoC Validation Fixes (Golden Master) {#dec-031}
+
+**Date:** 2026-01-27  
+**Status:** ✅ Implemented  
+**Category:** Templates, Validators  
+**Model Version:** 3.0.10-011
+
+**Context:**  
+Durante la ejecución del PoC customer-api como Golden Master, se identificaron 10 defectos que impedían la compilación, ejecución de tests, o validación del código generado. Estos defectos se agrupan en 3 categorías:
+
+1. **Template Bugs (5):** Código generado con errores de compilación
+2. **Validator Bugs (3):** Validadores con patrones incorrectos o demasiado restrictivos
+3. **Test Template Bugs (2):** Templates de tests incompletos
+
+**Root Cause Analysis:**
+
+| ID | Severidad | Síntoma | Causa Raíz |
+|----|-----------|---------|------------|
+| TB-001 | CRÍTICO | `cannot assign final variable id` | Template Entity.java declara `final` pero factory methods asignan post-construcción |
+| TB-002 | CRÍTICO | `package org.springframework.transaction.annotation does not exist` | Template ApplicationService usa `@Transactional` sin JPA, spring-tx no incluido |
+| TB-003 | MEDIO | Validator no encuentra `resilience4j.retry` | Config en application-retry.yml pero validator solo busca en application.yml |
+| TB-004 | BAJO | Fingerprint `toRequest` no encontrado | Template genera `toSystemRequest`, fingerprint desalineado |
+| TB-005 | BAJO | Fingerprint `ProblemDetail` no encontrado | Template genera `createError`, fingerprint desalineado |
+| VB-001 | MEDIO | `Missing X-Correlation-ID` aunque código correcto | Validator no detecta constante `CORRELATION_ID_HEADER` |
+| VB-002 | MEDIO | `resilience4j.retry not found` aunque existe | Validator solo busca en application.yml, no en application-*.yml |
+| VB-003 | BAJO | `-e` aparece en output | `echo -e` no portable, debe usar `printf` |
+| TTB-001 | ALTO | NPE en ControllerTest | Mock de `assembler.toModel()` no configurado |
+| TTB-002 | ALTO | Test incompleto | Placeholder `// Verification would continue...` sin assertions |
+
+**Decision:**  
+Aplicar fixes a templates, validators y fingerprints para garantizar que el código generado compile, pase tests, y supere validación sin intervención manual.
+
+### Fixes Aplicados
+
+#### CRÍTICO - Compilación
+
+**TB-001: Entity.java.tpl - Quitar `final` del campo id**
+
+```diff
+- private final {{Entity}}Id id;
++ // TB-001 FIX: Removed 'final' - field is assigned via static factory methods
++ private {{Entity}}Id id;
+```
+
+**TB-002: ApplicationService.java.tpl - Quitar `@Transactional`**
+
+Decisión arquitectónica: Para SystemAPI sin JPA, `@Transactional` no tiene sentido semántico. Se elimina en lugar de añadir spring-tx.
+
+```diff
+- import org.springframework.transaction.annotation.Transactional;
++ // TB-002 FIX: @Transactional removed - only needed with JPA persistence
+
+- @Transactional(readOnly = true)
+  @Service
+```
+
+#### ALTO - Tests
+
+**TTB-001: ControllerTest-hateoas.java.tpl (NUEVO)**
+
+Nuevo template específico para tests de controllers con HATEOAS que configura correctamente el mock del assembler:
+
+```java
+@MockBean
+private {{Entity}}ModelAssembler assembler;
+
+// En cada test:
+when(assembler.toModel(any({{Entity}}Response.class)))
+    .thenReturn(EntityModel.of(response));
+```
+
+**TTB-002: SystemApiAdapterTest.java.tpl - Test completo**
+
+Añadido test para System API error codes:
+
+```java
+@Test
+void findById_WhenSystemReturnsError_ReturnsEmpty() {
+    {{Entity}}Dto errorDto = {{Entity}}Dto.builder()
+        .sysRc("99")  // Error code
+        .build();
+    when(client.getById(id)).thenReturn(errorDto);
+    
+    Optional<{{Entity}}> result = adapter.findById(id);
+    
+    assertTrue(result.isEmpty());
+}
+```
+
+#### MEDIO - Validators
+
+**VB-001: integration-check.sh - Detectar constante**
+
+```diff
+- if ! grep -q "X-Correlation-ID\|x-correlation-id\|correlationId" "$file"; then
++ if ! grep -qE "X-Correlation-ID|x-correlation-id|correlationId|CORRELATION_ID_HEADER" "$file"; then
+```
+
+**VB-002: retry-check.sh - Buscar en todos los YAML**
+
+```diff
+- if grep -q "resilience4j:" "$TARGET_DIR/src/main/resources/application.yml"
++ if grep -rq "resilience4j:" "$RESOURCES_DIR"/application*.yml 2>/dev/null
+```
+
+#### BAJO - Fingerprints
+
+**TB-004/TB-005: template-conformance-check.sh**
+
+Fingerprints actualizados para coincidir con output real de templates:
+
+```bash
+# mod-015
+MODULE_FINGERPRINTS["mod-code-015:CorrelationIdFilter.java"]="...getCurrentCorrelationId"  # removed extractOrGenerate
+MODULE_FINGERPRINTS["mod-code-015:GlobalExceptionHandler.java"]="...createError|@ExceptionHandler"  # was ProblemDetail
+
+# mod-017
+MODULE_FINGERPRINTS["mod-code-017:*SystemApiMapper.java"]="...toSystemRequest\|toRequest"  # accept both
+
+# mod-019
+MODULE_FINGERPRINTS["mod-code-019:*ModelAssembler.java"]="extends RepresentationModelAssemblerSupport|withSelfRel"  # simplified
+```
+
+**Files Modified:**
+
+```
+modules/mod-code-015-hexagonal-base-java-spring/templates/
+├── domain/Entity.java.tpl                    # TB-001: removed final
+└── application/ApplicationService.java.tpl   # TB-002: removed @Transactional
+
+modules/mod-code-017-persistence-systemapi/templates/test/
+└── SystemApiAdapterTest.java.tpl             # TTB-002: complete test
+
+modules/mod-code-019-api-public-exposure-java-spring/templates/test/
+└── ControllerTest-hateoas.java.tpl           # TTB-001: NEW file
+
+modules/mod-code-002-retry-java-resilience4j/validation/
+└── retry-check.sh                            # VB-002: search all YAML
+
+modules/mod-code-018-api-integration-rest-java-spring/validation/
+└── integration-check.sh                      # VB-001: detect constant
+
+runtime/validators/tier-0-conformance/
+└── template-conformance-check.sh             # TB-004/TB-005: aligned fingerprints
+```
+
+**Validation Results Post-Fix:**
+
+| Check | Before | After |
+|-------|--------|-------|
+| `mvn compile` | ❌ 5 errors | ✅ SUCCESS |
+| `mvn test` | ❌ NPE | ✅ ALL PASS |
+| Tier-0 validation | ❌ 6 failures | ✅ PASS |
+| Tier-1 validation | ✅ PASS | ✅ PASS |
+| Tier-2 validation | ❌ compile, test | ✅ PASS |
+| Tier-3 validation | ❌ 4 failures | ✅ PASS |
+| **Total** | **13/17 PASS** | **17/17 PASS** |
+
+**Golden Master Package:**
+
+```
+gen_customer-api_20260127_145144-v2.tar
+├── input/           (5 files)
+├── output/          (Maven project, 25 Java files)
+├── trace/           (4 trace files)
+└── validation/      (17 scripts + runner)
+```
+
+**Lessons Learned:**
+
+1. **Template ↔ Fingerprint alignment:** Fingerprints must be updated when templates change
+2. **@Transactional is JPA-specific:** Don't include without actual transaction management
+3. **Factory method pattern incompatible with final:** Use private setters or builder instead
+4. **Test templates must be complete:** Placeholder comments are not acceptable
+5. **Validators must be flexible:** Accept constants, multiple file locations
+
+**Model version:** 3.0.10-011
+
+---
+
+## DEC-032: Human Approval Checkpoint Pattern {#dec-032}
+
+**Date:** 2026-01-27  
+**Status:** ✅ Implemented  
+**Category:** Orchestration, Process  
+**Model Version:** 3.0.10-012
+
+**Context:**  
+During the customer-api PoC Golden Master validation, we observed that:
+
+1. **Context compaction risk**: Long generation sessions risk mid-execution compaction, causing incomplete outputs
+2. **Wasted effort**: Errors in discovery/context resolution only surface after expensive code generation
+3. **No course correction**: Once generation starts, there's no opportunity to catch misunderstandings
+4. **Non-determinism**: Without explicit approval, the "contract" for generation is implicit
+
+We successfully used a two-phase pattern during the PoC:
+- **Phase 1 (Planning)**: INIT → DISCOVERY → CONTEXT_RESOLUTION → Present plan for approval
+- **Phase 2 (Execution)**: Human approves → GENERATION → TESTS → VALIDATION → PACKAGE
+
+This pattern proved valuable enough to formalize as a best practice.
+
+**Decision:**  
+Introduce a mandatory **Human Approval Checkpoint** (Phase 2.7) between CONTEXT_RESOLUTION and GENERATION.
+
+### Pattern Definition
+
+```
+PLANNING PHASES (Pre-Approval)
+├── Phase 1: INIT
+├── Phase 2: DISCOVERY  
+├── Phase 2.5: CONTEXT_RESOLUTION
+└── Phase 2.7: HUMAN APPROVAL CHECKPOINT ← NEW
+    ├── Generate execution-plan.md
+    ├── Present to human
+    └── Await "approved" response
+
+EXECUTION PHASES (Post-Approval)
+├── Phase 3: GENERATION (3.1, 3.2, 3.3)
+├── Phase 4: TESTS
+├── Phase 5: TRACEABILITY
+├── Phase 6: VALIDATION ASSEMBLY
+└── Phase 7: PACKAGE
+```
+
+### Checkpoint Artifact
+
+The checkpoint produces `trace/execution-plan.md` containing:
+- Package metadata (ID, stack, KB version)
+- Capabilities detected with modules
+- Phase-by-phase file generation plan
+- All resolved variables
+- Explicit approval request
+
+### Approval Protocol
+
+| Response | Action |
+|----------|--------|
+| "approved", "yes", "proceed" | Continue to GENERATION |
+| "rejected", "no", "cancel" | Abort generation |
+| Other text | Treat as modification request, re-run discovery |
+
+### Benefits
+
+| Benefit | Impact |
+|---------|--------|
+| **Anti-Compaction** | Natural breakpoint prevents mid-generation context loss |
+| **Early Validation** | Catch misunderstandings before expensive code generation |
+| **Auditability** | `execution-plan.md` provides approval record |
+| **Determinism** | Approved plan becomes the generation contract |
+| **Resumability** | If session ends, plan can be re-submitted for continuation |
+
+### Applicability
+
+| Scenario | Checkpoint Required? |
+|----------|---------------------|
+| Interactive chat (Claude.ai) | ✅ ALWAYS |
+| Automated CI/CD pipeline | ⚠️ OPTIONAL (`--auto-approve` flag) |
+| Agentic orchestration | ✅ RECOMMENDED |
+| Batch processing | ⚠️ Can be disabled for trusted inputs |
+
+### Integration Points
+
+For multi-agent or automated systems:
+
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│  Discovery  │────▶│  Checkpoint  │────▶│ Generation  │
+│    Agent    │     │   Gateway    │     │    Agent    │
+└─────────────┘     └──────────────┘     └─────────────┘
+                           │
+                    ┌──────┴──────┐
+                    │             │
+               ┌────▼────┐  ┌─────▼─────┐
+               │  Human  │  │   Auto    │
+               │ Approval│  │  Approve  │
+               └─────────┘  │ (trusted) │
+                            └───────────┘
+```
+
+Implementation options:
+- **Slack/Teams**: Notification with approval buttons
+- **Web UI**: Modal requiring explicit approval
+- **CLI**: Interactive prompt
+- **API**: Callback with manual override capability
+
+**Files Modified:**
+
+```
+runtime/flows/code/GENERATION-ORCHESTRATOR.md
+├── Version: 1.1 → 1.2
+├── Orchestration Flow diagram updated
+└── New section: Phase 2.7: HUMAN APPROVAL CHECKPOINT
+```
+
+**Justification:**
+
+1. **Proven in practice**: Successfully used in customer-api PoC
+2. **Low overhead**: Single checkpoint, clear approval protocol
+3. **High value**: Prevents wasted generation effort
+4. **Flexible**: Can be disabled for automated trusted pipelines
+5. **Auditable**: Creates approval artifact for compliance
+
+**Model version:** 3.0.10-012
+
+---
+
+## DEC-033: Validation Script Management (No Improvisation) {#dec-033}
+
+**Date:** 2026-01-28  
+**Status:** ✅ Implemented  
+**Category:** Orchestration, Validation  
+**Model Version:** 3.0.10-013
+
+**Context:**  
+During the new-chat PoC test (2026-01-27), we discovered that the chat agent **improvised validation scripts** instead of copying them from the KB. This violates DEC-025 (No Improvisation Rule).
+
+### Observed Behavior
+
+The chat generated 17 custom validation scripts instead of copying the existing ones:
+
+| Expected | Actual |
+|----------|--------|
+| Copy `hateoas-check.sh` (~80 lines, colors, import validation) | Generated new script (~30 lines, basic) |
+| Copy `systemapi-check.sh` | Created `systemapi-adapter-check.sh` (different name) |
+| Copy `circuit-breaker-check.sh` | Created `circuit-breaker-annotations-check.sh` |
+| Use `run-all.sh.tpl` from KB | Generated custom `run-all.sh` with `${tier^^}` (macOS incompatible) |
+
+Scripts created by chat that don't exist in KB:
+- `application-config-check.sh`
+- `correlation-id-check.sh`
+- `domain-api-check.sh`
+- `exception-handling-check.sh`
+- `field-mapping-check.sh`
+- `java-version-check.sh`
+- `resilience4j-check.sh`
+- `spring-boot-check.sh`
+- `tests-exist-check.sh`
+
+### Root Cause Analysis
+
+`GENERATION-ORCHESTRATOR.md` Phase 6 said "Copy Tier-X Scripts" but:
+1. No prominent warning about NOT generating scripts
+2. No explicit statement that improvisation is prohibited
+3. The instruction was buried in pseudocode, not highlighted
+
+### Decision
+
+Add explicit **WARNING** at the start of Phase 6 in `GENERATION-ORCHESTRATOR.md`:
+
+```markdown
+### ⚠️ CRITICAL WARNING - DEC-033
+
+**DO NOT GENERATE validation scripts. COPY them from the KB.**
+
+This is a violation of DEC-025 (No Improvisation Rule). Validation scripts:
+- MUST be copied from their source locations in the KB
+- MUST NOT be generated or improvised
+- MUST use the exact script names from the KB
+- MUST preserve the full content (colors, detailed checks, import validation)
+
+**If a validation script does not exist in the KB, it should NOT be included.**
+```
+
+### Script Location Reference
+
+| Tier | Source Location | What to Do |
+|------|-----------------|------------|
+| Tier 0 | `runtime/validators/tier-0-conformance/template-conformance-check.sh` | GENERATE using template + module fingerprints |
+| Tier 1 | `runtime/validators/tier-1-universal/**/*.sh` | COPY all applicable scripts |
+| Tier 2 | `runtime/validators/tier-2-technology/{stack}/**/*.sh` | COPY based on stack |
+| Tier 3 | `modules/{module-id}/validation/*.sh` | COPY for each module used |
+| run-all.sh | `runtime/validators/run-all.sh.tpl` | COPY and replace `{{SERVICE_NAME}}` |
+
+### Module → Script Mapping
+
+| Module | Script(s) to Copy |
+|--------|-------------------|
+| mod-code-015 | `hexagonal-structure-check.sh` |
+| mod-code-017 | `systemapi-check.sh` |
+| mod-code-018 | `integration-check.sh` |
+| mod-code-019 | `hateoas-check.sh`, `config-check.sh` |
+| mod-code-001 | `circuit-breaker-check.sh` |
+| mod-code-002 | `retry-check.sh` |
+| mod-code-003 | `timeout-check.sh` |
+
+### Impact
+
+| Aspect | Before | After |
+|--------|--------|-------|
+| Phase 6 clarity | Implicit "copy" in pseudocode | Explicit WARNING at top |
+| Script quality | Risk of improvised, basic scripts | Guaranteed use of KB scripts |
+| macOS compatibility | Risk of bash 4.0+ syntax | Uses KB's POSIX-compatible scripts |
+| Validation coverage | Inconsistent | Consistent with KB standards |
+
+### Files Modified
+
+```
+runtime/flows/code/GENERATION-ORCHESTRATOR.md
+├── Version: 1.2 → 1.3
+├── Phase 6: Added ⚠️ CRITICAL WARNING section at top
+└── Key Changes: Added DEC-033 reference
+```
+
+### Verification
+
+After this change, a new chat executing Phase 6 should:
+1. ✅ Read the WARNING before proceeding
+2. ✅ COPY scripts from listed locations
+3. ✅ NOT generate custom scripts
+4. ✅ Use exact script names from KB
+5. ✅ Preserve full script content
+
+**Model version:** 3.0.10-013
+
+---
+
+## DEC-034: Validation Assembly Script (Automation) {#dec-034}
+
+**Date:** 2026-01-28  
+**Status:** ✅ Implemented  
+**Category:** Orchestration, Validation, Automation  
+**Model Version:** 3.0.10-014
+
+**Context:**  
+DEC-033 added a WARNING to Phase 6 instructing agents to copy validation scripts from KB instead of generating them. However, testing showed that **the WARNING was not effective** - agents continued to improvise all validation scripts.
+
+### Problem Evidence (PoC 2026-01-28)
+
+Despite the explicit WARNING in Phase 6:
+- 100% of validation scripts were improvised
+- Scripts with matching names had completely different content
+- Wrong tier assignments (hexagonal-structure-check.sh in tier-2 instead of tier-3)
+- Missing scripts from KB (integration-check.sh, config-check.sh, etc.)
+
+Example comparison of `naming-conventions-check.sh`:
+
+| Aspect | KB Version | Improvised Version |
+|--------|------------|-------------------|
+| Shebang | `#!/bin/sh` (POSIX) | `#!/bin/bash` |
+| Lines | ~60 | ~25 |
+| Functions | `pass()`, `fail()`, `warn()` | None |
+| Output | Structured with colors | Basic echo |
+
+### Root Cause
+
+Text-based warnings are not enforceable. The agent:
+1. Reads the warning
+2. Understands the intent
+3. Still improvises because it's "easier" than navigating KB paths
+
+### Solution
+
+Create an **executable script** that the agent MUST run instead of manually copying files.
+
+```bash
+runtime/validators/assemble-validation.sh <validation-dir> <service-name> <stack> <module-1> [module-2] ...
+```
+
+The script:
+1. Takes modules discovered in Phase 2 as input
+2. Automatically copies scripts from correct KB locations
+3. Handles path resolution (module names with suffixes like `-java-resilience4j`)
+4. Configures `run-all.sh` with variable substitution
+5. Sets executable permissions
+
+### Additional Fix: Consolidate Duplicate Folders
+
+Eliminated confusion between two similar folders:
+
+| Before | After |
+|--------|-------|
+| `runtime/validators/` | `runtime/validators/` ✅ (kept) |
+| `runtime/validation/` | (deleted) |
+
+Moved `runtime/validation/scripts/tier-0/package-structure-check.sh` → `runtime/validators/tier-0-conformance/`
+
+### Files Changed
+
+```
+NEW:
+  runtime/validators/assemble-validation.sh
+
+UPDATED:
+  runtime/flows/code/GENERATION-ORCHESTRATOR.md (v1.3 → v1.4)
+    - Phase 6: Replaced WARNING with MANDATORY script execution
+    - Key Changes: Added DEC-034 reference
+
+MOVED:
+  runtime/validation/scripts/tier-0/package-structure-check.sh
+    → runtime/validators/tier-0-conformance/package-structure-check.sh
+
+DELETED:
+  runtime/validation/ (entire folder - was duplicate/confusing)
+```
+
+### Usage in Phase 6
+
+```bash
+# Agent MUST execute this command, not manually copy scripts
+./runtime/validators/assemble-validation.sh \
+    "${PACKAGE_DIR}/validation" \
+    "${SERVICE_NAME}" \
+    "${STACK}" \
+    mod-code-015 mod-code-017 mod-code-018 mod-code-019 \
+    mod-code-001 mod-code-002 mod-code-003
+```
+
+### Expected Outcome
+
+| Aspect | Before (DEC-033) | After (DEC-034) |
+|--------|------------------|-----------------|
+| Agent action | Read warning, ignore it | Execute script |
+| Script source | Improvised | Copied from KB |
+| Tier assignment | Often wrong | Automatic/correct |
+| Missing scripts | Common | None (script handles all) |
+| Consistency | Variable | Guaranteed |
+
+### Verification
+
+After running `assemble-validation.sh`, the `validation/` directory should contain:
+- Tier-0: 2 scripts (template-conformance-check.sh, package-structure-check.sh)
+- Tier-1: 3 scripts (naming-conventions, project-structure, traceability)
+- Tier-2: 5+ scripts (compile, syntax, application-yml, etc.)
+- Tier-3: N scripts (one per module with validation/*.sh)
+
+**Model version:** 3.0.10-014
+
+---
+
+## DEC-035: Config Flags Pub/Sub Pattern {#dec-035}
+
+**Fecha:** 2026-02-03  
+**Estado:** ✅ Aprobado  
+**Versión modelo:** 3.0.11
+
+### Contexto
+
+Feature modules need to influence code generation in core modules without tight coupling. Example: mod-019 (HATEOAS) needs mod-015's `Response.java` to extend `RepresentationModel` instead of being a record.
+
+**The problem:**
+- mod-015 generates `Response.java` (core)
+- mod-019 activates HATEOAS feature
+- Both modules are in Phase 1 (STRUCTURAL)
+- No explicit mechanism for mod-019 to influence mod-015's output
+
+**Previous attempts:**
+- Template priority by module number (arbitrary, doesn't scale)
+- Duplicate templates in feature modules (duplication, maintenance burden)
+
+### Decisión
+
+Implement a **Publish/Subscribe model for config flags**:
+
+1. **Publishers** (feature capabilities) declare flags they activate
+2. **Subscribers** (core modules/templates) declare which flags affect their behavior
+3. Flags propagate through `generation-context.json`
+4. Templates use conditional logic based on flags
+
+### Modelo Pub/Sub
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                     CONFIG FLAGS REGISTRY                           │
+├─────────────────────────────────────────────────────────────────────┤
+│  Flag              │ Publishers         │ Subscribers              │
+├────────────────────┼────────────────────┼──────────────────────────┤
+│  hateoas           │ mod-019            │ mod-015 (Response.tpl)   │
+│  pagination        │ mod-019            │ mod-015 (Controller.tpl) │
+│  jpa               │ mod-016            │ mod-015 (Entity.tpl)     │
+│  systemapi         │ mod-017            │ mod-015 (Repository.tpl) │
+│  circuit-breaker   │ mod-001            │ mod-017 (Adapter.tpl)    │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Sintaxis
+
+**Publisher (capability-index.yaml):**
+```yaml
+api-architecture:
+  features:
+    domain-api:
+      module: mod-code-019-api-public-exposure-java-spring
+      publishes_flags:
+        hateoas: true
+        pagination: true
+```
+
+**Subscriber (MODULE.md):**
+```yaml
+subscribes_to_flags:
+  - flag: hateoas
+    affects:
+      - templates/application/dto/Response.java.tpl
+    behavior: |
+      true  → class extends RepresentationModel
+      false → record (immutable DTO)
+```
+
+**Template conditional:**
+```java
+{{#config.hateoas}}
+public class {{Entity}}Response extends RepresentationModel<{{Entity}}Response> {
+{{/config.hateoas}}
+{{^config.hateoas}}
+public record {{Entity}}Response(
+{{/config.hateoas}}
+```
+
+**Runtime (generation-context.json):**
+```json
+{
+  "config_flags": {
+    "hateoas": true,
+    "pagination": true
+  }
+}
+```
+
+### Beneficios de Governance
+
+1. **Visibilidad**: Query todas las relaciones pub/sub
+2. **Análisis de impacto**: "Si activo mod-019, ¿qué templates cambian?"
+3. **Validación**: Detectar flags huérfanos o sin publisher
+4. **Documentación**: Generar matriz de dependencias automáticamente
+
+### Documentos Actualizados
+
+| Documento | Cambio |
+|-----------|--------|
+| `model/ENABLEMENT-MODEL-v3.0.md` | Nueva sección: Config Flags Pub/Sub |
+| `model/standards/authoring/CAPABILITY.md` | Atributo: `publishes_flags` |
+| `model/standards/authoring/MODULE.md` | Sección: `subscribes_to_flags` |
+| `capability-index.yaml` | mod-019 publica `hateoas` |
+| `mod-015/MODULE.md` | Suscribe a `hateoas` |
+| `mod-015/Response.java.tpl` | Condicional en `config.hateoas` |
+
+### Justificación
+
+- **Desacoplamiento**: Modules no se conocen, solo flags
+- **Escalabilidad**: Nuevos flags sin modificar código existente
+- **Governance**: Relaciones explícitas y auditables
+- **Simplicidad**: Un template por artifact, lógica condicional interna
+
+**Modelo version:** 3.0.11
+
+---
+
+## DEC-036: Explicit Template Output Paths {#dec-036}
+
+**Fecha:** 2026-02-03  
+**Estado:** Implementado  
+**Contexto:** Orchestration Session - E2E Validation
+
+### Problema
+
+Template output paths using `...` (e.g., `{{basePackagePath}}/.../Application.java`) caused:
+1. Manifest checker couldn't resolve expected file paths
+2. False warnings about "missing" files that were actually generated
+3. Reduced governance visibility
+
+### Decisión
+
+All template `// Output:` comments must use **explicit, resolvable paths**:
+
+| Before (ambiguous) | After (explicit) |
+|--------------------|------------------|
+| `{{basePackagePath}}/.../Application.java` | `{{basePackagePath}}/{{ServiceName}}Application.java` |
+| `{{basePackagePath}}/.../CreateRequest.java` | `{{basePackagePath}}/application/dto/Create{{Entity}}Request.java` |
+| `{{basePackagePath}}/.../application.yml` | `src/main/resources/application.yml` |
+
+### Variables Soportadas por Manifest Checker
+
+| Variable | Resolución |
+|----------|------------|
+| `{{basePackagePath}}` | `com/bank/customer` |
+| `{{Entity}}` | `Customer` |
+| `{{entity}}` | `customer` |
+| `{{ServiceName}}` | `CustomerApi` |
+| `{{entityPlural}}` | `customers` |
+
+### Justificación
+
+- **Governance**: Manifest checker validates 100% of expected outputs
+- **Determinism**: Clear contract between template and generated file
+- **Debugging**: Easy to trace which template produces which file
+
+**Modelo version:** 3.0.12
+
+---
+
+## DEC-037: Mandatory Enum Generation Rule {#dec-037}
+
+**Fecha:** 2026-02-03  
+**Estado:** Implementado  
+**Contexto:** Compilation failure due to missing `CustomerStatus.java`
+
+### Problema
+
+LLM generated code referencing `CustomerStatus` enum type but didn't generate the enum file, causing 13 compilation errors.
+
+### Decisión
+
+Added **CRITICAL rule** to CodeGen prompt:
+
+> "If ANY field uses an Enum type (e.g., CustomerStatus, OrderType), you MUST generate the enum file using `Enum.java.tpl`."
+
+### Regla en Prompt
+
+```
+## CRITICAL: Enum Generation
+
+If ANY field uses an Enum type, you MUST generate the enum file.
+Use Enum.java.tpl from mod-015:
+- Output path: {{basePackagePath}}/domain/model/{{EnumName}}.java
+
+Example: If Customer has field `status` of type `CustomerStatus`, 
+generate CustomerStatus.java with values: ACTIVE, INACTIVE, SUSPENDED, PENDING
+
+Rule: Never reference an enum type without generating its definition file.
+```
+
+### Justificación
+
+- **Compilation guarantee**: All referenced types must exist
+- **Explicit instruction**: LLM needs clear directive for dynamic artifacts
+- **Fail-fast**: Better to over-generate than compile-fail
+
+**Modelo version:** 3.0.12
+
+---
+
+## DEC-038: Traceability Manifest Structure {#dec-038}
+
+**Fecha:** 2026-02-03  
+**Estado:** Implementado  
+**Contexto:** traceability-check.sh failing on valid manifests
+
+### Problema
+
+Validator expected old manifest structure (`service`, `generator`, `capabilities`) but actual manifests use new structure (`generation`, `enablement`, `modules`).
+
+### Decisión
+
+Align validator with actual manifest structure produced by orchestration:
+
+**Expected Manifest Structure:**
+```json
+{
+  "generation": {
+    "id": "uuid",
+    "timestamp": "ISO-8601",
+    "service_name": "customer-api"
+  },
+  "enablement": {
+    "version": "3.0.x",
+    "domain": "code",
+    "flow": "flow-generate"
+  },
+  "modules": [
+    {"id": "mod-xxx", "capability": "...", "phase": 1}
+  ],
+  "status": {
+    "generation": "SUCCESS",
+    "validation": "PENDING"
+  },
+  "metrics": {
+    "files_generated": 34,
+    "test_files": 7
+  }
+}
+```
+
+### Validator Checks (Updated)
+
+| Check | Field | Required |
+|-------|-------|----------|
+| Generation info | `generation` | ✅ Yes |
+| Enablement info | `enablement` | ✅ Yes |
+| Module list | `modules` | ⚠️ Warn |
+| Status | `status` | ⚠️ Warn |
+| Service name | `generation.service_name` | ⚠️ Warn |
+| Version | `enablement.version` | ⚠️ Warn |
+| Timestamp | `generation.timestamp` | ⚠️ Warn |
+
+### Justificación
+
+- **Consistency**: Validator matches actual output
+- **Single source of truth**: Orchestration defines structure, validators follow
+- **Backward compatibility**: Warns but doesn't fail on optional fields
+
+**Modelo version:** 3.0.12
+
+---
+
+## DEC-039: Phase 2 Reproducibility Rules {#dec-039}
+
+**Fecha:** 2026-02-03  
+**Estado:** Implementado  
+**Contexto:** Analysis of 3 E2E runs showed cosmetic variations in Phase 2 files
+
+### Problema
+
+Phase 2 (SystemAPI) files showed variations across runs:
+
+| Variation Type | Example | Impact |
+|----------------|---------|--------|
+| Trailing newlines | Run06 missing final `\n` | Cosmetic |
+| Helper methods | `toUppercase()` vs inline null checks | Structural |
+| Unicode in comments | `↔` vs `<->` | Cosmetic |
+
+### Decisión
+
+Implement three-pronged approach:
+
+#### 1. Post-Processing (Orchestration)
+```python
+# Ensure content ends with exactly one newline
+normalized_content = content.rstrip() + '\n'
+```
+
+#### 2. Prompt Rules (CodeGen)
+```
+## CRITICAL: Code Style Consistency
+
+### 1. Trailing Newlines
+- Every file MUST end with exactly ONE newline
+
+### 2. Helper Methods Style
+- ALWAYS create private helper methods for null-safe transformations
+- Use EXACT names: toUpperCase(), toLowerCase(), toProperCase()
+
+### 3. ASCII Only in Comments
+- Use <-> for bidirectional arrows, NOT ↔
+```
+
+#### 3. Template Cleanup (KB)
+- Replace all Unicode arrows in templates with ASCII equivalents
+
+### Análisis de Variaciones
+
+**Before DEC-039:**
+| File | Run05 | Run06 | Run07 |
+|------|-------|-------|-------|
+| CustomerSystemApiMapper.java | 189 | 174 | 184 |
+| CustomerSystemApiAdapter.java | 68 | 67 | 68 |
+
+**Expected After DEC-039:**
+- Trailing newlines: 100% consistent
+- Helper methods: 100% consistent (always use helpers)
+- Unicode: 100% consistent (ASCII only)
+
+### Archivos Modificados
+
+**Orchestration:**
+- `scripts/run-codegen.sh` - Added style rules + trailing newline normalization
+
+**KB Templates:**
+- `mod-001/templates/annotation/chain-fallback.java.tpl`
+- `mod-015/templates/application/dto/Response.java.tpl`
+- `mod-015/templates/domain/Entity.java.tpl`
+- `mod-017/templates/mapper/SystemApiMapper.java.tpl`
+
+### Justificación
+
+- **Determinism**: Reduce LLM interpretation variance
+- **Diff-friendly**: Consistent outputs for code review
+- **CI/CD**: Reproducible builds across environments
+
+**Modelo version:** 3.0.13
+
+---
+
+## DEC-040: HTTP Client Variant Selection {#dec-040}
+
+**Fecha:** 2026-02-04  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+mod-017 tiene 3 templates de cliente HTTP (`feign.java.tpl`, `restclient.java.tpl`, `resttemplate.java.tpl`) todos declarando el mismo output path (`{{Entity}}SystemApiClient.java`). El LLM debería elegir uno, pero en pruebas de reproducibilidad (Run 03 del 2026-02-04), generó los tres con nombres diferentes.
+
+### Problema
+
+| Run | Files | Extra Files |
+|-----|-------|-------------|
+| 01 | 32 | - |
+| 02 | 32 | - |
+| 03 | 34 | `CustomerSystemApiRestClient.java`, `CustomerSystemApiRestTemplateClient.java` |
+
+El LLM interpretó que debía generar implementaciones alternativas cuando solo debe usar UNA.
+
+### Decisión
+
+Implementar **variant selection via Config Flags**:
+
+1. `persistence.systemapi` publica flag `http_client: restclient` (default)
+2. Templates declaran `// Variant: <variant_name>`
+3. CodeGen filtra templates que no coincidan con la variante activa
+
+### Implementación
+
+**1. capability-index.yaml** (KB):
+```yaml
+persistence:
+  features:
+    systemapi:
+      publishes_flags:
+        http_client: restclient  # Options: restclient, feign, resttemplate
+```
+
+**2. run-codegen.sh** (Orchestration):
+```python
+# Get variant from config_flags
+http_client_variant = config_flags.get('http_client', 'restclient')
+
+# Filter templates by variant
+variant_match = re.search(r'// Variant:\s*(\w+)', content)
+if variant_match:
+    if variant_match.group(1).lower() != http_client_variant.lower():
+        continue  # Skip non-matching variant
+```
+
+**3. Templates** (already have header):
+```java
+// Template: restclient.java.tpl
+// Output: {{basePackage}}/adapter/out/systemapi/client/{{Entity}}SystemApiClient.java
+// Variant: restclient
+```
+
+### Variantes Disponibles
+
+| Variant | Template | Dependencies | Notes |
+|---------|----------|--------------|-------|
+| `restclient` | restclient.java.tpl | None (Spring 6.1+) | **DEFAULT** |
+| `feign` | feign.java.tpl | spring-cloud-starter-openfeign | Declarative |
+| `resttemplate` | resttemplate.java.tpl | None | Legacy/deprecated |
+
+### Uso
+
+Para cambiar la variante, el usuario puede:
+1. Modificar el prompt: "use Feign for HTTP client"
+2. Modificar discovery-result.json manualmente
+3. (Futuro) Añadir UI para selección de variantes
+
+### Resultado Esperado
+
+- Solo 1 template de cliente incluido en el prompt
+- 100% reproducible (32 files en todos los runs)
+- Extensible a otras variantes (e.g., WebClient reactivo)
+
+**Modelo version:** 3.0.14
+
+---
+
+## DEC-041: Module Variants vs Config Flags {#dec-041}
+
+**Fecha:** 2026-02-04  
+**Estado:** ✅ Aprobado
+
+**Contexto:**  
+DEC-040 introdujo `http_client` como "config flag" publicado por `persistence.systemapi`. Pero surgió la pregunta: ¿cómo puede el usuario sobrescribir este valor vía prompt? La solución inicial (Discovery extrae override) era un parche que mezclaba conceptos.
+
+### Problema Conceptual
+
+El modelo de Config Flags (DEC-035) define:
+- **Productor**: Capability que publica un flag
+- **Consumidor**: Módulo que reacciona al flag
+
+Pero `http_client` no encaja:
+- No es una "capacidad activa" (hateoas, pagination)
+- Es una "elección de implementación" dentro de un módulo
+- El dueño natural es el módulo, no la capability
+
+### Distinción: Config Flags vs Variants
+
+| Aspecto | Config Flag | Variant |
+|---------|-------------|---------|
+| **Semántica** | ¿Está activa esta capacidad? | ¿Qué implementación usar? |
+| **Definido en** | capability-index.yaml | MODULE.md |
+| **Producido por** | Capability activa | Usuario (prompt) o default |
+| **Consumido por** | Otros módulos suscritos | El propio módulo |
+| **Ejemplo** | `hateoas: true` | `http_client: feign` |
+
+### Decisión
+
+Separar los conceptos:
+
+1. **Config Flags** - Cross-module influence (sin cambios)
+   ```
+   Capability A activa → publica flag → Module B reacciona
+   ```
+
+2. **Module Variants** - Intra-module configuration (NUEVO)
+   ```
+   Module define opciones → User selecciona (o default) → Module usa
+   ```
+
+### Modelo de Variants
+
+**Definición en MODULE.md:**
+```yaml
+# En frontmatter o sección dedicada
+variants:
+  http_client:
+    description: "HTTP client implementation"
+    default: restclient
+    options:
+      restclient:
+        description: "Spring 6.1+ RestClient"
+        templates: [client/restclient.java.tpl]
+        keywords: [restclient, "rest client"]
+      feign:
+        description: "OpenFeign declarative client"  
+        templates: [client/feign.java.tpl, config/feign-config.java.tpl]
+        keywords: [feign, openfeign, declarative]
+      resttemplate:
+        description: "Legacy RestTemplate"
+        templates: [client/resttemplate.java.tpl]
+        keywords: [resttemplate, legacy]
+```
+
+**Flujo de selección:**
+```
+1. Discovery detecta módulo + analiza prompt para keywords de variante
+2. Discovery output: variant_selections: { "mod-017.http_client": "feign" }
+3. Context Agent resuelve: usa selection o default del MODULE.md
+4. CodeGen filtra templates por variante activa
+```
+
+### Migración de DEC-040
+
+- ELIMINAR: `publishes_flags.http_client` de capability-index
+- AÑADIR: `variants.http_client` en MODULE.md de mod-017
+- ACTUALIZAR: Discovery Agent para detectar variant keywords
+- MANTENER: Filtrado por `// Variant:` en CodeGen (ya implementado)
+
+### Beneficios
+
+1. **Claridad** - Cada concepto tiene su lugar
+2. **Ownership** - Módulo define sus propias variantes
+3. **Escalable** - Nuevos módulos añaden variantes sin tocar modelo global
+4. **Discoverable** - Catálogo en MODULE.md, visible para el usuario
+5. **Validable** - Solo opciones definidas son válidas
+
+### Ejemplos de Uso
+
+**Prompt del usuario:**
+```
+Necesito una Customer API con integración a System API usando Feign client
+```
+
+**Discovery detecta:**
+- Capability: persistence.systemapi → mod-017
+- Variant keyword: "feign" → mod-017.http_client = feign
+
+**Sin mención en prompt:**
+- Usa default de MODULE.md: restclient
+
+**Modelo version:** 3.0.15
+
+---
+
+## DEC-042: Stack-Specific Style Files {#dec-042}
+
+**Fecha:** 2026-02-04  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Las Code Style Guidelines en MODULE.md (DEC-041) no se seguían consistentemente por el LLM. En pruebas, 4/5 runs usaron UUID en lugar de String para IDs en DTOs, a pesar de la documentación.
+
+### Problema
+
+| Ubicación | Efectividad | Motivo |
+|-----------|-------------|--------|
+| MODULE.md | ~80% | LLM puede ignorar documentación |
+| Prompt CodeGen (hardcoded) | ~95% | Pero agente pierde agnóstico |
+| Template hardcoded | 100% | Pero inflexible |
+
+### Decisión
+
+Crear **Stack-Specific Style Files** que se cargan dinámicamente según el stack detectado:
+
+```
+KB/
+└── runtime/
+    └── codegen/
+        └── styles/
+            ├── java-spring.style.md   ← Reglas Java/Spring
+            └── nodejs.style.md        ← Futuro
+```
+
+### Flujo
+
+```
+1. Discovery detecta stack: java-springboot
+         │
+         ▼
+2. CodeGen carga: runtime/codegen/styles/java-spring.style.md
+         │
+         ▼
+3. Contenido se inyecta en prompt (reemplaza {{STYLE_RULES}})
+         │
+         ▼
+4. LLM sigue reglas con alta fidelidad
+```
+
+### Contenido del Style File
+
+El fichero `java-spring.style.md` incluye reglas para:
+
+1. **DTOs** - `String` para IDs, factory method `from(entity)`
+2. **Mappers** - Helper methods con nombres exactos, orden alfabético
+3. **General** - Trailing newlines, ASCII only en comentarios
+4. **Tests** - Consistencia en setup, uso de String para IDs
+5. **Application Services** - Uso de factory methods, no @Transactional con System API
+
+### Implementación
+
+**KB:**
+- Nuevo directorio: `runtime/codegen/styles/`
+- Nuevo fichero: `java-spring.style.md`
+
+**Orchestration (run-codegen.sh):**
+```bash
+# Load style file based on stack
+STACK=$(python3 -c "..." || echo "java-spring")
+STYLE_FILE="${KB_DIR}/runtime/codegen/styles/${STACK}.style.md"
+
+# Inject into prompt
+content.replace('{{STYLE_RULES}}', style_content)
+```
+
+### Beneficios
+
+| Aspecto | Resultado |
+|---------|-----------|
+| Agente agnóstico | ✅ Solo carga fichero según stack |
+| Efectividad | Alta (en prompt, no en docs) |
+| Mantenibilidad | Fichero separado en KB |
+| Extensibilidad | Añadir nuevos stacks fácilmente |
+| Trazabilidad | Log indica qué style file se usó |
+
+### Relación con MODULE.md
+
+- **MODULE.md** = Documentación para humanos + referencia
+- **style.md** = Reglas para LLM (se inyectan en prompt)
+
+Las reglas pueden duplicarse, pero el style file es la fuente autoritativa para el LLM.
+
+**Modelo version:** 3.0.16
+
+---
+
+## DEC-043: Phase 3 Timeout Coherence Fixes {#dec-043}
+
+**Fecha:** 2026-02-05  
+**Estado:** ✅ Implementado
+
+**Contexto:**  
+Tras la primera ejecución E2E exitosa con Phase 3 (Transform Agent, ODEC-022), se detectaron 3 incoherencias entre el modelo de dos capas de timeout (DEC-028) y la implementación real.
+
+### Problemas Detectados
+
+#### Issue 1: RestClientConfig.java no se genera
+
+**Síntoma:** mod-003 transform descriptor apunta a `**/infrastructure/config/RestClientConfig.java`, pero este archivo no existe en el output generado.
+
+**Causa:** mod-018 tiene el template `config/restclient-config.java.tpl` (con `RestClientConfig` y timeouts 30s/60s), pero el CodeGen no lo genera. Probablemente filtrado por variant o no incluido en el scope de Phase 2.
+
+**Impacto:** El descriptor de mod-003 no encuentra su target → no puede modificar los timeouts de infraestructura a valores de resiliencia.
+
+**Fix:** Verificar que `restclient-config.java.tpl` de mod-018 se incluye en la generación de Phase 2 cuando la variante es `restclient`. Si se genera correctamente, mod-003 podrá transformar los valores de 30s/60s → 5s/5s.
+
+#### Issue 2: application-systemapi.yml incluye sección timelimiter
+
+**Síntoma:** `application-systemapi.yml` generado en Phase 2 contiene:
+```yaml
+resilience4j:
+  timelimiter:
+    instances:
+      customer-api:
+        timeoutDuration: 10s
+        cancelRunningFuture: true
+```
+
+**Causa:** El template `application-systemapi.yml.tpl` de mod-017 incluye incondicionalmente la sección `timelimiter`. Esta configuración es de la variante `annotation-async` de mod-003, no de `client-timeout`.
+
+**Impacto:** Configuración de resiliencia innecesaria/confusa. `timelimiter` no tiene efecto sin `@TimeLimiter` annotations, pero genera ruido y puede confundir.
+
+**Fix:** Condicionar la sección `timelimiter` en el template de mod-017 a un flag, o eliminarla del template de Phase 2 y que sea mod-003 quien la añada en Phase 3 solo si la variante es `annotation-async`.
+
+#### Issue 3: application-systemapi.yml incluye resilience4j completo
+
+**Síntoma:** El mismo template incluye circuitbreaker y retry config que Phase 3 (mod-001, mod-002) también genera vía transform → posible duplicación/conflicto.
+
+**Causa:** `application-systemapi.yml.tpl` fue creado antes del modelo de fases (DEC-028). Asume que toda la config de resiliencia va junto con la config de System API.
+
+**Impacto:** Duplicación de configuración entre Phase 2 (`application-systemapi.yml`) y Phase 3 (`application.yml`). En el output actual hay dos definiciones de circuitbreaker y retry.
+
+**Fix:** Limpiar `application-systemapi.yml.tpl` de mod-017 para que solo contenga:
+- Configuración de conectividad (`system-api.{serviceName}.base-url`)
+- Logging
+- (Opcional) Config de Feign si aplica
+
+La configuración de `resilience4j.*` debe generarse exclusivamente en Phase 3 por los módulos de resiliencia correspondientes.
+
+### Plan de Implementación
+
+| # | Fix | Módulo | Impacto |
+|---|-----|--------|---------|
+| 1 | Asegurar generación de RestClientConfig.java | mod-018 | CodeGen Phase 2 |
+| 2 | Limpiar application-systemapi.yml.tpl | mod-017 | Eliminar resilience4j.* |
+| 3 | Validar mod-003 descriptor funciona con target real | mod-003 | Transform Phase 3 |
+
+### Modelo de Timeout Correcto (DEC-028 recordatorio)
+
+```
+Phase 2 (mod-018):
+  RestClientConfig.java → connect: 30s, read: 60s (protección infraestructura)
+  application-systemapi.yml → SOLO config de conectividad, NO resilience
+
+Phase 3 (mod-003, variante client-timeout):
+  TRANSFORMA RestClientConfig.java → connect: 5s, read: 5s (resiliencia)
+  MERGE application.yml → integration.timeout.connect: 5s, read: 5s
+
+Phase 3 (mod-003, variante annotation-async, SI se selecciona):
+  AÑADE @TimeLimiter a métodos async
+  MERGE application.yml → resilience4j.timelimiter config
+```
+
+**Modelo version:** 3.0.17
+
+---
+
+## DEC-044: Template Stack Version Compatibility {#dec-044}
+
+**Fecha:** 2026-02-05  
+**Estado:** 🟡 Decisión pendiente (documentada para futuro)
+
+**Contexto:**  
+Los templates (.tpl) de los modules están escritos para un stack tecnológico concreto (actualmente Java 17 + Spring Boot 3.2.x). Contienen imports, annotations y patrones que son específicos de esa versión. Ejemplos:
+
+- `@MockBean` de `org.springframework.boot.test.mock.mockito` → deprecated en Spring Boot 3.4, reemplazado por `@MockitoBean` de `org.springframework.test.context.bean.override.mockito`
+- `RestClient` (Spring 6.1+) vs `RestTemplate` (legacy) vs `FeignClient`
+- Annotation patterns que cambian entre versiones mayores
+
+**Problema:**  
+No existe un mecanismo formal para:
+1. Declarar qué versión de stack soporta un module/template
+2. Que el Discovery valide compatibilidad entre el stack solicitado en el prompt y los templates disponibles
+3. Mantener múltiples versiones de templates para diferentes stacks
+
+**Impacto actual:** Bajo — toda la PoC asume Spring Boot 3.2.x y funciona. Pero es deuda técnica que crecerá al soportar nuevos stacks o versiones.
+
+**Dirección futura (no implementar ahora):**
+
+```
+capability-index.yaml:
+  persistence:
+    features:
+      systemapi:
+        implementations:
+          - id: java-spring-3.2
+            module: mod-code-017-persistence-systemapi
+            stack: java-spring
+            stack_version: ">=3.0 <3.4"
+          - id: java-spring-3.4
+            module: mod-code-017-persistence-systemapi-v34
+            stack: java-spring
+            stack_version: ">=3.4"
+```
+
+```
+Discovery flow:
+  1. Prompt: "Spring Boot 3.4"
+  2. Discovery: stack=java-spring, version=3.4
+  3. Module selection: filtrar implementations por stack_version compatible
+  4. Si no hay compatible → ERROR con mensaje claro
+```
+
+**Decisión:** Documentar como deuda técnica. No implementar hasta que se necesite soportar un segundo stack o versión mayor. Mientras tanto, asumir Spring Boot 3.2.x en todos los templates.
+
+**Modelo version:** 3.0.18
+
+---
+
+## DEC-045: Test Generation Strategy — Templates vs LLM {#dec-045}
+
+**Fecha:** 2026-02-05  
+**Estado:** 🟡 Decisión pendiente (evaluar en futuro)
+
+**Contexto:**  
+Análisis de reproducibilidad sobre 6 runs E2E muestra que los archivos de test tienen la mayor varianza (6/6 versiones diferentes en algunos casos), mientras que el código de producción es más estable.
+
+**Evidencia (6 runs):**
+
+| Categoría | Archivos | Estabilidad |
+|-----------|----------|-------------|
+| Infrastructure/Config | 12 | 100% idénticos |
+| Domain/Application | 11 | 2-3 versiones |
+| **Tests** | 9 | 4-6 versiones |
+
+**Archivos de test con alta varianza:**
+- `CustomerControllerTest.java` — 6 versiones
+- `CustomerControllerHateoasTest.java` — 6 versiones  
+- `CustomerSystemApiAdapterTest.java` — 6 versiones
+- `CustomerIdTest.java` — 5 versiones
+- `CustomerTest.java` — 5 versiones
+
+**Observación:** Aunque hay varianza, todos los runs compilan y pasan tests. La varianza es cosmética (nombres de métodos, orden de setup, estilo de assertions), no funcional.
+
+**Opciones futuras:**
+
+1. **Mantener LLM generation** (actual) — Acepta varianza cosmética, tests funcionalmente equivalentes
+2. **Templates para tests** — Mayor determinismo pero más rigidez y mantenimiento
+3. **Híbrido** — Templates para estructura base, LLM para assertions específicas
+
+**Decisión:** No actuar ahora. La varianza en tests no impacta funcionalidad ni cobertura. Reevaluar si:
+- La varianza causa problemas en CI/CD (flaky tests)
+- Se necesita comparar outputs entre runs para auditoría
+- El equipo reporta confusión por tests diferentes
+
+**Modelo version:** 3.0.19
+
+---
+
+## 2026-02-16 (Sesión: DESIGN KB Architecture)
+
+### DEC-046: DESIGN KB: Domain Prefix Naming Convention {#dec-046}
+
+**Fecha:** 2026-02-16
+**Estado:** ✅ Implementado
+
+**Contexto:**
+Los ADRs existentes usaban naming sin prefijo de dominio (`adr-001-*`) mientras que ERIs y Modules ya incluían dominio (`eri-code-*`, `mod-code-*`). Al crear ADRs para el dominio DESIGN se evidenció la inconsistencia.
+
+**Decisión:** Adoptar naming con prefijo de dominio para ADRs: `adr-{domain}-XXX-{topic}`
+
+**Implicación:**
+- ADRs existentes renombrados: `adr-001-*` → `adr-code-001-*`
+- ADRs nuevos: `adr-design-001-*` a `adr-design-004-*`
+- Authoring guide ADR.md actualizada a v1.1
+- Cross-references actualizadas en ERIs, Modules y Capabilities
+- Patrón universal: `{asset-type}-{domain}-{NNN}-{topic}` para todos los assets
+
+**Pendiente:** ~30 refs en documentación de modelo (technical guide, asset standards, traceability profiles, validators) — baja prioridad, bulk find/replace.
+
+**Modelo version:** 3.1.0
+
+---
+
+### DEC-047: DESIGN KB: ADRs Define Decisions, ERIs Define Formats {#dec-047}
+
+**Fecha:** 2026-02-16
+**Estado:** ✅ Implementado
+
+**Contexto:**
+Al crear los primeros DESIGN ADRs se incluyeron schemas YAML/JSON completos de output (bounded-context-map.yaml, aggregate-definitions.yaml, etc.) directamente en los ADRs. Análisis del modelo CODE reveló que ADRs deben contener decisiones estratégicas y ERIs las implementaciones concretas con schemas.
+
+**Decisión:** Separar responsabilidades estrictamente:
+- **ADR:** Decisiones estratégicas, heurísticas, reglas, constraints — technology-agnostic. Puede incluir formatos estándar prescriptivos (como ADR-CODE-001 define paginación), pero NO schemas completos de output.
+- **ERI:** Schemas completos, worked examples con dominio real (Customer), machine-readable annex con constraints para modules.
+
+**Implicación:**
+- 4 DESIGN ADRs limpiados: schemas movidos a ERIs
+- ADRs referencian "formato definido en ERI correspondiente"
+- 4 DESIGN ERIs creados con schemas completos + Customer reference
+
+**Modelo version:** 3.1.1
+
+---
+
+### DEC-048: DESIGN KB: API Mapping — API-Type Agnostic with Variants {#dec-048}
+
+**Fecha:** 2026-02-16
+**Estado:** ✅ Implementado
+
+**Contexto:**
+ADR-DESIGN-003 v1.0 definía mapping DDD→API solo para REST (commands→HTTP verbs, aggregates→resources). Esto era demasiado restrictivo — gRPC, AsyncAPI, GraphQL son targets válidos.
+
+**Decisión:** Separar el ADR en dos niveles:
+- **Part 1 — Tier Mapping (API-type agnostic):** Bounded context → Fusion tier. Siempre igual.
+- **Part 2 — Surface Mapping (API-type specific):** DDD concepts → API surface. Variantes por tipo: REST (active), gRPC (planned), AsyncAPI (planned), GraphQL (evaluate).
+
+**Implicación:**
+- ADR-DESIGN-003 reescrito a v1.1 con 4 variantes
+- Un aggregate puede tener múltiples proyecciones simultáneas (REST + AsyncAPI)
+- API Type Selection Criteria con matriz de decisión
+- REST como default, otros incrementales
+
+**Modelo version:** 3.1.2
+
+---
+
+### DEC-049: DESIGN KB: Strategic DDD + Tactical DDD + BDD as Design Methodology {#dec-049}
+
+**Fecha:** 2026-02-16
+**Estado:** ✅ Implementado (ADRs + ERIs)
+
+**Contexto:**
+La plataforma Enablement necesita un upstream de diseño antes de CODE. Se identificó DDD (strategic + tactical) + BDD como metodología de análisis de dominio.
+
+**Decisión:** Adoptar cadena de diseño fija:
+1. **Strategic DDD** (ADR/ERI-DESIGN-001) → Bounded contexts, subdomains, context relationships
+2. **Tactical DDD** (ADR/ERI-DESIGN-002) → Aggregates, entities, value objects, commands, events, invariants
+3. **API Mapping** (ADR/ERI-DESIGN-003) → DDD → Fusion API tiers + contracts
+4. **BDD Validation** (ADR/ERI-DESIGN-004) → Gherkin scenarios with traceability
+
+**Reference domain:** Retail Banking — Customer Management (3 subdomains, 3 contexts, 1 aggregate, 16 scenarios).
+
+**Artefactos creados:**
+- 4 ADRs: adr-design-001 to adr-design-004
+- 4 ERIs: eri-design-001 to eri-design-004 (con Customer reference completo)
+
+**Modelo version:** 3.1.3
+
+---
+
+### DEC-050: Solution Targets — Golden Paths for Design-to-Code {#dec-050}
+
+**Fecha:** 2026-02-16
+**Estado:** ✅ Diseñado (model/SOLUTION-TARGETS.md v3.0)
+
+**Contexto:**
+Con DESIGN produciendo análisis DDD, se necesita un puente hacia CODE. Antes el input para CODE era un prompt humano con decisiones de diseño incluidas. Ahora DESIGN produce el input, pero necesita saber qué tipo de sistema construir.
+
+**Opciones exploradas:**
+- v1: Targets atómicos (soi-microservice-rest, soe-microfrontend) — demasiado rígido
+- v2: Composición por dimensiones arquitectónicas — explosión combinatoria
+- v3: Golden paths opinionados con inherent capabilities + enriched prompt
+
+**Decisión:** v3 — Solution Target = golden path con:
+- **Inherent capabilities:** Siempre aplican, no negociables (hexagonal, api-architecture)
+- **Enriched prompt.md:** DESIGN produce un prompt equivalente a lo que un arquitecto escribiría, CODE discovery extrae capabilities adicionales (resilience, caching, etc.) de ese prompt
+- El target NO pre-resuelve todas las capabilities — deja que CODE discovery haga su trabajo
+
+**Solution Target activo:** `soi-fusion-api-rest` (único, equivale al KB CODE actual)
+
+**Extensibilidad:** Organizaciones pueden crear variantes opinionadas (`extends`) que pre-baken decisiones de plataforma (Apigee + Anthos + GKE).
+
+**Modelo version:** 3.1.4
+
+---
+
+### DEC-051: DESIGN Flow: Fixed Analysis + Discoverable Target Mapping {#dec-051}
+
+**Fecha:** 2026-02-16
+**Estado:** 🟡 Diseñado, pendiente implementación
+
+**Contexto:**
+En CODE, discovery identifica capabilities del prompt por keywords. En DESIGN, la metodología (DDD/BDD) se aplica siempre — no se descubre. Pero el target de generación sí varía.
+
+**Decisión:** El flow de DESIGN tiene dos bloques:
+- **Analysis (flow fijo, sin discovery):** Strategic DDD → Tactical DDD → BDD Validation. Se ejecuta siempre. La profundidad puede variar (full vs lightweight) pero la metodología no.
+- **Target Mapping (descubrible):** ¿Qué se va a generar? API service, event processor, frontend, batch? Se infiere del input o se pregunta al usuario. Determina qué mapping rules aplican y qué contracts se producen.
+
+**Implicación:**
+- No hay capability discovery al estilo CODE en la fase de análisis
+- El "discovery" en DESIGN es target selection, no methodology selection
+- capability-index de DESIGN se organiza por fases, no por keywords
+- Un mismo análisis DDD puede proyectarse a múltiples targets simultáneamente
+
+**Modelo version:** 3.1.5
+
+---
+
+### DEC-052: Module Types: Template-Driven vs Policy-Driven {#dec-052}
+
+**Fecha:** 2026-02-16
+**Estado:** 🟡 Diseñado, pendiente implementación
+
+**Contexto:**
+Los modules de CODE son template-driven: tienen Mustache templates, transform.yaml, estructura de ficheros predecible. Los modules de DESIGN no pueden ser template-driven porque el output es análisis creativo (descomposición de dominio, escenarios BDD), no código con patrones repetitivos.
+
+**Decisión:** Reconocer dos tipos de modules:
+
+**Template-driven** (CODE, y partes de DESIGN):
+- Templates + transform + validation
+- Output determinista: misma entrada = misma estructura de salida
+- Ejemplo: api-mapping.yaml es mayoritariamente derivable mecánicamente
+
+**Policy-driven** (DESIGN principalmente):
+- Policies + schema + few-shot examples + validation
+- El LLM genera contenido dentro de un marco estricto
+- El module aporta: schema YAML de output, reglas del ERI annex, ejemplos de referencia, validación post-generación
+- Output no determinista en contenido, pero validable en estructura y completitud
+- Ejemplo: bounded-context-map.yaml — el LLM analiza el dominio, pero el output debe cumplir schema y constraints
+
+**Categorías identificadas:**
+- **A — Policy modules:** strategic-ddd, tactical-design (LLM-heavy, constrained)
+- **B — Template modules:** api-mapping, openapi-contracts (parcialmente plantillable)
+- **C — Hybrid modules:** bdd-scenarios (LLM genera, module valida cobertura)
+
+**Implicación:**
+- Authoring guide MODULE.md necesita contemplar policy-driven modules
+- Module structure para DESIGN: policies/ + schemas/ + examples/ + validation/ (en lugar de templates/ + transform/)
+- Pendiente formalizar en authoring guide
+
+**Modelo version:** 3.1.6
+
+---
+
+### DEC-053: DESIGN Capability Index + Modules {#dec-053}
+
+**Fecha:** 2026-02-16
+**Estado:** ✅ Implementado
+
+**Contexto:**
+With DESIGN ADRs, ERIs, and SOLUTION-TARGETS defined, the KB needs a capability-index for DESIGN (how capabilities are organized and discovered) and modules (how they execute).
+
+**Decisión:**
+
+**Capability Index (`design-capability-index.yaml` v1.0):**
+- 6 capabilities across 3 phase groups:
+  - Analysis (fixed): domain-analysis (2 features), tactical-design (2 features)
+  - Validation (fixed): behavior-validation (1 feature)
+  - Target-mapping (conditional per target): api-mapping (2 features), contract-generation (1 feature), integration-mapping (1 feature), output-assembly (1 feature)
+- Execution model: fixed phases (analysis, validation) + conditional phases (target-mapping)
+- Solution target registry embedded, with detection keywords for `soi-fusion-api-rest`
+- 5 discovery rules (D1-D5) specific to DESIGN domain
+- No keyword-based discovery for analysis — methodology always applies
+- Target mapping activated by solution target selection
+
+**Modules (4 modules):**
+
+| Module | Type | Capabilities Served |
+|--------|------|-------------------|
+| mod-design-001-strategic-ddd | Policy-driven | domain-analysis |
+| mod-design-002-tactical-design | Policy-driven | tactical-design |
+| mod-design-003-api-mapping | Template-driven | api-mapping, contract-generation, integration-mapping, output-assembly |
+| mod-design-004-bdd-scenarios | Hybrid | behavior-validation |
+
+**Module structure for DESIGN:**
+- `policies/` replaces `templates/` for policy-driven modules
+- `schemas/` contains output format definitions (from ERI annexes)
+- `examples/` contains Customer reference as few-shot (from ERIs)
+- `validation/` contains both schema validation and coverage validation
+
+**Key design choice:** mod-design-003 is a single module serving multiple capabilities (api-mapping + contracts + field-mapping + prompt assembly). This keeps the target-mapping phase cohesive for the initial `soi-fusion-api-rest` target. When additional targets are added, it may split into separate modules.
+
+**Implicación:**
+- DESIGN KB now has complete asset chain: ADRs → ERIs → capabilities → modules
+- Policy-driven module structure formalized: policies/ + schemas/ + examples/ + validation/
+- Authoring guide MODULE.md will need update to document policy-driven type (pending)
+
+**Modelo version:** 3.1.7
+
+---
+
+### DEC-054: Capability Index Naming Convention {#dec-054}
+
+**Fecha:** 2026-02-16
+**Estado:** ✅ Decisión tomada
+
+**Contexto:**
+With the addition of `design-capability-index.yaml`, the CODE capability index (`capability-index.yaml`) has an inconsistent naming. Ideally it would be `code-capability-index.yaml` to match, but renaming would break ~50 references in the KB plus external references in enablement-2.0-orchestration and enablement-2.0-orchestration-jaato Python/bash scripts.
+
+**Opciones:**
+- A) Rename to `code-capability-index.yaml` — consistent naming, high refactoring cost
+- B) Keep `capability-index.yaml` for CODE, use `design-capability-index.yaml` for DESIGN — inconsistent but zero-risk
+- C) Keep both as-is, document convention — pragmatic
+
+**Decisión:** Opción C — Keep `capability-index.yaml` (CODE) and `design-capability-index.yaml` (DESIGN). Document the convention:
+
+```
+runtime/discovery/
+├── capability-index.yaml            # CODE domain (legacy name, domain: code inside)
+├── design-capability-index.yaml     # DESIGN domain (domain: design inside)
+├── qa-capability-index.yaml         # QA domain (future)
+└── gov-capability-index.yaml        # GOV domain (future)
+```
+
+**Convention:** New domains use `{domain}-capability-index.yaml`. CODE keeps `capability-index.yaml` as legacy exception. The `domain:` field inside each file is authoritative.
+
+**Justificación:**
+- Zero refactoring risk
+- Both orchestration repos unaffected
+- Each file self-identifies via `domain:` field
+- Future domains follow explicit naming
+
+**Modelo version:** 3.1.8
+
+---
+
+## 2026-02-17 (Sesión: DESIGN Pipeline Refinement + Test)
+
+### DEC-055: mod-design-000 — Requirements Normalization as Phase 0 {#dec-055}
+
+**Fecha:** 2026-02-17
+**Estado:** ✅ Implementado
+
+**Contexto:**
+Testing the DESIGN pipeline on an Online Banking example revealed that the agent improvised requirements normalization (language translation, structuring, section identification) with no codified phase, no schema, no validation.
+
+**Decisión:** Create mod-design-000-requirements-normalization as Phase 0 of the DESIGN pipeline. Policy-driven module with Interactive Enrichment Protocol, schema `normalized-requirements.yaml`, validation with Gap Detection Rules (G1-G6), and Online Banking reference example.
+
+**Justificación:**
+- Without normalization, Phase 1 receives unstructured, potentially multi-language input
+- The phase captures domain knowledge that DDD phases need (integrations, states, criticality)
+- Structured output enables consistent, traceable consumption by downstream phases
+
+**Modelo version:** 3.2.0
+
+---
+
+### DEC-056: Policies as Organizational Constraints, not DDD Teaching {#dec-056}
+
+**Fecha:** 2026-02-17
+**Estado:** ✅ Implementado (policies v3.0)
+
+**Contexto:**
+Initial policies (v1.0-v2.0) attempted to teach DDD via decision trees. Testing revealed LLMs already understand DDD. The real gap was ORGANIZATIONAL DECISIONS the LLM cannot know: naming conventions, classification criteria, schema formats.
+
+**Opciones:**
+- A) Keep DDD decision trees, add more detail (v2.0 approach)
+- B) Remove DDD teaching, keep only organizational constraints (v3.0 approach)
+
+**Decisión:** Opción B — Policies define OUTPUT FORMAT + ORGANIZATIONAL CONVENTIONS. The LLM already knows DDD. Policies shrank from ~160-215 lines to ~80-120 lines. Both policies explicitly state "You already understand DDD."
+
+**Justificación:**
+- Equivalent or better output with less guidance but clearer constraints
+- Organizational constraints ARE the unique value of this KB
+- DDD guidance can be added surgically if needed later
+
+---
+
+### DEC-057: Interactive Enrichment Protocol — Ask, Don't Guess {#dec-057}
+
+**Fecha:** 2026-02-17
+**Estado:** ✅ Implementado (mod-000 policy v3.0)
+
+**Contexto:**
+In the first manual test, the agent guessed integrations, invented card states (TEMPORARILY_BLOCKED, PERMANENTLY_BLOCKED instead of actual BLOCKED, CANCELLED), assumed subdomain criticality. All guesses were wrong or incomplete.
+
+**Decisión:** Phase 0 implements an Interactive Enrichment Protocol:
+- Phase 1: Silent extraction of explicit input
+- Phase 2: Targeted questions in priority categories (A: data sources > B: states > C: criticality > D: details > E: constraints)
+- Phase 3: Output generation only after enrichment complete
+- Rule: "Do NOT guess what you don't know. ASK."
+
+**Justificación:**
+- Enriched output: all assumptions confidence high (confirmed by user)
+- Without enrichment: 4 medium/low assumptions, 3 factually wrong
+- Universal patterns (pagination, standard errors) still auto-enriched without asking
+
+---
+
+### DEC-058: Gap Detection Rules (G1-G6) — Validation Gate {#dec-058}
+
+**Fecha:** 2026-02-17
+**Estado:** ✅ Implementado (policy + validator)
+
+**Contexto:**
+Even with enrichment protocol, agent might miss questions. Needed safety net: rules that detect missing information required by downstream phases.
+
+**Decisión:** 6 Gap Detection Rules in mod-000, serving dual purpose (pre-enrichment question generation + post-enrichment validation gate):
+
+| Rule | Checks | Required by | Severity |
+|------|--------|-------------|----------|
+| G1 | Reference entities have integration source | Phase 1 | WARNING |
+| G2 | Stateful entities have state machine | Phase 2 | ERROR |
+| G3 | Business criticality info exists | Phase 1 | WARNING |
+| G4 | Integration access info exists | Phase 1 | WARNING |
+| G5 | _Deferred to Solution Target_ | — | — |
+| G6 | Terminal state reversibility confirmed | Phase 2 | WARNING |
+
+**Justificación:**
+- Rules are derivable from downstream schema requirements — not improvised
+- Agent can iterate: generate → validate → ask remaining questions → regenerate
+
+---
+
+### DEC-059: DESIGN Output is Solution-Target Agnostic {#dec-059}
+
+**Fecha:** 2026-02-17
+**Estado:** ✅ Implementado (schema cleanup)
+
+**Contexto:**
+Implementation leaks found in DESIGN output: `integration_pattern: sync-api|async-event` in bounded-context-map, `target_endpoint: "POST /transfers"` in scenario-tracing.
+
+**Decisión:** Clean all DESIGN phases (0-3 + BDD) to be solution-target agnostic.
+
+**Removed:** `integration_pattern` from Phase 1 (schema, policy, validator, examples). `target_endpoint` from BDD (schema, examples).
+
+**Clean model:**
+```
+DESIGN (solution-target agnostic):
+  Phase 0: Normalize → normalized-requirements.yaml
+  Phase 1: Strategic DDD → bounded-context-map.yaml
+  Phase 2: Tactical DDD → aggregate-definitions.yaml
+  Phase 3: BDD → scenarios.feature + scenario-tracing.yaml
+
+BIND POINT: Solution Target selection
+
+IMPLEMENTATION (solution-target specific):
+  Phase 4+: API Mapping, Contracts, Field Mapping, Prompt Assembly
+```
+
+**Justificación:**
+- Same DDD/BDD analysis can project to multiple targets
+- mod-design-003 (api-mapping) is conceptually IMPLEMENTATION, not DESIGN
+
+**Implicación:**
+- DEC-050 (Solution Targets) needs updating to reflect clean boundary
+- Future: mod-003 may move under Solution Target
+
+---
+
+### DEC-060: Solution Target vs Golden Path — Complementary Concepts {#dec-060}
+
+**Fecha:** 2026-02-17
+**Estado:** 🟡 Diseñado, pendiente implementación
+
+**Contexto:**
+Discussion about where implementation decisions live.
+
+**Decisión:** Formalize the distinction:
+
+- **Solution Target** = architectural pattern + bindings (DDD element → implementation pattern). WHAT to build. Example: "Fusion API Integration Module with Domain/System APIs."
+- **Golden Path** = technology template. WITH WHAT to build. Example: "Spring Boot 3 + JPA + Resilience4j."
+
+**Binding flow:**
+```
+DDD/BDD Output (agnostic)
+  → Solution Target (DDD element → architectural pattern)
+    → Golden Path (architectural pattern → code template)
+      → CODE pipeline (generates code)
+```
+
+**Solution Target contains bindings like:**
+- `aggregate_root` → primary REST resource
+- `command_create` → POST /{resource}
+- `relationship_acl` → system API + anti-corruption layer
+- `invariant_violation` → 400 + error code
+- `domain_event_cross_context` → publish to event broker
+
+**Justificación:**
+- Clean separation: design / architecture / technology
+- Solution Target reusable across Golden Paths
+- Golden Path reusable across Solution Targets
+
+---
+
+### DEC-061: G5 (Sync/Async) Deferred to Solution Target {#dec-061}
+
+**Fecha:** 2026-02-17
+**Estado:** ✅ Implementado
+
+**Contexto:**
+G5 validated sync/async behavior in Phase 0. Analysis revealed this is a technical design decision, not a business requirement.
+
+**Decisión:** Remove G5 from Phase 0 validation. Sync/async resolved during Solution Target binding.
+
+**Exception:** If sync/async affects UX (user waits vs gets notified later), it IS a business question worth capturing in feature description. But not systematically required.
+
+---
+
+### DEC-062: Bash Arithmetic Fix Across All Validators {#dec-062}
+
+**Fecha:** 2026-02-17
+**Estado:** ✅ Implementado
+
+**Contexto:**
+All validation scripts used `((ERRORS++))` / `((WARNINGS++))`. In bash, `((0++))` returns exit code 1 (pre-increment value 0 is falsy). Combined with `set -euo pipefail`, scripts exited prematurely on first warning.
+
+**Decisión:** Replace all `((VAR++))` with `VAR=$((VAR + 1))` across 11 validation scripts.
+
+---
+
+### DEC-063: Event Suffix 'Executed' Added to Approved List {#dec-063}
+
+**Fecha:** 2026-02-17
+**Estado:** ✅ Implementado
+
+**Contexto:**
+Validator rejected `TransferExecuted` event name because "Executed" was not in the approved suffix list.
+
+**Decisión:** Add "Executed" to approved event suffixes in aggregate-check.sh and in mod-002 policy naming conventions.
+
+**Approved suffixes (updated):** Created, Updated, Deleted, Changed, Processed, Approved, Rejected, Cancelled, Submitted, Executed.
+
+---
+
+### DEC-064: Query-Level Invariants — enforced_by: query-validation {#dec-064}
+
+**Fecha:** 2026-02-17
+**Estado:** ✅ Implementado
+
+**Contexto:**
+Read-only contexts (account-overview) have invariants like "date range max 1 year" that apply to queries, not commands. The validator warned that these invariants weren't referenced by any command error_case.
+
+**Decisión:** Invariants with `enforced_by: query-validation` are exempt from the command-error-case linkage check. The validator auto-marks them as referenced.
+
+---
+
+### DEC-065: DESIGN Domain ≠ DDD/BDD — Capability-Based Model {#dec-065}
+
+**Fecha:** 2026-02-17
+**Estado:** ✅ Implementado (2026-02-18)
+
+**Contexto:**
+Documentation (DOMAIN.md, SOLUTION-TARGETS.md, design-capability-index.yaml) was conflating the DESIGN domain with DDD/BDD methodology. This is equivalent to putting "Spring Boot" in CODE's DOMAIN.md. DDD/BDD is ONE implementation of ONE capability, not the domain itself.
+
+**Decisión:** Restructure the DESIGN domain model:
+
+**1. DESIGN domain** is a container for design capabilities, analogous to CODE:
+- `implementation-design` — designing for code generation (current: DDD/BDD)
+- `architecture-diagramming` — C4, sequence diagrams (future)
+- `application-manual` — documentation generation (future)
+- others
+
+**2. `implementation-design` is a capability** with variants:
+- `implementation-design.ddd-bdd` — current implementation (DDD strategic + tactical + BDD)
+- `implementation-design.other-methodology` — future alternatives
+
+**3. Solution Target bindings are per methodology**, not hardcoded to DDD:
+```yaml
+# In Solution Target definition
+methodology_bindings:
+  ddd-bdd:
+    aggregate_root: "primary REST resource"
+    command_create: "POST /{resource}"
+    bounded_context: "one service per context"
+    ...
+  future-methodology:
+    component: "..."
+    ...
+```
+
+**4. Discovery** follows CODE pattern: user prompt → keyword/intent discovery → capability activation:
+- "diseña para implementación usando DDD" → activates `implementation-design.ddd-bdd`
+- "genera diagrama C4" → activates `architecture-diagramming`
+- If no methodology specified → default variant (currently `ddd-bdd`)
+
+**5. DOMAIN.md** should NOT reference DDD/BDD. Should describe the domain generically (capabilities, discovery, module types) like CODE's DOMAIN.md.
+
+**Refactorización completada:**
+
+| File | Change | Status |
+|------|--------|--------|
+| `model/domains/design/DOMAIN.md` | Rewritten methodology-agnostic | ✅ Done |
+| `model/domains/design/capabilities/implementation_design.md` | Created capability doc | ✅ Done |
+| `runtime/discovery/design-capability-index.yaml` | v2.0 — restructured with `implementation-design` capability, `ddd-bdd` variant, features for phases 0-3 | ✅ Done |
+| `model/SOLUTION-TARGETS.md` | Bindings under `methodology_bindings.ddd-bdd` | ✅ Done |
+| Module names | No change — `mod-design-001-strategic-ddd` correctly named as ddd-bdd impl | N/A |
+| ADRs/ERIs | No change — document DDD/BDD methodology specifically | N/A |
+
+**Key principle:** The model is methodology-agnostic. DDD/BDD is the current (and default) implementation of `implementation-design`. The plumbing supports adding alternatives without restructuring.
+
+---
+
+### DEC-066: GENERIC Contexts Excluded from Tactical Design {#dec-066}
+
+**Fecha:** 2026-02-18
+**Estado:** ✅ Implementado
+**Origen:** Blind test comparison — clean chat generated aggregates for core-banking and notification-system integration contexts
+
+**Contexto:**
+In a blind test (chat without session context executing the DESIGN pipeline from the KB alone), the agent generated `aggregate-definitions.yaml` for GENERIC/reuse bounded contexts (core-banking-integration, notification-system). These contexts represent external systems we don't own or build — they exist in the context map as integration boundaries, but their internal structure is not ours to design.
+
+The strategic policy (mod-001) correctly says "External systems → generic subdomain with own bounded context", but the tactical policy (mod-002) had NO rule about which contexts to process and which to skip. So the agent processed all of them.
+
+**Decisión:** Add explicit scope rule to mod-002 tactical policy:
+
+> **Scope Rule:** Generate `aggregate-definitions.yaml` ONLY for bounded contexts in `supporting` or `core` subdomains (investment_strategy: `build`). Skip `generic` subdomains (investment_strategy: `buy/reuse`) — these are integration boundaries, not domains we design.
+
+Also add to mod-004 BDD policy:
+
+> **Scope Rule:** Generate BDD scenarios ONLY for contexts that have `aggregate-definitions.yaml` with at least one command OR one query. Skip empty integration contexts.
+
+**Impacto:**
+- `modules/mod-design-002-tactical-design/policies/tactical-design.md` — Add scope rule
+- `modules/mod-design-004-bdd-scenarios/policies/gherkin-generation.md` — Add scope rule
+
+---
+
+### DEC-067: Notification as Event Payload, Not Separate Command {#dec-067}
+
+**Fecha:** 2026-02-18
+**Estado:** ✅ Implementado
+**Origen:** Blind test comparison — clean chat modeled `notify-recipient` as a separate command in transfer-execution
+
+**Contexto:**
+The blind test created two commands in transfer-execution: `execute-transfer` and `notify-recipient`. The reference modeled notification as an optional field in the `CreateTransfer` command input, with the `TransferExecuted` event carrying a `notifyRecipient` flag for downstream processing.
+
+The separate command approach has problems:
+1. Notification depends on a completed transfer — it's not an independent business action
+2. It creates a temporal coupling (must call execute first, then notify)
+3. The user requirement says "additionally you can select the option to notify" — it's part of the transfer flow, not a standalone operation
+
+**Decisión:** Add organizational convention to mod-002 tactical policy:
+
+> **Convention — Ancillary Actions:** When a user requirement describes an optional side-effect of a primary action (e.g., "optionally notify recipient"), model it as an optional field in the primary command's input, NOT as a separate command. The domain event carries the flag; a downstream context (e.g., notification-integration) reacts to it. This keeps the aggregate's command set focused on business state changes.
+
+**Heuristic for the policy:**
+- "Does this action change the aggregate's state independently?" → YES → separate command
+- "Is this action only meaningful after/during another action?" → NO → optional field on the primary command
+
+**Impacto:**
+- `modules/mod-design-002-tactical-design/policies/tactical-design.md` — Add convention
+
+---
+
+### DEC-068: Account Overview vs Global Position — Separate Contexts {#dec-068}
+
+**Fecha:** 2026-02-18
+**Estado:** 🟡 Diseñado, pendiente validación con dominio
+
+**Contexto:**
+The blind test merged account listing + movements + global position into a single `global-position` bounded context. The reference separated them: `account-overview` (account listing + movements) and `global-position` (aggregated financial position with investments).
+
+**Arguments for separation (reference approach):**
+- Global position is a DERIVED read model (sum of accounts + investments) — different data freshness requirements
+- Account overview is direct SoR data — no transformation needed
+- Different data sources: accounts from one SoR query, investments from another
+- Different scaling characteristics: global position is computed once per login, account movements are paginated on demand
+
+**Arguments for merging (test approach):**
+- Simpler model — fewer bounded contexts
+- From user's perspective it's one screen (landing page)
+- Both are read-only, no commands
+
+**Decisión:** Maintain separation (reference approach) as organizational convention. Rationale: the organization's Fusion API model maps bounded contexts to deployable units, and mixing a computed aggregation (global position) with a pass-through query (account movements) in the same service creates unnecessary coupling.
+
+However, this decision is domain-specific and may not apply universally. We do NOT encode this in the policy as a hard rule. Instead:
+
+> **Guideline in mod-001 policy:** When a context contains both direct data retrieval (pass-through from SoR) and computed/aggregated views derived from multiple sources, evaluate splitting into separate contexts. Consider: data freshness, data sources, scaling patterns, and the Fusion API model (1 context = 1 deployable unit).
+
+**Impacto:**
+- `modules/mod-design-001-strategic-ddd/policies/strategic-ddd.md` — Add context splitting guideline
+
+---
+
+### DEC-069: DESIGN Flow Definition — Implementation Design Pipeline {#dec-069}
+
+**Fecha:** 2026-02-18
+**Estado:** ✅ Implementado
+
+**Contexto:**
+The DESIGN domain had no flow document. CODE has `runtime/flows/code/flow-generate.md` which serves dual purpose: formal pipeline description AND execution guide for chat-based simulation. A blind test of the DESIGN pipeline revealed that without a flow doc, the agent generates output files in arbitrary locations/formats, requiring manual repackaging.
+
+**Decisión:** Create `runtime/flows/design/flow-implementation-design.md` following the CODE flow pattern:
+
+1. **Pipeline phases** documented with input/output paths, modules, validation gates
+2. **Output directory structure** formalized: root-level YAML for global artifacts, `{context-id}/` subdirectories for per-context artifacts
+3. **Execution pseudocode** for each phase (loadable by orchestrator or followable by chat agent)
+4. **Context size management** estimated per phase
+5. **Continuation point** to Solution Target binding and CODE pipeline
+
+The flow doc serves as:
+- **Spec for orchestration implementation** (jaato plugin or Python agents)
+- **Execution guide for chat simulation** (agent reads flow, follows steps)
+- **Contract** between DESIGN and CODE pipelines (output structure)
+
+**Impacto:**
+- `runtime/flows/design/flow-implementation-design.md` — Created
+- Future: `flow-target-mapping.md` for Phase 4+ (Solution Target binding)
+
+---
+
+### DEC-070: Query-Validation Invariants Excluded from BDD Coverage Check {#dec-070}
+
+**Fecha:** 2026-02-18
+**Estado:** ✅ Implementado
+**Origen:** Blind test v2 — agent created forced `transfer-must-be-completed` invariant to satisfy coverage-check
+
+**Contexto:**
+Invariants with `enforced_by: query-validation` (DEC-064) are structural constraints on queries — they are enforced by input validation, not by business state. Examples: "date range must not exceed one year", "from-date must be before to-date". These invariants cannot be "violated" by a user action in the same way command-level invariants can. The BDD coverage-check (line 84-86) requires a violation scenario for ALL invariants without distinction, which forces the agent to create artificial scenarios.
+
+In the blind test, this led to `transfer-must-be-completed` — an invariant that "notification can only happen after a completed transfer", which is structurally impossible to violate because notification is an optional field on CreateTransfer (DEC-067). The agent had to invent a scenario to satisfy the checker.
+
+**Decisión:**
+- `coverage-check.sh`: Skip invariants where `enforced_by: query-validation` from the violation scenario requirement
+- `gherkin-generation.md` policy: Category 4 (Business rule violations) now explicitly says "Only for invariants enforced by aggregate-root or domain-service. Skip query-validation invariants — these are tested as part of query validation scenarios."
+- Query-validation invariants ARE still tested — through the validation category scenarios on the relevant queries (e.g., "Reject movement query when date range exceeds one year")
+
+**Impacto:**
+- `modules/mod-design-004-bdd-scenarios/validation/coverage-check.sh` — Filter invariants by enforced_by
+- `modules/mod-design-004-bdd-scenarios/policies/gherkin-generation.md` — Clarify Category 4 scope
+
+---
+
+### DEC-071: BDD Minimum Coverage for Query-Only Contexts {#dec-071}
+
+**Fecha:** 2026-02-18
+**Estado:** ✅ Implementado
+**Origen:** Blind test v2 — global-position context with 1 query generated only 1 BDD scenario
+
+**Contexto:**
+A query-only context (no commands, no command-level invariants) with a single query produces only 1 happy-path scenario. This passes coverage-check but is poor test coverage. At minimum, a not-found scenario should exist for queries that target a specific entity by ID.
+
+In the blind test, `global-position` had 1 query (`get-global-position`) and generated exactly 1 scenario. The reference had `account-overview` separate from global-position, giving each more scenarios, but even so — a single query context should produce more than 1 scenario.
+
+**Decisión:**
+- `coverage-check.sh`: Add rule — queries targeting an entity by ID (`filters` contains a required ID-like field) MUST have a not-found scenario in addition to happy-path
+- `gherkin-generation.md` policy: Category 5 (Not found) already says "For queries/commands that target an existing entity by ID". Make this a MUST, not just a suggestion. Add: "Every query with a required identifier filter (e.g., accountId, customerId) must have a not-found scenario."
+
+**Heuristic for "targets entity by ID":** The query is a Get/Search query (id starts with `get-` or `search-`, NOT `list-`) AND has a required filter whose name ends in `Id` or whose type is `UUID`. List queries returning empty results are not errors.
+
+**Impacto:**
+- `modules/mod-design-004-bdd-scenarios/validation/coverage-check.sh` — Add query not-found check
+- `modules/mod-design-004-bdd-scenarios/policies/gherkin-generation.md` — Strengthen Category 5
+
+---
+
+### DEC-072: Pause/Resume as Separate Commands with Distinct Names {#dec-072}
+
+**Fecha:** 2026-02-18
+**Estado:** ✅ Implementado
+**Origen:** Blind test v2 — agent noted ambiguity of same command name `ChangeRecurringTransferStatus` for both pause and resume
+
+**Contexto:**
+Both blind tests and the reference used `ChangeRecurringTransferStatus` as the command name for both pause and resume operations on recurring transfers. The blind test chat flagged this as semantically unclear. The same pattern exists in card-operations (`ChangeCardStatus` for block and reactivate).
+
+While the shared name reflects the DDD pattern of a single state-change command with action parameter, it creates ambiguity in BDD scenarios and traceability — two distinct behaviors share the same `exercises` value, making it harder to trace which scenario tests which transition.
+
+**Decisión:** Update tactical design policy (mod-002) with naming convention for state-change commands:
+
+> **Convention — State Change Commands:** When a bounded context has multiple state transitions on the same entity, use **distinct command names** per transition rather than a single generic command. This improves BDD traceability (each scenario exercises a unique command) and error-case clarity.
+>
+> Pattern: `{Action}{Entity}` — e.g., `PauseRecurringTransfer`, `ResumeRecurringTransfer`, `BlockCard`, `ReactivateCard`
+>
+> Exception: If transitions share identical input fields and error cases (true polymorphism), a single command with action discriminator is acceptable.
+
+**Impacto:**
+- `modules/mod-design-002-tactical-design/policies/tactical-design.md` — Add state-change naming convention
+- Reference outputs and examples should follow this convention in future iterations
+
+---
+
+### DEC-073: Expanded Command/Event Naming Vocabulary {#dec-073}
+
+**Fecha:** 2026-02-18
+**Estado:** ✅ Implementado
+**Origen:** Blind test v3 — agent forced to use `Process{Action}` prefix because natural state-change verbs (Block, Pause, Resume, Reactivate) were rejected by aggregate-check.sh
+
+**Contexto:**
+DEC-072 introduced the convention "use distinct command names per transition" with examples like `BlockCard`, `PauseRecurringTransfer`. However, the validator regex only allowed: Create, Update, Delete, Change, Process, Approve, Reject, Cancel, Submit. This created an incoherence: the policy said one thing, the validator enforced another. The blind test agent correctly identified this and worked around it using `ProcessCardBlock` — technically valid but semantically weaker.
+
+Same issue with events: `CardBlocked`, `RecurringTransferPaused` are natural names but the validator only allowed suffixes: Created, Updated, Deleted, Changed, Processed, Approved, Rejected, Cancelled, Submitted, Executed.
+
+**Decisión:** Expand both lists to include state-lifecycle verbs:
+
+**Command prefixes added:** Block, Reactivate, Pause, Resume, Activate, Deactivate, Suspend
+**Event suffixes added:** Blocked, Reactivated, Paused, Resumed, Activated, Deactivated, Suspended
+
+**Also refined DEC-071:** The not-found heuristic in coverage-check.sh now checks that the ID filter targets the aggregate's own entity (e.g., `cardId` for card aggregate) rather than a foreign key (e.g., `customerId` in get-global-position). This eliminates false positives for aggregate queries filtered by parent entity.
+
+**Impacto:**
+- `modules/mod-design-002-tactical-design/validation/aggregate-check.sh` — Expanded regex
+- `modules/mod-design-002-tactical-design/policies/tactical-design.md` — Updated approved lists
+- `modules/mod-design-004-bdd-scenarios/validation/coverage-check.sh` — Refined DEC-071 heuristic
+
+---
+
+### DEC-074: Tracing-Check Argument Order Fix + Execute Prefix Added {#dec-074}
+
+**Fecha:** 2026-02-18
+**Estado:** ✅ Implementado
+**Origen:** Blind test v4 — agent reported tracing-check.sh produces Python traceback trying to parse .feature as YAML
+
+**Contexto:**
+`tracing-check.sh` had reversed argument order: usage said `<feature> <tracing>` but the natural invocation pattern (and how it was called in our test harness) was `<tracing> <feature>`. When the blind test agent followed the script's own usage documentation, it got a YAML parse error because the .feature file was passed as the YAML argument.
+
+Additionally, the agent noted "Execute" was missing from approved command prefixes despite the reference example using `execute-transfer`. Both v3 and v4 tests had to work around this with `ProcessTransfer`.
+
+**Decisión:**
+1. **Fix `tracing-check.sh`:** Swap argument order to `<scenario-tracing.yaml> <feature-file>` (tracing first, consistent with natural invocation)
+2. **Add `Execute` to approved command prefixes:** Both in validator regex and policy text
+
+**Impacto:**
+- `modules/mod-design-004-bdd-scenarios/validation/tracing-check.sh` — Argument order fixed
+- `modules/mod-design-002-tactical-design/validation/aggregate-check.sh` — Execute added to regex
+- `modules/mod-design-002-tactical-design/policies/tactical-design.md` — Execute added to approved list
+
+---
+
+### DEC-075: mod-000 Example Replaced to Eliminate Test Bias {#dec-075}
+
+**Fecha:** 2026-02-19
+**Estado:** ✅ Implementado
+
+**Contexto:**
+The mod-000 example was `online-banking-reference.yaml` — the exact same domain used in all 4 blind tests. While the tests validated policy-driven convergence, the agent had access to a complete worked example of the expected output domain as a few-shot reference. This creates bias: we can't distinguish whether the agent followed the policies or simply adapted the example.
+
+mod-001, mod-002, and mod-004 already use `customer-reference` examples (a different domain), so only mod-000 had this bias.
+
+**Decisión:** Replace `online-banking-reference.yaml` with `customer-onboarding-reference.yaml`. The new example:
+- Uses a different domain (customer onboarding, not online banking)
+- Covers the same structural patterns: commands, queries, state machines, integrations, pagination, enrichment-derived assumptions
+- Passes `requirements-check.sh` with 0 warnings
+- Provides few-shot guidance on FORMAT without giving away CONTENT
+
+**Impacto:**
+- `modules/mod-design-000-requirements-normalization/examples/online-banking-reference.yaml` — Deleted
+- `modules/mod-design-000-requirements-normalization/examples/customer-onboarding-reference.yaml` — Created
+
+---
+
+### DEC-076: Gap Rules G7 (Implicit Lifecycle) and G8 (Incomplete State Operations) {#dec-076}
+
+**Fecha:** 2026-02-19
+**Estado:** ✅ Implementado
+**Origen:** Blind test v5 (first test without online-banking example)
+
+**Contexto:**
+Blind test v5 (with customer-onboarding example replacing online-banking) revealed two enrichment gaps:
+
+1. **Periodic transfers assumed, not asked:** The input only says "visualizar las transferencias periódicas configuradas" (view configured periodic transfers). The agent invented create/pause/resume/cancel commands without asking. Previous tests (v1-v4) also did this — but the online-banking example included these commands, so the agent was copying the example pattern.
+
+2. **CancelCard missing:** The input says "bloquearla/desbloquearla temporalmente" (block/unblock temporarily). The agent correctly created Block/Reactivate commands. But the card state machine (confirmed via G2: ACTIVE/BLOCKED/CANCELLED) implies a cancel transition that was never asked about. Previous tests had CancelCard because the example included it.
+
+Both gaps share a root cause: the gap rules only checked what was explicitly stated (G2: "entities involved in commands that imply status change") but didn't check for what was IMPLIED but not stated.
+
+**Decisión:** Add two new gap rules:
+
+**G7: Implicit lifecycle for view-only entities**
+- Trigger: Entity appears only in query features but has lifecycle signals ("configured", "scheduled", "active", is master-classified)
+- ASK: "The input mentions viewing [entity] but not managing it. Can users create/modify/cancel [entity]?"
+- Prevents agents from silently inventing CRUD commands
+
+**G8: Incomplete state operations**
+- Trigger: State machine is known (via G2) but input only mentions some transitions
+- ASK: "The [entity] state machine includes [transition] but no command references it. Can users trigger this?"
+- Prevents missing commands (like CancelCard when CANCELLED is a valid state)
+
+**Impacto:**
+- `modules/mod-design-000-requirements-normalization/policies/requirements-normalization.md` — G7, G8 added to gap rules + self-validation checklist
+- `modules/mod-design-000-requirements-normalization/validation/requirements-check.sh` — G7 (query-only masters), G8 (state transitions without commands)
+- `runtime/flows/design/flow-implementation-design.md` — Enrichment priorities updated with G7/G8
+
+---
+
+### DEC-077: Solution Target Structure — Deferred Refactoring to Directory+YAML {#dec-077}
+
+**Fecha:** 2026-02-19
+**Estado:** 📋 Registrado (trigger: >1 active target)
+
+**Contexto:**
+`model/SOLUTION-TARGETS.md` currently holds in a single document: the meta-model definition (what a Solution Target is), instance definitions (soi-fusion-api-rest), methodology bindings (ddd-bdd mappings), org customization patterns, and planned targets. With 1 active target × 1 methodology this is manageable, but the structure scales as Targets × Methodologies × OrgVariants.
+
+**Problema futuro:**
+With 5 targets × 2 methodologies × 2 orgs = 20 binding combinations in a single .md file. The file becomes unreadable, and tooling (discovery, orchestration) cannot programmatically resolve individual targets.
+
+**Decisión:** When the SECOND active Solution Target is implemented, refactor to:
+
+```
+model/solution-targets/
+├── SOLUTION-TARGETS.md                          # Meta-model only (stable)
+├── targets/
+│   ├── soi-fusion-api-rest.yaml                 # Instance definition
+│   ├── soi-event-processor.yaml                 # Instance definition
+│   └── ...
+└── bindings/
+    ├── soi-fusion-api-rest.ddd-bdd.yaml         # Target × Methodology binding
+    ├── soi-event-processor.ddd-bdd.yaml
+    └── ...
+```
+
+**Trigger:** Implementation of `soi-event-processor` or any second active target.
+
+**Current state:** Acceptable. Single .md with 1 target + 1 binding is readable and sufficient.
+
+**Impacto futuro:**
+- `model/SOLUTION-TARGETS.md` → Split into meta + instances + bindings
+- Flow doc `flow-implementation-design.md` → Update binding resolution to read YAML files
+- Orchestration → Programmatic target discovery from YAML directory
+
+---
+
+### DEC-078: Blueprints as Core Model Entity {#dec-078}
+
+**Fecha:** 2026-02-19
+**Estado:** ✅ Implementado
+**Supersedes:** DEC-050, DEC-060, DEC-077
+
+**Contexto:**
+Solution Targets and Golden Paths needed a home in the model. They are cross-domain assets (bridge DESIGN and CODE) but the core model entities (ADR, ERI, Capability, Module) are universal and problem-agnostic. Solution Targets are SDLC-specific — another problem domain (like APA) might not need them at all.
+
+**Decisión:** Introduce **Blueprint** as a core model entity — an opinionated, authoritative guide for building a specific type of application. The model defines the concept abstractly; each problem instantiation defines its own blueprints.
+
+A Blueprint contains:
+- **Building Blocks:** Types of deployable artifacts (e.g., fusion-api-rest, event-processor)
+- **Bindings:** How design methodology output maps to building block patterns (block × methodology)
+- **Tech Stacks:** Concrete technology choices for implementing blocks (stack per tech)
+
+Blueprints are incremental: start with 1 active block, grow as needed. Only active blocks need complete bindings and tech stacks.
+
+**Structure:**
+```
+blueprints/
+├── README.md
+└── {blueprint-id}/
+    ├── blueprint.yaml
+    ├── bindings/{block}.{methodology}.yaml
+    └── tech-stacks/{stack-id}.yaml
+```
+
+**First instance:** `digital-banking-platform` blueprint with:
+- 1 active block: `fusion-api-rest`
+- 1 binding: `fusion-api-rest.ddd-bdd`
+- 1 tech stack: `java-spring-boot-3`
+- 3 planned blocks: event-processor, batch-job, microfrontend
+
+**Impacto:**
+- `model/SOLUTION-TARGETS.md` — Deleted (migrated to blueprints/)
+- `blueprints/` — Created with full structure
+- All references updated across flow docs, capability docs, domain docs
+
+### DEC-079: Solution Target → Blueprint Building Block (Terminology) {#dec-079}
+
+**Fecha:** 2026-02-19
+**Estado:** ✅ Implementado
+
+**Contexto:**
+"Solution Target" was confusing as a name and too atomic for a blueprint concept. A "target" like `soi-fusion-api-rest` is not a complete guide for building — it's one type of artifact within a broader architectural vision.
+
+**Decisión:**
+- **Blueprint** = the complete opinionated guide (was: no equivalent, closest was "Golden Path" in its full sense)
+- **Building Block** = a type of deployable artifact within a blueprint (was: "Solution Target")
+- **Binding** = translation rules from design methodology to building block patterns (was: "methodology_bindings")
+- **Tech Stack** = concrete technology choices (was: "Golden Path" in its reduced sense)
+
+"Golden Path" is reserved for future use as a higher-level concept: a fully pre-baked, opinionated application template with all building blocks, bindings, and stacks pre-selected. Not needed yet.
+
+**All references updated** across KB to use new terminology.
+
+---
+
+### DEC-080: Bridge Module and Blueprint Binding Flow {#dec-080}
+
+**Fecha:** 2026-02-19
+**Estado:** ✅ Implementado (structure + policies + flow + validator + examples)
+
+**Contexto:**
+With DESIGN validated (6 blind tests, G1-G8 gap rules) and Blueprints defined (DEC-078), the missing piece is the bridge that transforms DESIGN output into CODE input.
+
+**Decisión:**
+
+1. **Module:** `mod-bridge-001-blueprint-binding` — a bridge module (not DESIGN, not CODE). Uses `mod-bridge-*` naming convention for cross-domain modules.
+
+2. **Four steps per bounded context:**
+   - 4a: Block assignment (blueprint → building block per context)
+   - 4b: Contract generation (aggregate → OpenAPI using binding rules, template-driven)
+   - 4c: Capability inference (4-layer resolution: inherent + inferred + stack + manual)
+   - 4d: Prompt assembly (aggregate + BDD + contract + manifest → prompt.md)
+
+3. **Bridge is holistic, CODE is per-context.** Bridge reads all contexts for cross-context consistency, produces independent packages. Each package = 1 CODE agent.
+
+4. **BDD as business specification.** Full Gherkin scenarios go in prompt.md. LLM reads them BEFORE generating code (BDD methodology).
+
+5. **Manifest-first capability resolution.** Bridge pre-resolves capabilities. CODE discovery validates + enriches, not replaces (Option B from design doc).
+
+**Output per bounded context:**
+```
+{context-id}/
+├── openapi-spec.yaml    # API contract
+├── manifest.yaml        # Pre-resolved capabilities
+└── prompt.md            # CODE-ready prompt with BDD
+```
+
+**Files:**
+- `modules/mod-bridge-001-blueprint-binding/` — Full module structure
+  - `policies/`: blueprint-binding.md, contract-generation.md, capability-inference.md, prompt-assembly.md
+  - `schemas/`: manifest.schema.yaml
+  - `templates/`: prompt.md.tpl
+  - `examples/`: card-management-manifest.yaml, card-management-prompt.md
+  - `validation/`: manifest-check.sh (validated: PASS against CODE capability-index)
+- `runtime/flows/bridge/flow-blueprint-binding.md` — Bridge flow document
+
+---
+
+## DEC-083: Unified DESIGN Flow (Phases 0→4) {#dec-083}
+
+**Fecha:** 2026-02-19
+**Estado:** ✅ Implementado
+
+**Contexto:**
+The DESIGN pipeline had two separate flows: `flow-implementation-design.md` (phases 0-3) and `flow-blueprint-binding.md` (phase 4). Test execution required a TEST-PROMPT that replicated flow orchestration, which defeats the purpose of the KB being self-contained.
+
+**Decisión:**
+
+1. **Unified flow:** `flow-implementation-design.md` now covers Phases 0→4 (DESIGN + Bridge) in a single document. Phase 4 (Blueprint Binding) is inline with steps 4a-4d.
+2. **TEST-PROMPT is minimal:** Does NOT replicate the flow. Says "read the flow and execute it". If the agent can't navigate the KB autonomously, the problem is in the Flow/KB, not in the test.
+3. **TEST-PROMPT is external to KB:** It's a PoC artifact, not part of the knowledge base.
+4. **Bridge flow remains as reference:** `runtime/flows/bridge/flow-blueprint-binding.md` stays as detailed documentation but the unified flow is the primary orchestration spec.
+
+**Validación:** v7 and v8 tests executed successfully with minimal TEST-PROMPT against unified flow.
+
+---
+
+## DEC-084: Tactical Design Policy Refinements (P1 + P2) {#dec-084}
+
+**Fecha:** 2026-02-19
+**Estado:** ✅ Implementado
+
+**Contexto:**
+Analysis of v7 test output revealed two policy gaps in `mod-design-002-tactical-design`:
+- v7 created notify-transfer-recipient as separate command AND included notificationRequest field in execute-transfer (dual path)
+- v7 used generic "reactivate" for both cards and periodic transfers instead of domain-specific verbs
+
+**Decisión:**
+
+1. **P1 — Anti-pattern dual path (reinforcement):** Added explicit anti-pattern to Ancillary Actions Convention: "If an ancillary action IS modeled as a separate command, the primary command MUST NOT include fields for that action."
+2. **P2 — Domain-specific verb preference (new):** Added guidance preferring domain-specific verbs (unblock, resume) over generic terms (reactivate). Aligns with DDD ubiquitous language. Generic verbs acceptable when no domain-specific term exists.
+3. **Not added:** No policy for bounded context boundary decisions (e.g., global-position merge). These are legitimate design variance — not constrainable by generic rules.
+
+**Validación:** v8 test: P1 ✅ (no dual-path), P2 partial (resume ✅, reactivate persists for cards — acceptable since it's in approved prefixes).
+
+---
+
+## DEC-085: CODE Discovery Mode A/B (Standalone vs DESIGN-seeded) {#dec-085}
+
+**Fecha:** 2026-02-19
+**Estado:** ✅ Spec updated in flow-generate.md. Pending agent implementation.
+
+**Contexto:**
+CODE pipeline needs to accept input from DESIGN pipeline (manifest with pre-resolved capabilities) while still supporting standalone operation (discovery from prompt only).
+
+**Decisión:**
+
+1. **Mode A (Standalone):** Current behavior. Discovery runs from scratch on user prompt, resolves capabilities and modules.
+2. **Mode B (DESIGN-seeded):** Receives DESIGN manifest as input. Discovery loads manifest capabilities as seed, runs discovery on prompt to find additional capabilities, merges without duplicates.
+3. **Responsibility split:**
+   - DESIGN resolves **capabilities** (what the context needs, from DDD analysis)
+   - CODE resolves **modules** (how to implement each capability in the tech stack)
+   - DESIGN manifest does NOT contain module IDs — that's CODE territory
+4. **Merge with precedence:** DESIGN seed capabilities have precedence (already validated). Prompt-discovered capabilities are additive.
+
+**Impacto:** `flow-generate.md` updated with Mode A/B sections. Orchestration agents (Python, jaato) pending update.
+
+---
+
+## DEC-086: DESIGN→CODE Handoff Package Definition {#dec-086}
+
+**Fecha:** 2026-02-19
+**Estado:** 🔲 Defined, pending E2E validation with CODE agents
+
+**Contexto:**
+Need to define what artifacts flow from DESIGN pipeline to CODE pipeline per bounded context, and what external artifacts are needed.
+
+**Decisión:**
+
+**From DESIGN (per bounded context):**
+- `prompt.md` — Enriched prompt with BDD scenarios, aggregate definitions, capabilities
+- `domain-api-spec.yaml` — OpenAPI contract to implement (renamed from openapi-spec.yaml)
+- `manifest.yaml` — Pre-resolved capabilities (not modules)
+- `aggregate-definitions.yaml` — Full DDD model for reference
+- `{aggregate}.feature` — BDD scenarios (Gherkin)
+
+**External (provided by user / pre-existing):**
+- `system-api-*.yaml` — System API specs to consume (backend contracts)
+- `mapping.json` — Field mappings between Domain API and System API
+
+**serviceName and basePackage:** Derived from context ID and org conventions by CODE, not provided by DESIGN.
+
+**Validation:** PoC handoff package created for card-management context with simulated System API and mappings. Pending CODE agent execution.
+
+---
+
+## DEC-087: Blueprint Naming Convention {#dec-087}
+
+**Fecha:** 2026-02-19
+**Estado:** 📝 Decision recorded, naming pending refinement
+
+**Contexto:**
+Current blueprint is `fusion-soi-platform`. Discussion about future multi-tier architecture.
+
+**Decisión:**
+- Current: `fusion-soi-platform` → rename to `fusion-soi-application` (preferred — "application" better than "platform")
+- Future: `fusion-ntier-application` would include BFF/Experience + Composable + Domain + System API layers
+- Current PoC scope: Domain APIs + System APIs only (no BFF)
+- The bounded contexts identified from front-end requirements are treated as Domain APIs for PoC purposes (philosophical debate: closer to BFF, but treating as domain for simplicity)
+
+**Pending:** Rename when we formalize the multi-tier blueprint.

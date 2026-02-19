@@ -1,0 +1,102 @@
+# Aggregate Definitions — Output Schema
+# Module: mod-design-002-tactical-design
+# Source: eri-design-002-tactical-design
+# Version: 1.0
+#
+# This schema defines the structure of aggregate-definitions.yaml.
+# One file per bounded context.
+# Validation script: ../validation/aggregate-check.sh
+
+version: "1.0"                                    # REQUIRED — Always "1.0"
+bounded_context: "{context-id}"                   # REQUIRED — From bounded-context-map.yaml
+context_name: "{Context Name}"                    # REQUIRED — Human-readable
+analysis_date: "YYYY-MM-DD"                       # REQUIRED — Date of analysis
+
+aggregates:                                        # REQUIRED — At least one aggregate
+  - id: "{aggregate-id}"                           # REQUIRED — kebab-case, unique within context
+    name: "{AggregateName}"                        # REQUIRED — PascalCase
+    root_entity: "{entity-id}"                     # REQUIRED — References root entity below
+    description: "{What this aggregate represents}" # REQUIRED
+
+    entities:                                      # REQUIRED — At least one (the root)
+      - id: "{entity-id}"                         # REQUIRED — kebab-case, unique within aggregate
+        name: "{EntityName}"                       # REQUIRED — PascalCase
+        is_root: true                              # REQUIRED — Exactly ONE true per aggregate
+        description: "{What this entity represents}" # REQUIRED
+        identity:                                  # REQUIRED for entities
+          field: "{fieldName}"                     # REQUIRED — e.g., "id"
+          type: "UUID|Long|String"                 # REQUIRED
+          generation: "auto|external|composite"    # REQUIRED
+        attributes:                                # REQUIRED — At least one attribute
+          - name: "{attributeName}"                # REQUIRED — camelCase
+            type: "{type}"                         # REQUIRED — Domain type
+            required: true                         # REQUIRED — boolean
+            description: "{What this represents}"  # REQUIRED
+            constraints: "{Optional rules}"        # OPTIONAL
+
+    value_objects:                                  # OPTIONAL — Empty array if none
+      - id: "{vo-id}"                             # REQUIRED — kebab-case
+        name: "{ValueObjectName}"                  # REQUIRED — PascalCase
+        description: "{What this VO represents}"   # REQUIRED
+        attributes:                                # REQUIRED — At least one
+          - name: "{attributeName}"                # REQUIRED — camelCase
+            type: "{type}"                         # REQUIRED
+            constraints: "{Optional rules}"        # OPTIONAL
+        used_by:                                   # REQUIRED — At least one entity ref
+          - "{entity-id}"
+
+    invariants:                                    # REQUIRED for full-tactical, OPTIONAL for entity-focused
+      - id: "{invariant-id}"                      # REQUIRED — kebab-case
+        rule: "{Human-readable business rule}"     # REQUIRED
+        scope: "aggregate|entity"                  # REQUIRED
+        enforced_by: "aggregate-root|domain-service" # REQUIRED
+        error: "{Error message when violated}"     # REQUIRED
+
+    commands:                                      # REQUIRED — At least one
+      - id: "{command-id}"                        # REQUIRED — kebab-case
+        name: "{CommandName}"                      # REQUIRED — PascalCase, imperative verb
+        description: "{What this command does}"    # REQUIRED
+        input:                                     # REQUIRED
+          - name: "{fieldName}"                    # REQUIRED
+            type: "{type}"                         # REQUIRED
+            required: true                         # REQUIRED
+        produces_event: "{event-id}"               # REQUIRED — References event below
+        error_cases:                               # REQUIRED for full-tactical
+          - code: "{ERROR_CODE}"                   # REQUIRED — UPPER_SNAKE_CASE
+            description: "{When this occurs}"      # REQUIRED
+            invariant: "{invariant-id}"            # OPTIONAL — Links to invariant
+
+    domain_events:                                 # REQUIRED for full-tactical, OPTIONAL for entity-focused
+      - id: "{event-id}"                          # REQUIRED — kebab-case
+        name: "{EventName}"                        # REQUIRED — PascalCase, past tense
+        description: "{What happened}"             # REQUIRED
+        payload:                                   # REQUIRED
+          - name: "{fieldName}"                    # REQUIRED
+            type: "{type}"                         # REQUIRED
+        triggered_by: "{command-id}"               # REQUIRED — References command above
+        visibility: "internal|cross-context"       # REQUIRED
+
+    queries:                                       # REQUIRED — At least one
+      - id: "{query-id}"                          # REQUIRED — kebab-case
+        name: "{QueryName}"                        # REQUIRED — PascalCase
+        description: "{What info is requested}"    # REQUIRED
+        returns: "{entity-id|projection}"          # REQUIRED
+        filters:                                   # REQUIRED
+          - name: "{filterName}"                   # REQUIRED
+            type: "{type}"                         # REQUIRED
+            required: true                         # REQUIRED
+        pagination: true                           # REQUIRED — boolean
+
+# ═══════════════════════════════════════════════════════════════
+# NAMING CONVENTIONS
+# ═══════════════════════════════════════════════════════════════
+#
+# | Element         | Convention      | Example                    |
+# |-----------------|-----------------|----------------------------|
+# | IDs             | kebab-case      | customer-entity, create-customer |
+# | Entity names    | PascalCase noun | Customer, Order, Account   |
+# | VO names        | PascalCase noun | Address, Money, EmailAddress |
+# | Command names   | PascalCase verb | CreateCustomer, ChangeStatus |
+# | Event names     | PascalCase past | CustomerCreated, StatusChanged |
+# | Error codes     | UPPER_SNAKE     | DUPLICATE_EMAIL, INVALID_TRANSITION |
+# | Attribute names | camelCase       | firstName, dateOfBirth     |

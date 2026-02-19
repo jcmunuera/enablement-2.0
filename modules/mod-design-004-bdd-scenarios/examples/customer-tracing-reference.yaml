@@ -1,0 +1,119 @@
+# Scenario Tracing — Customer Reference Example
+# Module: mod-design-004-bdd-scenarios
+# Source: eri-design-004-bdd-scenarios
+#
+# 16 scenarios traced: 3 command happy, 3 query happy,
+# 2 validation, 4 invariant, 1 not-found, 2 integration, 1 pagination.
+
+version: "1.0"
+bounded_context: "customer-core"
+aggregate: "customer"
+feature_file: "customer.feature"
+
+scenarios:
+  # ─── Happy path (commands) ───
+  - id: "create-customer-happy"
+    scenario: "Register a new customer with valid data"
+    category: happy-path
+    validates_requirement: "Customer registration and onboarding"
+    exercises: "create-customer"
+
+  - id: "update-customer-happy"
+    scenario: "Update customer personal data"
+    category: happy-path
+    validates_requirement: "Customer data maintenance (CRUD)"
+    exercises: "update-customer"
+
+  - id: "change-status-happy"
+    scenario: "Change customer status to DORMANT"
+    category: happy-path
+    validates_requirement: "Customer status lifecycle management"
+    exercises: "change-status"
+
+  # ─── Happy path (queries) ───
+  - id: "get-customer-happy"
+    scenario: "Retrieve an existing customer by ID"
+    category: happy-path
+    validates_requirement: "Customer search and retrieval"
+    exercises: "get-customer"
+
+  - id: "list-customers-happy"
+    scenario: "List customers with pagination"
+    category: pagination
+    validates_requirement: "Customer search and retrieval"
+    exercises: "list-customers"
+
+  - id: "search-by-email-happy"
+    scenario: "Search customer by email"
+    category: happy-path
+    validates_requirement: "Customer search and retrieval"
+    exercises: "search-customer-by-email"
+
+  # ─── Validation ───
+  - id: "create-missing-fields"
+    scenario: "Reject customer creation with missing required fields"
+    category: validation
+    validates_requirement: "Customer registration and onboarding"
+    exercises: "create-customer"
+    expected_error: "INVALID_INPUT"
+
+  - id: "update-not-found"
+    scenario: "Reject customer update for non-existent customer"
+    category: not-found
+    validates_requirement: "Customer data maintenance (CRUD)"
+    exercises: "update-customer"
+    expected_error: "CUSTOMER_NOT_FOUND"
+
+  # ─── Invariants ───
+  - id: "duplicate-email"
+    scenario: "Reject duplicate customer email"
+    category: invariant
+    validates_requirement: "Customer registration and onboarding"
+    exercises: "create-customer"
+    tests_invariant: "unique-email"
+    expected_error: "DUPLICATE_EMAIL"
+
+  - id: "invalid-transition"
+    scenario: "Reject invalid status transition"
+    category: invariant
+    validates_requirement: "Customer status lifecycle management"
+    exercises: "change-status"
+    tests_invariant: "valid-status-transition"
+    expected_error: "INVALID_TRANSITION"
+
+  - id: "kyc-not-verified"
+    scenario: "Reject activation without verified KYC"
+    category: invariant
+    validates_requirement: "Customer status lifecycle management"
+    exercises: "change-status"
+    tests_invariant: "kyc-required-for-active"
+    expected_error: "KYC_NOT_VERIFIED"
+
+  - id: "underage-customer"
+    scenario: "Reject underage customer registration"
+    category: invariant
+    validates_requirement: "Customer registration and onboarding"
+    exercises: "create-customer"
+    tests_invariant: "minimum-age"
+    expected_error: "UNDERAGE"
+
+  # ─── Not found ───
+  - id: "get-customer-not-found"
+    scenario: "Return error when customer does not exist"
+    category: not-found
+    validates_requirement: "Customer search and retrieval"
+    exercises: "get-customer"
+    expected_error: "CUSTOMER_NOT_FOUND"
+
+  # ─── Integration ───
+  - id: "persist-via-parties"
+    scenario: "Customer data persisted via Parties system API"
+    category: integration
+    validates_requirement: "Customer registration and onboarding"
+    exercises: "create-customer"
+
+  - id: "retrieve-via-parties"
+    scenario: "Customer data retrieved from Parties system API"
+    category: integration
+    validates_requirement: "Customer search and retrieval"
+    exercises: "get-customer"

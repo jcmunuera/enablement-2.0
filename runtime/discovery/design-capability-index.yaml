@@ -1,0 +1,349 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# DESIGN CAPABILITY INDEX v2.0
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Capability index for the DESIGN domain.
+#
+# Changes from v1.0:
+#   - DEC-065: Restructured — DDD/BDD is now a variant of the
+#     `implementation-design` capability, not the domain itself.
+#   - Capabilities: `domain-analysis`, `tactical-design`, `behavior-validation`
+#     collapsed into features of `implementation-design` (variant: ddd-bdd).
+#   - Target-mapping capabilities remain separate (solution-target-specific).
+#   - Discovery now supports methodology selection via prompt keywords.
+#   - DEC-059: DESIGN output is solution-target agnostic (phases 0-3).
+#
+# KEY DIFFERENCES FROM CODE CAPABILITY INDEX:
+#
+#   - Discovery applies to METHODOLOGY SELECTION and TARGET SELECTION.
+#   - Methodology capabilities have a default variant (ddd-bdd).
+#   - Modules are primarily policy-driven (not template-driven).
+#   - Phase execution is sequential within a capability.
+#
+# See: DEC-051, DEC-052, DEC-059, DEC-065
+#      blueprints/
+#      model/domains/design/DOMAIN.md
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODULE TYPES (DESIGN domain)
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# module_type: policy-driven | template-driven | hybrid
+#
+#   POLICY-DRIVEN:
+#     - LLM generates content within strict organizational constraints
+#     - Module provides: schema, policies, examples (few-shot), validation
+#     - Output is creative but structure-validated
+#     - Example: strategic-ddd, tactical-design
+#
+#   TEMPLATE-DRIVEN:
+#     - Output is mechanically derivable from input
+#     - Module provides: templates, transformation rules, validation
+#     - Deterministic: same input = same output
+#     - Example: api-resource-mapping, openapi-generation
+#
+#   HYBRID:
+#     - LLM generates creative content, module validates coverage/completeness
+#     - Module provides: generation rules, coverage matrix, validation
+#     - Example: bdd-scenarios (LLM writes Gherkin, module checks coverage)
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+
+version: "2.0"
+domain: design
+last_updated: "2026-02-18"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXECUTION MODEL
+# ═══════════════════════════════════════════════════════════════════════════════
+
+execution:
+  # Design methodology phases are FIXED — always execute in order
+  # The specific features activated depend on the methodology variant
+  fixed_phases:
+    - design-methodology    # implementation-design capability (phases 0-3)
+
+  # Target mapping is CONDITIONAL — depends on target selection
+  conditional_phases:
+    - target-mapping        # Solution-target-specific capabilities
+
+  # Flow: [methodology discovery] → design-methodology → [target selection] → target-mapping
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SOLUTION TARGETS (reference — full spec in blueprints/)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+solution_targets:
+  soi-fusion-api-rest:
+    status: active
+    description: "Fusion API Service (REST) — Domain/Composable/System API"
+    mapping_capabilities:
+      - api-mapping.tier-assignment
+      - api-mapping.rest-resource-mapping
+      - contract-generation.openapi
+      - integration-mapping.field-mapping
+      - output-assembly.prompt-enrichment
+    detection_keywords:
+      - API
+      - REST
+      - servicio
+      - microservicio
+      - Domain API
+      - System API
+      - endpoint
+      - integración
+
+  # Future targets — registered but not implemented
+  soi-event-processor:
+    status: planned
+    description: "Event Processor — reactive daemon"
+  soi-batch-job:
+    status: planned
+    description: "Batch Processing — scheduled data job"
+  soe-microfrontend:
+    status: planned
+    description: "Micro-Frontend Module — web components"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CAPABILITIES
+# ═══════════════════════════════════════════════════════════════════════════════
+
+capabilities:
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # IMPLEMENTATION DESIGN
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Design for code generation. Produces solution-target agnostic artifacts
+  # from user requirements using a specific design methodology.
+  #
+  # Current variant: ddd-bdd (Domain-Driven Design + Behavior-Driven Development)
+  # Future variants: could include alternative methodologies
+  # ─────────────────────────────────────────────────────────────────────────────
+  implementation-design:
+    description: "Design for implementation — produces structured design artifacts from requirements that feed into a Blueprint binding and CODE pipeline"
+    type: foundational
+    phase_group: design-methodology
+    mandatory: true
+    documentation: "model/domains/design/capabilities/implementation_design.md"
+
+    # Methodology variant selection
+    default_variant: ddd-bdd
+
+    variants:
+      ddd-bdd:
+        description: "Domain-Driven Design (strategic + tactical) + Behavior-Driven Development"
+        keywords:
+          - DDD
+          - domain-driven
+          - domain driven design
+          - BDD
+          - behavior driven
+          - bounded context
+          - aggregate
+        features:
+          # Phase 0 — Requirements Normalization
+          requirements-normalization:
+            description: "Normalize unstructured requirements into structured YAML with interactive enrichment"
+            phase_order: 0
+            module_type: policy-driven
+            module: mod-design-000-requirements-normalization
+            input: "Unstructured requirements (any language)"
+            output: "normalized-requirements.yaml"
+            validation: "requirements-check.sh (structural + gap detection G1-G6)"
+
+          # Phase 1 — Strategic DDD
+          strategic-ddd:
+            description: "Full strategic DDD analysis with subdomains, bounded contexts, ubiquitous language, and relationships"
+            phase_order: 1
+            module_type: policy-driven
+            is_default: true
+            module: mod-design-001-strategic-ddd
+            eri: eri-design-001-strategic-ddd
+            adr: adr-design-001-domain-decomposition
+            input: "normalized-requirements.yaml"
+            output: "bounded-context-map.yaml"
+            validation: "context-map-check.sh"
+            options:
+              full-strategic:
+                description: "Full analysis with ubiquitous language, capabilities, all relationship types"
+                is_default: true
+              lightweight:
+                description: "Simplified with contexts and basic relationships only"
+                use_when:
+                  - "Simple domain with single team"
+                  - "1-2 bounded contexts"
+
+          # Phase 2 — Tactical DDD
+          tactical-design:
+            description: "Tactical DDD — aggregates, entities, VOs, commands, events, queries, invariants"
+            phase_order: 2
+            module_type: policy-driven
+            module: mod-design-002-tactical-design
+            eri: eri-design-002-tactical-design
+            adr: adr-design-002-tactical-design-patterns
+            input: "bounded-context-map.yaml + normalized-requirements.yaml"
+            output: "aggregate-definitions.yaml (per bounded context)"
+            validation: "aggregate-check.sh"
+            options:
+              full-tactical:
+                description: "All DDD building blocks"
+                is_default: true
+              entity-focused:
+                description: "Entities + basic CRUD commands only"
+                use_when:
+                  - "Pure CRUD context (0-2 invariants)"
+                  - "No cross-context events"
+
+          # Phase 3 — BDD Scenarios
+          behavior-validation:
+            description: "BDD scenario generation — Gherkin scenarios with full traceability to DDD elements"
+            phase_order: 3
+            module_type: hybrid
+            module: mod-design-004-bdd-scenarios
+            eri: eri-design-004-bdd-scenarios
+            adr: adr-design-004-behavior-validation
+            input: "aggregate-definitions.yaml + bounded-context-map.yaml"
+            output: "{context}.feature + scenario-tracing.yaml"
+            validation: "scenario-check.sh + tracing-check.sh"
+
+      # Future variant placeholder
+      # other-methodology:
+      #   description: "Alternative design methodology"
+      #   keywords: [...]
+      #   features: [...]
+
+    # Discovery keywords at capability level (methodology-agnostic)
+    keywords:
+      - diseño para implementación
+      - diseño para desarrollo
+      - design for implementation
+      - implementation design
+      - diseña para código
+      - genera el diseño
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # TARGET-MAPPING CAPABILITIES
+  # ─────────────────────────────────────────────────────────────────────────────
+  # These are solution-target-specific. They execute AFTER design-methodology
+  # and transform the methodology-agnostic output into implementation input.
+  # Activated by solution target selection, not by prompt discovery.
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # API MAPPING (target-mapping, for soi-fusion-api-rest)
+  api-mapping:
+    description: "Maps design artifacts to Fusion API tiers and REST resources"
+    type: layered
+    phase_group: target-mapping
+    phase_order: 1
+    module_type: template-driven
+    mandatory: false
+    requires: [implementation-design]
+    applies_to_targets: [soi-fusion-api-rest]
+    documentation: "knowledge/ADRs/adr-design-003-api-architecture-mapping/"
+
+    features:
+      tier-assignment:
+        description: "Assign bounded contexts to Fusion API tiers (Domain, Composable, Experience, System)"
+        module: mod-design-003-api-mapping
+        eri: eri-design-003-api-mapping
+        input: "bounded-context-map.yaml + aggregate-definitions.yaml"
+        output: "api-mapping.yaml (tier + resource mapping)"
+
+      rest-resource-mapping:
+        description: "Map aggregates to REST resources and HTTP operations"
+        module: mod-design-003-api-mapping
+        eri: eri-design-003-api-mapping
+        input: "aggregate-definitions.yaml"
+        output: "api-mapping.yaml (operations section)"
+
+  # CONTRACT GENERATION (target-mapping, after api-mapping)
+  contract-generation:
+    description: "Generates API contracts from mapping artifacts"
+    type: layered
+    phase_group: target-mapping
+    phase_order: 2
+    module_type: template-driven
+    mandatory: false
+    requires: [api-mapping]
+    applies_to_targets: [soi-fusion-api-rest]
+
+    features:
+      openapi:
+        description: "Generate OpenAPI 3.0 specs from api-mapping + aggregate definitions"
+        module: mod-design-003-api-mapping
+        eri: eri-design-003-api-mapping
+        input: "api-mapping.yaml + aggregate-definitions.yaml"
+        output: "{api-name}-spec.yaml (OpenAPI 3.0)"
+
+  # INTEGRATION MAPPING (target-mapping, parallel with contracts)
+  integration-mapping:
+    description: "Generates field-level mappings between domain model and backend systems"
+    type: layered
+    phase_group: target-mapping
+    phase_order: 2
+    module_type: policy-driven
+    mandatory: false
+    requires: [api-mapping]
+    applies_to_targets: [soi-fusion-api-rest]
+
+    features:
+      field-mapping:
+        description: "Domain-to-system field transformation mapping"
+        module: mod-design-003-api-mapping
+        eri: eri-design-003-api-mapping
+        input: "api-mapping.yaml (system_api_dependencies section)"
+        output: "field-mapping.json"
+        condition: "system_api_dependencies is non-empty"
+
+  # OUTPUT ASSEMBLY (target-mapping, final step)
+  output-assembly:
+    description: "Assembles all design artifacts into CODE pipeline input"
+    type: layered
+    phase_group: target-mapping
+    phase_order: 3
+    module_type: template-driven
+    mandatory: true
+    requires: [api-mapping]
+    applies_to_targets: [soi-fusion-api-rest]
+
+    features:
+      prompt-enrichment:
+        description: "Generates enriched prompt.md combining all design context for CODE pipeline"
+        module: mod-design-003-api-mapping
+        eri: eri-design-003-api-mapping
+        input: "All design artifacts + solution target"
+        output: "prompt.md + packaged design artifacts"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DISCOVERY RULES (DESIGN domain)
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Rule D1: Methodology discovery
+#   Match input against implementation-design.keywords (capability level)
+#   and implementation-design.variants.{variant}.keywords (variant level).
+#   If matched → activate that variant.
+#   If no variant match → use default_variant (ddd-bdd).
+#   If no capability match but intent is "design for development" → activate default.
+#
+# Rule D2: Feature depth selection
+#   Within a variant, features have options (full vs lightweight).
+#   Default options apply unless input signals simplicity
+#   (single team, CRUD-only, <3 entities).
+#
+# Rule D3: Target selection
+#   After design-methodology completes, determine solution target:
+#   a) Match input against solution_targets.detection_keywords
+#   b) If matched → activate target's mapping_capabilities
+#   c) If ambiguous → ask user to select
+#   d) If multiple targets → repeat target-mapping per target
+#
+# Rule D4: Conditional capabilities
+#   integration-mapping.field-mapping only activates when
+#   system_api_dependencies detected in api-mapping output.
+#
+# Rule D5: Sequential execution
+#   Within design-methodology: features execute by phase_order (0→1→2→3).
+#   Within target-mapping: capabilities execute by phase_order.
+#   Each output is input to the next.
+#
+# ═══════════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,102 @@
+# Code Generation Defaults
+# Version: 1.0
+# Date: 2026-01-13
+#
+# These defaults are applied when input parameters are not provided.
+# They ensure deterministic code generation across executions.
+
+---
+
+# Enterprise context
+enterprise:
+  # Base package prefix for all generated code
+  # Format: {packagePrefix}.{domain}
+  packagePrefix: "com.bank"
+  
+  # Default group ID for Maven projects
+  groupId: "com.bank"
+
+# Java/Spring defaults
+java:
+  version: "17"
+  springBoot:
+    version: "3.2.0"
+
+# Package derivation rules
+package:
+  # How to derive basePackage if not provided
+  # Options: 
+  #   - "serviceName": com.bank.{serviceName-normalized}
+  #   - "explicit": require basePackage in input
+  derivation: "serviceName"
+  
+  # Normalization rules for serviceName → package
+  normalization:
+    # Remove these suffixes before converting
+    removeSuffixes: ["-api", "-service", "-svc"]
+    # Remove dashes and convert to lowercase
+    removeDashes: true
+    # Examples:
+    #   customer-api → com.bank.customer
+    #   account-management-service → com.bank.accountmanagement
+
+# API Layer defaults
+apiLayer:
+  # Default features by layer
+  experience:
+    hateoas: true
+    pagination: true
+    compensation: false
+  
+  composable:
+    hateoas: false
+    pagination: true
+    compensation: false
+  
+  domain:
+    hateoas: true
+    pagination: true
+    compensation: false  # Must be explicitly enabled
+  
+  system:
+    hateoas: false
+    pagination: true
+    compensation: false
+
+# Feature defaults
+features:
+  resilience:
+    enabled: true
+    circuitBreaker: true
+    retry: true
+    timeout: true
+  
+  compensation:
+    # CRITICAL: Compensation is OPT-IN, never enabled by default
+    enabled: false
+  
+  observability:
+    enabled: true
+    correlationId: true
+    actuator: true
+
+# Artifact generation defaults
+artifacts:
+  # Always generate these regardless of configuration
+  mandatory:
+    - "pom.xml"
+    - "application.yml"
+    - "Entity.java"
+    - "EntityId.java"
+    - "Repository.java"
+    - "ApplicationService.java"
+    - "Controller.java"
+    - "GlobalExceptionHandler.java"
+    - "CorrelationIdFilter.java"
+  
+  # Generate based on conditions
+  conditional:
+    - artifact: "ModelAssembler.java"
+      condition: "apiLayer IN [experience, domain]"
+    - artifact: "Compensation classes"
+      condition: "features.compensation.enabled = true AND apiLayer = domain"

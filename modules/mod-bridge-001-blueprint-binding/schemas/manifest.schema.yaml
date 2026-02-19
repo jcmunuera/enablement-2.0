@@ -1,0 +1,48 @@
+# Capability Manifest Schema
+# Output of Step 4c: Capability Inference
+
+type: object
+required: [context_id, building_block, tech_stack, blueprint, capabilities]
+
+properties:
+  context_id:
+    type: string
+    description: "Bounded context ID from context map"
+
+  building_block:
+    type: string
+    description: "Building block ID from blueprint"
+
+  tech_stack:
+    type: string
+    description: "Tech stack ID"
+
+  blueprint:
+    type: string
+    description: "Blueprint ID"
+
+  capabilities:
+    type: array
+    items:
+      type: object
+      required: [id, source]
+      properties:
+        id:
+          type: string
+          description: "Capability.feature ID (e.g., architecture.hexagonal-light)"
+        source:
+          type: string
+          enum: [inherent, inferred, stack, manual]
+          description: "Which layer resolved this capability"
+        reason:
+          type: string
+          description: "Why this capability is included"
+
+  tech_defaults:
+    type: object
+    properties:
+      patterns:
+        type: object
+        description: "Implementation variant preferences from tech stack"
+        additionalProperties:
+          type: string
