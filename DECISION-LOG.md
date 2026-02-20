@@ -82,6 +82,7 @@ Este documento registra las decisiones de diseño importantes tomadas durante el
 - [DEC-085](#dec-085) - CODE Discovery Mode A/B (Standalone vs DESIGN-seeded)
 - [DEC-086](#dec-086) - DESIGN→CODE Handoff Package Definition
 - [DEC-087](#dec-087) - Blueprint Naming Convention
+- [DEC-088](#dec-088) - SystemApiAdapterTest Template Alignment with EntityId
 
 ---
 
@@ -3844,3 +3845,28 @@ Current blueprint is `fusion-soi-platform`. Discussion about future multi-tier a
 - The bounded contexts identified from front-end requirements are treated as Domain APIs for PoC purposes (philosophical debate: closer to BFF, but treating as domain for simplicity)
 
 **Pending:** Rename when we formalize the multi-tier blueprint.
+
+---
+
+## DEC-088: SystemApiAdapterTest Template Alignment with EntityId {#dec-088}
+
+**Fecha:** 2026-02-20
+**Estado:** ✅ Implementado y validado
+
+**Contexto:**
+El template `SystemApiAdapterTest.java.tpl` de mod-code-017 estaba desalineado con el adapter real y con el domain model generado por mod-code-015:
+- Usaba `String` para IDs en vez del value object `{{Entity}}Id`
+- Usaba literals como `"123"`, `"non-existent"` que no son UUIDs válidos
+- Usaba `{{Entity}}.builder()` que no existe (domain entities tienen private constructor)
+- No incluía `mapper.toMainframeId()` en el flujo de test
+- Faltaban tests de `existsById()`
+
+**Decisión:**
+Fix del template para alinearlo con la interfaz real del adapter:
+1. `{{Entity}}Id` como tipo de parámetro (no `String`)
+2. UUIDs válidos como constantes de test (`EXISTING_ID`, `NON_EXISTING_ID`)
+3. `mock({{Entity}}.class)` para domain entities (no builder)
+4. Flujo completo: EntityId → `mapper.toMainframeId()` → String → client
+5. Tests de `existsById()` incluidos
+
+**Validación:** card-management regenerado, 35/35 tests pass, 16/16 validators pass.

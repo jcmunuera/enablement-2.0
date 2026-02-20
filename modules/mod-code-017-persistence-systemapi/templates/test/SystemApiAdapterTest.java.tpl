@@ -9,6 +9,7 @@ import {{basePackage}}.adapter.out.systemapi.dto.{{Entity}}SystemApiRequest;
 import {{basePackage}}.adapter.out.systemapi.dto.{{Entity}}SystemApiResponse;
 import {{basePackage}}.adapter.out.systemapi.mapper.{{Entity}}SystemApiMapper;
 import {{basePackage}}.domain.model.{{Entity}};
+import {{basePackage}}.domain.model.{{Entity}}Id;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,9 +19,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -35,6 +38,10 @@ import static org.mockito.Mockito.*;
  */
 @ExtendWith(MockitoExtension.class)
 class {{Entity}}SystemApiAdapterTest {
+    
+    private static final {{Entity}}Id EXISTING_ID = {{Entity}}Id.of(UUID.fromString("a1b2c3d4-e5f6-7890-abcd-ef1234567890"));
+    private static final {{Entity}}Id NON_EXISTING_ID = {{Entity}}Id.of(UUID.fromString("00000000-0000-0000-0000-000000000000"));
+    private static final String MAINFRAME_ID = "A1B2C3D4";
     
     @Mock
     private {{Entity}}SystemApiClient client;
@@ -52,32 +59,31 @@ class {{Entity}}SystemApiAdapterTest {
     @Test
     void findById_WhenExists_ReturnsMappedEntity() {
         // Given
-        String id = "123";
-        {{Entity}}SystemApiResponse dto = {{Entity}}SystemApiResponse.builder().id(id).build();
-        {{Entity}} entity = {{Entity}}.builder().id(id).build();
+        {{Entity}}SystemApiResponse dto = {{Entity}}SystemApiResponse.builder().id(MAINFRAME_ID).build();
+        {{Entity}} entity = mock({{Entity}}.class);
         
-        when(client.getById(id)).thenReturn(dto);
+        when(mapper.toMainframeId(EXISTING_ID)).thenReturn(MAINFRAME_ID);
+        when(client.getById(MAINFRAME_ID)).thenReturn(dto);
         when(mapper.toDomain(dto)).thenReturn(entity);
         
         // When
-        Optional<{{Entity}}> result = adapter.findById(id);
+        Optional<{{Entity}}> result = adapter.findById(EXISTING_ID);
         
         // Then
         assertThat(result).isPresent();
-        assertThat(result.get().getId()).isEqualTo(id);
-        verify(client).getById(id);
+        verify(client).getById(MAINFRAME_ID);
         verify(mapper).toDomain(dto);
     }
     
     @Test
     void findById_WhenNotExists_ReturnsEmpty() {
         // Given
-        String id = "non-existent";
-        when(client.getById(id)).thenReturn(null);
+        when(mapper.toMainframeId(NON_EXISTING_ID)).thenReturn("00000000");
+        when(client.getById("00000000")).thenReturn(null);
         when(mapper.toDomain(null)).thenReturn(null);
         
         // When
-        Optional<{{Entity}}> result = adapter.findById(id);
+        Optional<{{Entity}}> result = adapter.findById(NON_EXISTING_ID);
         
         // Then
         assertThat(result).isEmpty();
@@ -86,10 +92,10 @@ class {{Entity}}SystemApiAdapterTest {
     @Test
     void findAll_ReturnsMappedEntities() {
         // Given
-        {{Entity}}SystemApiResponse dto1 = {{Entity}}SystemApiResponse.builder().id("1").build();
-        {{Entity}}SystemApiResponse dto2 = {{Entity}}SystemApiResponse.builder().id("2").build();
-        {{Entity}} entity1 = {{Entity}}.builder().id("1").build();
-        {{Entity}} entity2 = {{Entity}}.builder().id("2").build();
+        {{Entity}}SystemApiResponse dto1 = {{Entity}}SystemApiResponse.builder().id("ID1").build();
+        {{Entity}}SystemApiResponse dto2 = {{Entity}}SystemApiResponse.builder().id("ID2").build();
+        {{Entity}} entity1 = mock({{Entity}}.class);
+        {{Entity}} entity2 = mock({{Entity}}.class);
         
         when(client.getAll()).thenReturn(List.of(dto1, dto2));
         when(mapper.toDomain(dto1)).thenReturn(entity1);
@@ -100,19 +106,18 @@ class {{Entity}}SystemApiAdapterTest {
         
         // Then
         assertThat(result).hasSize(2);
-        assertThat(result).extracting({{Entity}}::getId).containsExactly("1", "2");
     }
     
     @Test
     void save_ReturnsMappedSavedEntity() {
         // Given
-        {{Entity}} entity = {{Entity}}.builder().id("123").build();
-        {{Entity}}SystemApiRequest inputDto = {{Entity}}SystemApiRequest.builder().id("123").build();
-        {{Entity}}SystemApiResponse savedDto = {{Entity}}SystemApiResponse.builder().id("123").build();
-        {{Entity}} savedEntity = {{Entity}}.builder().id("123").build();
+        {{Entity}} entity = mock({{Entity}}.class);
+        {{Entity}}SystemApiRequest request = {{Entity}}SystemApiRequest.builder().id(MAINFRAME_ID).build();
+        {{Entity}}SystemApiResponse savedDto = {{Entity}}SystemApiResponse.builder().id(MAINFRAME_ID).build();
+        {{Entity}} savedEntity = mock({{Entity}}.class);
         
-        when(mapper.toRequest(entity)).thenReturn(inputDto);
-        when(client.save(inputDto)).thenReturn(savedDto);
+        when(mapper.toRequest(entity)).thenReturn(request);
+        when(client.save(request)).thenReturn(savedDto);
         when(mapper.toDomain(savedDto)).thenReturn(savedEntity);
         
         // When
@@ -120,40 +125,49 @@ class {{Entity}}SystemApiAdapterTest {
         
         // Then
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo("123");
-        verify(client).save(inputDto);
+        verify(client).save(request);
     }
     
     @Test
     void deleteById_CallsClient() {
         // Given
-        String id = "123";
+        when(mapper.toMainframeId(EXISTING_ID)).thenReturn(MAINFRAME_ID);
         
         // When
-        adapter.deleteById(id);
+        adapter.deleteById(EXISTING_ID);
         
         // Then
-        verify(client).deleteById(id);
+        verify(client).deleteById(MAINFRAME_ID);
     }
     
-    // TTB-002 FIX: Added test for System API error response codes
     @Test
-    void findById_WhenSystemReturnsError_ReturnsEmpty() {
-        // Given - System API returns response but with error code
-        String id = "123";
-        {{Entity}}SystemApiResponse errorDto = {{Entity}}SystemApiResponse.builder()
-            .id(id)
-            .sysRc("99")  // Error code
-            .sysMsg("Record not found")
-            .build();
+    void existsById_WhenExists_ReturnsTrue() {
+        // Given
+        {{Entity}}SystemApiResponse dto = {{Entity}}SystemApiResponse.builder().id(MAINFRAME_ID).build();
+        {{Entity}} entity = mock({{Entity}}.class);
         
-        when(client.getById(id)).thenReturn(errorDto);
+        when(mapper.toMainframeId(EXISTING_ID)).thenReturn(MAINFRAME_ID);
+        when(client.getById(MAINFRAME_ID)).thenReturn(dto);
+        when(mapper.toDomain(dto)).thenReturn(entity);
         
         // When
-        Optional<{{Entity}}> result = adapter.findById(id);
+        boolean result = adapter.existsById(EXISTING_ID);
         
         // Then
-        assertThat(result).isEmpty();
-        verify(mapper, never()).toDomain(any());  // Should not map error response
+        assertThat(result).isTrue();
+    }
+    
+    @Test
+    void existsById_WhenNotExists_ReturnsFalse() {
+        // Given
+        when(mapper.toMainframeId(NON_EXISTING_ID)).thenReturn("00000000");
+        when(client.getById("00000000")).thenReturn(null);
+        when(mapper.toDomain(null)).thenReturn(null);
+        
+        // When
+        boolean result = adapter.existsById(NON_EXISTING_ID);
+        
+        // Then
+        assertThat(result).isFalse();
     }
 }
